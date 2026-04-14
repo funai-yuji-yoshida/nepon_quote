@@ -225,6 +225,11 @@ const QuotationPDF = (() => {
     // 物販・作業の場合はアイテム行を直接表示、工事はセクション集計行
     const isKouji = (quoteCategory || '').includes('工事');
 
+    // 見積外工事を先に定義（行数カウントに含めるため）
+    const exclusions = (data.exclusions && data.exclusions.length > 0)
+      ? data.exclusions : [];
+    const exRowCount = Math.ceil(exclusions.length / 2);
+
     // 第1パス: 行データを収集してカウント（フォントサイズ決定のため）
     const mirrorEntries = [];
     sectionTotals.forEach(s => {
@@ -234,18 +239,23 @@ const QuotationPDF = (() => {
         if (s.name && s.name.trim()) {
           mirrorEntries.push({ type: 'sectionHeader', s });
         }
-        (s.items || []).filter(i => (Number(i.amount) || 0) > 0).forEach(item => {
+        // 単価0円のアイテムも名前があれば表示する
+        (s.items || []).filter(i => i.name && i.name.trim()).forEach(item => {
           mirrorEntries.push({ type: 'item', item });
         });
       }
     });
-    const mirrorRowCount = mirrorEntries.length;
+    // 見積外工事行・固定行（合計+内訳7行）も含めてトータル行数を算出
+    const mirrorRowCount = mirrorEntries.length + exRowCount + 7;
 
-    // 行数に応じてフォントサイズを動的調整（1ページ収容のため）
+    // 行数に応じてフォントサイズ・パディング・マージンを動的調整（1ページ収容のため）
     let itemFs = 8.5;
-    if (mirrorRowCount > 20) itemFs = 7.5;
-    if (mirrorRowCount > 28) itemFs = 6.5;
-    if (mirrorRowCount > 36) itemFs = 6.0;
+    if (mirrorRowCount > 18) itemFs = 7.5;
+    if (mirrorRowCount > 26) itemFs = 7.0;
+    if (mirrorRowCount > 34) itemFs = 6.5;
+    if (mirrorRowCount > 42) itemFs = 6.0;
+    const cellPad   = mirrorRowCount > 30 ? 1 : mirrorRowCount > 20 ? 1.5 : 2;
+    const topMargin = mirrorRowCount > 26 ? 10 : mirrorRowCount > 18 ? 20 : 50;
 
     // 第2パス: 決定したフォントサイズで行を生成
     mirrorEntries.forEach(entry => {
@@ -298,75 +308,72 @@ const QuotationPDF = (() => {
     // 合計行
     tableRows.push([
       { text: '', border: [true, true, false, false] },
-      { text: '合　　計', alignment: 'center', bold: true, colSpan: 4, border: [false, true, false, false] },
+      { text: '合　　計', alignment: 'center', bold: true, fontSize: itemFs, colSpan: 4, border: [false, true, false, false] },
       {}, {}, {},
-      { text: fmt(grandTotal), alignment: 'right', border: [false, true, true, false] },
+      { text: fmt(grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
     ]);
 
     // 値引き額（0の場合も表示）
     tableRows.push([
       { text: '', border: [true, false, false, false] },
-      { text: discountLabel, alignment: 'center', colSpan: 4, border: [false, false, false, false] },
+      { text: discountLabel, alignment: 'center', fontSize: itemFs, colSpan: 4, border: [false, false, false, false] },
       {}, {}, {},
-      { text: discount > 0 ? '▲ ' + fmt(discount) : fmt(0), alignment: 'right', border: [false, false, true, false] },
+      { text: discount > 0 ? '▲ ' + fmt(discount) : fmt(0), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
     ]);
 
     // お渡し価格
     tableRows.push([
       { text: '', border: [true, false, false, false] },
-      { text: '貴社お渡し価格', alignment: 'center', colSpan: 4, border: [false, false, false, false] },
+      { text: '貴社お渡し価格', alignment: 'center', fontSize: itemFs, colSpan: 4, border: [false, false, false, false] },
       {}, {}, {},
-      { text: fmt(deliveryPrice), alignment: 'right', bold: true, border: [false, false, true, false] },
+      { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
     ]);
 
     // 内訳ヘッダー
     tableRows.push([
       { text: '', border: [true, false, false, false] },
-      { text: '＜内訳＞', alignment: 'center', colSpan: 5, border: [false, false, true, false] },
+      { text: '＜内訳＞', alignment: 'center', fontSize: itemFs, colSpan: 5, border: [false, false, true, false] },
       {}, {}, {}, {},
     ]);
 
     // 内訳 1) 資材費
     tableRows.push([
       { text: '', border: [true, false, false, false] },
-      { text: '1）資材費他', colSpan: 4, border: [false, false, false, false] },
+      { text: '1）資材費他', fontSize: itemFs, colSpan: 4, border: [false, false, false, false] },
       {}, {}, {},
-      { text: fmt(materialCost), alignment: 'right', border: [false, false, true, false] },
+      { text: fmt(materialCost), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
     ]);
 
     // 内訳 2) 労務費
     tableRows.push([
       { text: '', border: [true, false, false, false] },
-      { text: '2）労務費', colSpan: 4, border: [false, false, false, false] },
+      { text: '2）労務費', fontSize: itemFs, colSpan: 4, border: [false, false, false, false] },
       {}, {}, {},
-      { text: fmt(laborCost), alignment: 'right', border: [false, false, true, false] },
+      { text: fmt(laborCost), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
     ]);
 
     // 内訳 3) 法定福利費
     tableRows.push([
       { text: '', border: [true, false, false, true] },
-      { text: `3）法定福利費（${(legalRate * 100).toFixed(1)}%）`, colSpan: 4, border: [false, false, false, true] },
+      { text: `3）法定福利費（${(legalRate * 100).toFixed(1)}%）`, fontSize: itemFs, colSpan: 4, border: [false, false, false, true] },
       {}, {}, {},
-      { text: fmt(legalWelfare), alignment: 'right', border: [false, false, true, true] },
+      { text: fmt(legalWelfare), alignment: 'right', fontSize: itemFs, border: [false, false, true, true] },
     ]);
 
     // ── 見積外工事リスト（選択なしの場合は非表示）──────────────
-    const exclusions = (data.exclusions && data.exclusions.length > 0)
-      ? data.exclusions
-      : [];
     const half = Math.ceil(exclusions.length / 2);
     const leftCol  = exclusions.slice(0, half);
     const rightCol = exclusions.slice(half);
     const exRows   = leftCol.map((item, i) => [
-      { text: `${i + 1}. ${item}`, fontSize: 8, border: [false, false, false, false] },
-      { text: rightCol[i] ? `${i + half + 1}. ${rightCol[i]}` : '', fontSize: 8, border: [false, false, false, false] },
+      { text: `${i + 1}. ${item}`, fontSize: itemFs, border: [false, false, false, false] },
+      { text: rightCol[i] ? `${i + half + 1}. ${rightCol[i]}` : '', fontSize: itemFs, border: [false, false, false, false] },
     ]);
 
     // ── スタンプボックス（2行×2列 = 4ボックス） ─────────────────
     // 幅: サマリーテーブルの単価(58pt)+金額(58pt)列と左右端を合わせる
     const STAMP_W       = 58;  // 各セル幅（単価・金額列に合わせる）
-    const STAMP_LABEL_H = 12;
-    const STAMP_BODY_H  = 32;
+    const STAMP_LABEL_H = mirrorRowCount > 18 ? 10 : 12;
+    const STAMP_BODY_H  = mirrorRowCount > 18 ? 22 : 32;
     const stampTable = {
       table: {
         widths:  [STAMP_W, STAMP_W],
@@ -400,6 +407,15 @@ const QuotationPDF = (() => {
       },
     };
 
+    // 行数に応じたヘッダー部フォントサイズ
+    const compact = mirrorRowCount > 18;
+    const titleFs    = compact ? 17 : 22;
+    const custFs     = compact ? 11 : 14;
+    const midFs      = compact ? 9  : 12;
+    const amountBigFs= compact ? 14 : 18;
+    const hdrLineH   = compact ? 1.3 : 1.6;
+    const amountMgn  = compact ? 3   : 6;
+
     return [
       // ── タイトル〜定型文（左列）＋ 社印・会社情報（右列） ──
       {
@@ -408,29 +424,29 @@ const QuotationPDF = (() => {
             width: '*',
             stack: [
               // タイトル
-              { text: '御　見　積　書', style: 'docTitle', alignment: 'center' },
-              // 顧客名（タイトルから50pt下、左端25pt・自動改行）
+              { text: '御　見　積　書', fontSize: titleFs, bold: true, characterSpacing: 8, alignment: 'center' },
+              // 顧客名
               {
-                margin: [25, 50, 0, 0],
+                margin: [25, topMargin, 0, 0],
                 text: [
-                  { text: (data.customerName || ''), fontSize: 14, bold: true },
-                  { text: '　御中', fontSize: 12 },
+                  { text: (data.customerName || ''), fontSize: custFs, bold: true },
+                  { text: '　御中', fontSize: midFs },
                 ],
               },
-              // 工事名（左端25pt・長文自動改行）
+              // 工事名
               {
-                margin: [25, 8, 0, 0],
+                margin: [25, compact ? 4 : 8, 0, 0],
                 columns: [
                   { width: 42, text: '工 事 名', fontSize: 9 },
                   { width: '*', text: data.projectName || '', decoration: 'underline', fontSize: 9 },
                 ],
               },
-              // 定型文（左端25pt）
+              // 定型文
               {
-                margin: [25, 5, 0, 0],
+                margin: [25, compact ? 3 : 5, 0, 0],
                 text: '下記の通り御見積申し上げます。\n何卒ご用命くださいますよう御願い申し上げます。',
-                fontSize: 8.5,
-                lineHeight: 1.6,
+                fontSize: compact ? 7.5 : 8.5,
+                lineHeight: hdrLineH,
               },
             ],
           },
@@ -443,7 +459,7 @@ const QuotationPDF = (() => {
                 margin: [0, 2, 0, 0],
                 table: {
                   widths: [195],
-                  heights: [28],
+                  heights: [compact ? 22 : 28],
                   body: [[{
                     stack: [
                       { text: 'ネポン株式会社', alignment: 'center', fontSize: 9, bold: true },
@@ -454,7 +470,7 @@ const QuotationPDF = (() => {
                 },
                 layout: { hLineWidth: () => 0.5, vLineWidth: () => 0.5 },
               },
-              { text: branch.name,    fontSize: 9, bold: true, alignment: 'center', margin: [0, 4, 0, 0] },
+              { text: branch.name,    fontSize: 9, bold: true, alignment: 'center', margin: [0, compact ? 2 : 4, 0, 0] },
               { text: branch.postal,  fontSize: 8 },
               { text: branch.address, fontSize: 7.5 },
               { text: `TEL　${branch.tel}`, fontSize: 8 },
@@ -466,20 +482,21 @@ const QuotationPDF = (() => {
 
       // ── 金額 + 条件 + スタンプ ──────────────────────────
       {
-        margin: [25, 6, 0, 0],
+        margin: [25, compact ? 3 : 6, 0, 0],
         columns: [
           {
             width: '*',
             stack: [
               {
                 columns: [
-                  { width: 75, text: '御 見 積 金 額', fontSize: 10, margin: [0, 4, 0, 0] },
+                  { width: 75, text: '御 見 積 金 額', fontSize: compact ? 8 : 10, margin: [0, compact ? 2 : 4, 0, 0] },
                   {
                     width: '*',
                     stack: [
                       {
                         text: `¥${fmt(deliveryPrice)}`,
-                        style: 'amountBig',
+                        fontSize: amountBigFs,
+                        bold: true,
                         decoration: 'underline',
                       },
                       { text: '（法定福利費事業主負担金を含む）', fontSize: 7, margin: [0, 1, 0, 0] },
@@ -487,10 +504,10 @@ const QuotationPDF = (() => {
                   },
                 ],
               },
-              { text: `納期（御注文後）　${data.deliveryTerm || ''}`, fontSize: 8, margin: [0, 6, 0, 0] },
+              { text: `納期（御注文後）　${data.deliveryTerm || ''}`, fontSize: 8, margin: [0, amountMgn, 0, 0] },
               { text: `受 渡 し 方 法　　${data.deliveryMethod || ''}`, fontSize: 8 },
               { text: `支 払 い 条 件　　${data.paymentTerm || ''}`, fontSize: 8 },
-              { text: `${data.validDays || ''}`, fontSize: 8, margin: [0, 3, 0, 0] },
+              { text: `${data.validDays || ''}`, fontSize: 8, margin: [0, compact ? 1 : 3, 0, 0] },
             ],
           },
           {
@@ -514,8 +531,8 @@ const QuotationPDF = (() => {
           vLineWidth: ()        => 0.5,
           paddingLeft:   () => 3,
           paddingRight:  () => 3,
-          paddingTop:    () => 2,
-          paddingBottom: () => 2,
+          paddingTop:    () => cellPad,
+          paddingBottom: () => cellPad,
           hLineColor: () => '#555',
           vLineColor: () => '#888',
         },
@@ -524,47 +541,59 @@ const QuotationPDF = (() => {
       // ── 見積外工事（選択がある場合のみ）──────────────────────
       ...(exclusions.length > 0 ? [
         {
-          margin: [0, 6, 0, 0],
+          margin: [0, cellPad * 2, 0, 0],
           table: {
             widths: ['*'],
             body: [[{
               text: '見積外工事',
               bold: true,
-              fontSize: 8.5,
+              fontSize: itemFs,
               border: [false, true, false, false],
-              margin: [0, 4, 0, 4],
+              margin: [0, cellPad, 0, cellPad],
             }]],
           },
-          layout: { hLineWidth: () => 0.6, vLineWidth: () => 0 },
+          layout: {
+            hLineWidth: () => 0.6, vLineWidth: () => 0,
+            paddingTop: () => cellPad, paddingBottom: () => cellPad,
+            paddingLeft: () => 2, paddingRight: () => 2,
+          },
         },
         {
           table: {
             widths: ['50%', '50%'],
             body: exRows,
           },
-          layout: { hLineWidth: () => 0, vLineWidth: () => 0 },
+          layout: {
+            hLineWidth: () => 0, vLineWidth: () => 0,
+            paddingTop: () => cellPad, paddingBottom: () => cellPad,
+            paddingLeft: () => 2, paddingRight: () => 2,
+          },
         },
       ] : []),
 
       // ── 備考（入力がある場合のみ）────────────────────────────
       ...(data.remarks ? [
         {
-          margin: [0, 6, 0, 0],
+          margin: [0, cellPad * 2, 0, 0],
           table: {
             widths: ['*'],
             body: [[{
               text: '備　考',
               bold: true,
-              fontSize: 8.5,
+              fontSize: itemFs,
               border: [false, true, false, false],
-              margin: [0, 4, 0, 4],
+              margin: [0, cellPad, 0, cellPad],
             }]],
           },
-          layout: { hLineWidth: () => 0.6, vLineWidth: () => 0 },
+          layout: {
+            hLineWidth: () => 0.6, vLineWidth: () => 0,
+            paddingTop: () => cellPad, paddingBottom: () => cellPad,
+            paddingLeft: () => 2, paddingRight: () => 2,
+          },
         },
         {
           text: data.remarks,
-          fontSize: 8,
+          fontSize: itemFs,
           margin: [4, 0, 0, 0],
           lineHeight: 1.4,
         },

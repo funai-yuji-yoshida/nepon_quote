@@ -672,23 +672,68 @@ const app = (() => {
   }
 
   // ── 商品マスタ（Zoho Products）────────────────────────────────
+  // 件数が多いため起動時全件読み込みは行わず、入力時にAPIで都度検索する
 
-  async function loadProducts() {
-    if (!zohoReady) return;
+  function loadProducts() {
+    state.products = []; // 互換性のため空配列を保持
+  }
+
+  // デバウンス用タイマー
+  let _productSearchTimer = null;
+
+  /** 商品検索（入力のたびに Zoho API を叩く。400ms デバウンス付き） */
+  function searchProducts(query) {
+    const dd = document.getElementById('productDropdown');
+    clearTimeout(_productSearchTimer);
+    if (!query || query.length < 2) { dd.style.display = 'none'; return; }
+    dd.innerHTML = '<div style="padding:8px 12px;color:#888;font-size:12px;">検索中...</div>';
+    dd.style.display = 'block';
+    _productSearchTimer = setTimeout(() => _execProductSearch(query), 400);
+  }
+
+  async function _execProductSearch(query) {
+    const dd = document.getElementById('productDropdown');
     try {
-      const data = await fetchAllRecords('Products', 'Product_Name');
-      state.products = data.map(p => ({
-        id:       p.id,
-        name:     p.Product_Name  || '',
-        code:     p.Product_Code  || '',
-        price:    Number(p.Unit_Price) || 0,
-        cost:     Number(p.Cost)       || 0,
-        category: p.Product_Category  || '',
-        source:   'product',
-      }));
-      console.log(`商品マスタ ${state.products.length} 件読み込み`);
+      let products = [];
+      if (zohoReady) {
+        const q = query.trim();
+        if (!q) { dd.style.display = 'none'; return; }
+        // word 検索: モジュールの全テキストフィールド（Product_Name・Product_Code・field2 等）を横断検索
+        const res = await ZOHO.CRM.API.searchRecord({
+          Entity: 'Products', Type: 'word',
+          Query: q, page: 1, per_page: 25,
+        });
+        products = (res?.data || []).map(p => ({
+          id:     p.id,
+          name:   p.Product_Name  || '',
+          code:   p.Product_Code  || '',
+          model:  p.field2        || '',
+          price:  Number(p.Unit_Price) || 0,
+          cost:   Number(p.Cost)       || 0,
+          source: 'product',
+        }));
+      }
+      if (products.length === 0) { dd.style.display = 'none'; return; }
+      state.searchResults = products;
+      dd.innerHTML = products.map((item, idx) => `
+        <div class="product-item" data-idx="${idx}">
+          <div style="flex:1;min-width:0">
+            <div class="p-name"><span class="p-badge product">商品</span>${escHtml(item.name)}</div>
+            <div class="p-code">${escHtml([item.model, item.code].filter(Boolean).join(' / '))}</div>
+          </div>
+          <div class="p-price">¥${item.price.toLocaleString('ja-JP')}</div>
+        </div>`).join('');
+      dd.querySelectorAll('.product-item').forEach(el => {
+        el.addEventListener('click', e => {
+          e.stopPropagation();
+          const product = state.searchResults[Number(el.dataset.idx)];
+          if (product) selectProduct(product);
+        });
+      });
+      dd.style.display = 'block';
     } catch (e) {
-      console.warn('商品マスタ取得失敗:', e);
+      console.error('商品検索エラー:', e);
+      dd.style.display = 'none';
     }
   }
 
@@ -774,62 +819,6 @@ const app = (() => {
       .replace(/[－ー‐−]/g, '-')
       .replace(/　/g, ' ')
       .toLowerCase();
-  }
-
-  /** 工事費マスタ検索 */
-  function searchProducts(query) {
-    const dd = document.getElementById('productDropdown');
-    if (!query || query.length < 1) { dd.style.display = 'none'; return; }
-
-    const q = normalize(query);
-
-    // 商品マスタ＋工事費マスタを統合検索
-    const fromProducts = state.products.filter(p =>
-      normalize(p.name).includes(q) ||
-      normalize(p.code).includes(q)
-    ).slice(0, 10).map(p => ({ ...p, source: 'product' }));
-
-    const fromKoujihi = state.koujihi.filter(k =>
-      normalize(k.name).includes(q) ||
-      normalize(k.code).includes(q) ||
-      normalize(k.model).includes(q) ||
-      normalize(k.category).includes(q)
-    ).slice(0, 15);
-
-    const filtered = [...fromProducts, ...fromKoujihi].slice(0, 25);
-    if (filtered.length === 0) { dd.style.display = 'none'; return; }
-
-    state.searchResults = filtered;
-
-    dd.innerHTML = filtered.map((item, idx) => {
-      const isKoujihi = item.source === 'koujihi';
-      const badge = isKoujihi
-        ? '<span class="p-badge koujihi">工事費</span>'
-        : '<span class="p-badge product">商品</span>';
-      const sub = isKoujihi
-        ? escHtml([item.model, item.category].filter(Boolean).join(' / '))
-        : escHtml(item.code);
-      return `
-        <div class="product-item" data-idx="${idx}">
-          <div style="flex:1;min-width:0">
-            <div class="p-name">${badge}${escHtml(item.name)}</div>
-            <div class="p-code">${sub}</div>
-          </div>
-          <div class="p-price">¥${item.price.toLocaleString('ja-JP')}</div>
-        </div>`;
-    }).join('');
-
-    // innerHTML 設定後に各行へ直接リスナーを付ける
-    dd.querySelectorAll('.product-item').forEach(el => {
-      el.addEventListener('click', e => {
-        e.stopPropagation();
-        const product = state.searchResults[Number(el.dataset.idx)];
-        console.log('[dropdown click] idx:', el.dataset.idx, 'product:', product?.name);
-        if (product) selectProduct(product);
-      });
-    });
-
-    dd.style.display = 'block';
   }
 
   /** 工事費1件をセクションに追加する共通処理 */
@@ -1761,9 +1750,9 @@ const app = (() => {
         field57: state.paymentTerm,
         field58: state.validDays,
         field59: state.remarks    || undefined,
-        field60: saveGrandTotal   || undefined,   // 明細合計（定価）
-        field61: saveDiscount     || undefined,   // 値引き額
-        field62: saveDeliveryPrice || undefined,  // 貴社お渡し価格
+        field60: saveGrandTotal,    // 明細合計（定価）
+        field61: saveDiscount,      // 値引き額（0も明示的に送信）
+        field62: saveDeliveryPrice, // 貴社お渡し価格
         // 工事費用サブフォーム（LinkingModule1）
         // 既存行ID付きで送ると UPDATE（重複なし）、IDなしは新規 ADD
         LinkingModule1: (() => {
@@ -1797,6 +1786,9 @@ const app = (() => {
         quoteId:        state.quoteId,
         seqNo:          apiData.field55,
         revision:       apiData.field56,
+        grandTotal:     apiData.field60,
+        discount:       apiData.field61,
+        deliveryPrice:  apiData.field62,
         deliveryTerm:   apiData.field6,
         deliveryMethod: apiData.field51,
         paymentTerm:    apiData.field57,
