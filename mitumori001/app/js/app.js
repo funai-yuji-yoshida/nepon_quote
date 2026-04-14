@@ -462,13 +462,15 @@ const app = (() => {
     const catEl = document.getElementById('quoteCategoryDisplay');
     if (catEl) catEl.textContent = state.quoteCategory || '―';
     // 値引き額ラベル切り替え（工事を含む場合→出精値引き）
+    const isKouji = (state.quoteCategory || '').includes('工事');
     const discountLabelEl = document.getElementById('discountLabel');
     if (discountLabelEl) {
-      const isKouji = (state.quoteCategory || '').includes('工事');
       discountLabelEl.textContent = isKouji ? '出精値引き' : '値引き額';
-      console.log('[DEBUG] quoteCategory:', state.quoteCategory, '→', discountLabelEl.textContent);
-    } else {
-      console.warn('[DEBUG] discountLabel element not found');
+    }
+    // 明細印刷オプション: 工事以外（物販・作業）のとき表示
+    const printDetailOption = document.getElementById('printDetailOption');
+    if (printDetailOption) {
+      printDetailOption.style.display = isKouji ? 'none' : '';
     }
     setValue('quoteSeqNo',      state.seqNo);
     setValue('quoteRevision',   state.revision);
@@ -1704,6 +1706,12 @@ const app = (() => {
       remarks:         state.remarks || undefined,
       discount:        state.discount || undefined,
       quoteCategory:   state.quoteCategory || '',
+      printDetail:     (() => {
+        const isKouji = (state.quoteCategory || '').includes('工事');
+        if (isKouji) return true; // 工事は常に明細印刷
+        const cb = document.getElementById('printDetailPages');
+        return cb ? cb.checked : true;
+      })(),
     };
   }
 

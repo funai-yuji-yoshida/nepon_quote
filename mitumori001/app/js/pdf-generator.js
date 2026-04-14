@@ -187,12 +187,14 @@ const QuotationPDF = (() => {
           data, sectionTotals, grandTotal, discount, quoteCategory,
           deliveryPrice, materialCost, laborCost, legalWelfare, legalRate,
         }),
-        { text: '', pageBreak: 'after' },
 
         // ====================================================
-        // 2ページ目以降: 見積明細書
+        // 2ページ目以降: 見積明細書（printDetail=falseの場合はスキップ）
         // ====================================================
-        ...buildDetailPages({ quoteNoStr, sectionTotals, grandTotal }),
+        ...(data.printDetail !== false ? [
+          { text: '', pageBreak: 'after' },
+          ...buildDetailPages({ quoteNoStr, sectionTotals, grandTotal }),
+        ] : []),
       ],
     };
   }
@@ -222,48 +224,65 @@ const QuotationPDF = (() => {
     // セクション行
     // 物販・作業の場合はアイテム行を直接表示、工事はセクション集計行
     const isKouji = (quoteCategory || '').includes('工事');
-    let mirrorRowCount = 0;
+
+    // 第1パス: 行データを収集してカウント（フォントサイズ決定のため）
+    const mirrorEntries = [];
     sectionTotals.forEach(s => {
       if (isKouji) {
-        // 工事: セクション集計行
-        tableRows.push([
-          { text: String(s.no || ''), alignment: 'center' },
-          { text: s.name || '' },
-          { text: '1', alignment: 'center' },
-          { text: '式', alignment: 'center' },
-          { text: '' },
-          { text: fmt(s.subtotal), alignment: 'right' },
-        ]);
-        mirrorRowCount++;
+        mirrorEntries.push({ type: 'section', s });
       } else {
-        // 物販・作業: 大項目名があれば表示
         if (s.name && s.name.trim()) {
-          tableRows.push([
-            { text: String(s.no || ''), alignment: 'center' },
-            { text: s.name, bold: true },
-            { text: '', alignment: 'center' },
-            { text: '', alignment: 'center' },
-            { text: '', alignment: 'right' },
-            { text: '', alignment: 'right' },
-          ]);
-          mirrorRowCount++;
+          mirrorEntries.push({ type: 'sectionHeader', s });
         }
-        // アイテム行を直接表示
         (s.items || []).filter(i => (Number(i.amount) || 0) > 0).forEach(item => {
-          tableRows.push([
-            { text: '' },
-            { text: item.name || '' },
-            { text: String(item.qty || 1), alignment: 'center' },
-            { text: item.unit || '式', alignment: 'center' },
-            { text: fmt(item.unitPrice), alignment: 'right' },
-            { text: fmt(item.amount), alignment: 'right' },
-          ]);
-          mirrorRowCount++;
+          mirrorEntries.push({ type: 'item', item });
         });
       }
     });
+    const mirrorRowCount = mirrorEntries.length;
 
-    // 空白行（最低10行分の高さを確保）
+    // 行数に応じてフォントサイズを動的調整（1ページ収容のため）
+    let itemFs = 8.5;
+    if (mirrorRowCount > 20) itemFs = 7.5;
+    if (mirrorRowCount > 28) itemFs = 6.5;
+    if (mirrorRowCount > 36) itemFs = 6.0;
+
+    // 第2パス: 決定したフォントサイズで行を生成
+    mirrorEntries.forEach(entry => {
+      if (entry.type === 'section') {
+        const s = entry.s;
+        tableRows.push([
+          { text: String(s.no || ''), alignment: 'center', fontSize: itemFs },
+          { text: s.name || '', fontSize: itemFs },
+          { text: '1', alignment: 'center', fontSize: itemFs },
+          { text: '式', alignment: 'center', fontSize: itemFs },
+          { text: '', fontSize: itemFs },
+          { text: fmt(s.subtotal), alignment: 'right', fontSize: itemFs },
+        ]);
+      } else if (entry.type === 'sectionHeader') {
+        const s = entry.s;
+        tableRows.push([
+          { text: String(s.no || ''), alignment: 'center', fontSize: itemFs },
+          { text: s.name, bold: true, fontSize: itemFs },
+          { text: '', alignment: 'center', fontSize: itemFs },
+          { text: '', alignment: 'center', fontSize: itemFs },
+          { text: '', alignment: 'right', fontSize: itemFs },
+          { text: '', alignment: 'right', fontSize: itemFs },
+        ]);
+      } else {
+        const item = entry.item;
+        tableRows.push([
+          { text: '', fontSize: itemFs },
+          { text: item.name || '', fontSize: itemFs },
+          { text: String(item.qty || 1), alignment: 'center', fontSize: itemFs },
+          { text: item.unit || '式', alignment: 'center', fontSize: itemFs },
+          { text: fmt(item.unitPrice), alignment: 'right', fontSize: itemFs },
+          { text: fmt(item.amount), alignment: 'right', fontSize: itemFs },
+        ]);
+      }
+    });
+
+    // 空白行（行数が少ない場合のみ余白を確保）
     const emptyRows = Math.max(0, 10 - mirrorRowCount);
     for (let i = 0; i < emptyRows; i++) {
       tableRows.push([
