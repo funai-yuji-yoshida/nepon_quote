@@ -242,6 +242,9 @@ const QuotationPDF = (() => {
         // 単価0円のアイテムも名前があれば表示する
         (s.items || []).filter(i => i.name && i.name.trim()).forEach(item => {
           mirrorEntries.push({ type: 'item', item });
+          (item.specLines || []).filter(l => l.trim()).forEach(line => {
+            mirrorEntries.push({ type: 'specLine', text: line });
+          });
         });
       }
     });
@@ -278,6 +281,16 @@ const QuotationPDF = (() => {
           { text: '', alignment: 'center', fontSize: itemFs },
           { text: '', alignment: 'right', fontSize: itemFs },
           { text: '', alignment: 'right', fontSize: itemFs },
+        ]);
+      } else if (entry.type === 'specLine') {
+        const specFs = Math.max(5.5, itemFs - 0.5);
+        tableRows.push([
+          { text: '', fontSize: specFs },
+          { text: `　${entry.text}`, fontSize: specFs, color: '#444' },
+          { text: '', fontSize: specFs },
+          { text: '', fontSize: specFs },
+          { text: '', fontSize: specFs },
+          { text: '', fontSize: specFs },
         ]);
       } else {
         const item = entry.item;
@@ -631,7 +644,7 @@ const QuotationPDF = (() => {
         {}, {}, {}, {},
       ]);
 
-      // 明細行（個別、変更なし）
+      // 明細行（個別）
       (section.items || []).forEach(item => {
         rows.push([
           { text: '' },
@@ -641,6 +654,17 @@ const QuotationPDF = (() => {
           { text: item.unitPrice ? fmt(item.unitPrice) : '', alignment: 'right' },
           { text: fmt(item.amount), alignment: 'right' },
         ]);
+        // 仕様行
+        (item.specLines || []).filter(l => (l || '').trim()).forEach(line => {
+          rows.push([
+            { text: '' },
+            { text: `　${line}`, fontSize: 7.5, color: '#444' },
+            { text: '' },
+            { text: '' },
+            { text: '' },
+            { text: '' },
+          ]);
+        });
       });
 
       // 空白行（最低2行）

@@ -278,6 +278,8 @@ const app = (() => {
     deliveryPrice:  0,
     laborCost:      null,   // null = 自動計算
     legalWelfareRate: 14.6,
+    currentUserId:   null,  // ログイン中のZohoユーザーID
+    currentUserName: '',
     branchKey:    'honbu',
     exclusions:   [],       // 見積外工事（選択・編集済み）
     sections:     [],       // { id, no, name, items[] }
@@ -435,6 +437,7 @@ const app = (() => {
     loadKoujihi();
     loadKanzai();
     loadDenzai();
+    loadCurrentUser();
 
     showToast('CRMデータを読み込みました');
   }
@@ -1245,6 +1248,7 @@ const app = (() => {
       houkouKubun: '',  // 歩工区分（マスタから）
       houkouGoukei: 0,  // 歩工合計（減衰計算結果 or 手動上書き）
       houkouDirect: 0,  // 直接歩工値（field16 > 0 なら減衰計算をスキップして使用）
+      specLines: [],    // 仕様行（テキストのみ）
     };
   }
 
@@ -1267,7 +1271,9 @@ const app = (() => {
     const sec   = state.sections.find(s => s.id === secId);
     if (sec) {
       sec.items = sec.items.filter(i => i.id !== itemId);
-      row.remove();
+      // アイテム行・仕様行・追加ボタン行をまとめて削除
+      const tbody = block.querySelector('.items-tbody');
+      tbody.querySelectorAll(`[data-item-id="${itemId}"]`).forEach(r => r.remove());
       updateSectionSubtotal(block);
       updateOutput();
     }
@@ -1443,17 +1449,21 @@ const app = (() => {
 
   function renderSection(sec, block) {
     const tbody = block.querySelector('.items-tbody');
+
+    // 既存の仕様行・追加ボタン行を一旦クリア
+    tbody.querySelectorAll('.spec-line-row, .spec-add-row').forEach(r => r.remove());
+
     const existingIds = new Set([...tbody.querySelectorAll('.item-row')].map(r => Number(r.dataset.itemId)));
     const newIds      = new Set(sec.items.map(i => i.id));
 
     // 削除
     existingIds.forEach(id => {
-      if (!newIds.has(id)) tbody.querySelector(`[data-item-id="${id}"]`)?.remove();
+      if (!newIds.has(id)) tbody.querySelector(`.item-row[data-item-id="${id}"]`)?.remove();
     });
 
     // 追加・更新
     sec.items.forEach(item => {
-      let row = tbody.querySelector(`[data-item-id="${item.id}"]`);
+      let row = tbody.querySelector(`.item-row[data-item-id="${item.id}"]`);
       if (!row) {
         row = createItemRowDOM(item);
         tbody.appendChild(row);
@@ -1493,7 +1503,6 @@ const app = (() => {
       const kubunEl       = row.querySelector('.item-houkou-kubun');
       const goukeiEl      = row.querySelector('.item-houkou-goukei');
       const houkouDispEl  = row.querySelector('.item-houkou');
-      // 歩単：Number()で確実に数値変換してから小数2桁固定で表示
       const houdanNum = Number(item.houdan) || 0;
       if (houdanEl) houdanEl.textContent = houdanNum !== 0 ? houdanNum.toFixed(2) : '';
       if (kubunEl)  kubunEl.textContent  = item.houkouKubun || '';
@@ -1507,11 +1516,19 @@ const app = (() => {
       }
     });
 
-    // 順序修正
-    sec.items.forEach((item, idx) => {
-      const row = tbody.querySelector(`[data-item-id="${item.id}"]`);
-      if (row && tbody.children[idx] !== row) tbody.insertBefore(row, tbody.children[idx]);
+    // 順序修正＋仕様行を各アイテム行の直後に挿入
+    const fragment = document.createDocumentFragment();
+    sec.items.forEach(item => {
+      const itemRow = tbody.querySelector(`.item-row[data-item-id="${item.id}"]`);
+      if (itemRow) fragment.appendChild(itemRow);
+      // 仕様行
+      (item.specLines || []).forEach((line, idx) => {
+        fragment.appendChild(createSpecLineRowDOM(item.id, idx, line));
+      });
+      // 仕様追加ボタン行
+      fragment.appendChild(createSpecAddRowDOM(item.id));
     });
+    tbody.appendChild(fragment);
 
     updateSectionSubtotal(block);
   }
@@ -1522,6 +1539,219 @@ const app = (() => {
     const row   = clone.querySelector('.item-row');
     row.dataset.itemId = item.id;
     return row;
+  }
+
+  function createSpecLineRowDOM(itemId, lineIdx, text) {
+    const tr = document.createElement('tr');
+    tr.className = 'spec-line-row';
+    tr.dataset.itemId  = itemId;
+    tr.dataset.lineIdx = lineIdx;
+    const safeText = (text || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    tr.innerHTML = `
+      <td class="spec-line-td" colspan="12">
+        <input type="text" class="spec-line-input" placeholder="仕様テキストを入力..."
+               value="${safeText}" oninput="app.onSpecLineInput(this)">
+      </td>
+      <td class="spec-line-del-td">
+        <button class="btn-icon btn-danger" onclick="app.removeSpecLine(this)" title="削除">✕</button>
+      </td>`;
+    return tr;
+  }
+
+  function createSpecAddRowDOM(itemId) {
+    const tr = document.createElement('tr');
+    tr.className = 'spec-add-row';
+    tr.dataset.itemId = itemId;
+    tr.innerHTML = `
+      <td colspan="13" class="spec-add-td">
+        <button class="btn-spec-add" onclick="app.addSpecLine(this)">＋ 仕様追加</button>
+        <button class="btn-spec-template" onclick="app.showSpecTemplateMenu(this)">📋 テンプレート</button>
+      </td>`;
+    return tr;
+  }
+
+  // ── 仕様行 操作 ───────────────────────────────────────────────
+
+  function onSpecLineInput(input) {
+    const row   = input.closest('.spec-line-row');
+    const itemId  = Number(row.dataset.itemId);
+    const lineIdx = Number(row.dataset.lineIdx);
+    const sec = state.sections.find(s => s.items.some(i => i.id === itemId));
+    if (!sec) return;
+    const item = sec.items.find(i => i.id === itemId);
+    if (item && item.specLines) item.specLines[lineIdx] = input.value;
+  }
+
+  function addSpecLine(btn) {
+    const addRow = btn.closest('.spec-add-row');
+    const block  = btn.closest('.section-block');
+    const itemId = Number(addRow.dataset.itemId);
+    const sec = state.sections.find(s => s.items.some(i => i.id === itemId));
+    if (!sec) return;
+    const item = sec.items.find(i => i.id === itemId);
+    if (!item) return;
+    if (!Array.isArray(item.specLines)) item.specLines = [];
+    item.specLines.push('');
+    renderSection(sec, block);
+    // 新しい行にフォーカス
+    setTimeout(() => {
+      const inputs = block.querySelectorAll(`.spec-line-row[data-item-id="${itemId}"] .spec-line-input`);
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    }, 30);
+  }
+
+  function removeSpecLine(btn) {
+    const row    = btn.closest('.spec-line-row');
+    const block  = btn.closest('.section-block');
+    const itemId  = Number(row.dataset.itemId);
+    const lineIdx = Number(row.dataset.lineIdx);
+    const sec = state.sections.find(s => s.items.some(i => i.id === itemId));
+    if (!sec) return;
+    const item = sec.items.find(i => i.id === itemId);
+    if (!item || !item.specLines) return;
+    item.specLines.splice(lineIdx, 1);
+    renderSection(sec, block);
+    updateOutput();
+  }
+
+  // ── 仕様テンプレート ──────────────────────────────────────────
+
+  async function loadCurrentUser() {
+    if (!zohoReady) return;
+    try {
+      const res = await ZOHO.CRM.CONFIG.getCurrentUser();
+      const user = res?.users?.[0];
+      if (user) {
+        state.currentUserId   = user.id;
+        state.currentUserName = user.full_name || '';
+      }
+    } catch(e) { console.warn('getCurrentUser error:', e); }
+  }
+
+  async function showSpecTemplateMenu(btn) {
+    const addRow = btn.closest('.spec-add-row');
+    const itemId = Number(addRow.dataset.itemId);
+    const sec = state.sections.find(s => s.items.some(i => i.id === itemId));
+    if (!sec) return;
+    const item = sec.items.find(i => i.id === itemId);
+    if (!item) return;
+    const block = btn.closest('.section-block');
+
+    // 既存メニューを閉じる
+    document.querySelectorAll('.spec-template-menu').forEach(m => m.remove());
+
+    // メニュー生成・配置
+    const menu = document.createElement('div');
+    menu.className = 'spec-template-menu';
+    menu.innerHTML = '<div class="stm-loading">🔍 検索中...</div>';
+    document.body.appendChild(menu);
+    const btnRect = btn.getBoundingClientRect();
+    menu.style.left = btnRect.left + 'px';
+    menu.style.top  = (btnRect.bottom + 4) + 'px';
+
+    // CRM からテンプレート検索
+    let templates = [];
+    if (zohoReady) {
+      try {
+        const productName = (item.name || '').trim();
+        const res = productName
+          ? await ZOHO.CRM.API.searchRecord({
+              Entity: 'SpecModule', Type: 'word',
+              Query: productName, page: 1, per_page: 25,
+            })
+          : null;
+        const all = res?.data || [];
+        // ログインユーザーのものだけ表示
+        templates = state.currentUserId
+          ? all.filter(t => t.Owner?.id === state.currentUserId)
+          : all;
+      } catch(e) { console.warn('テンプレート検索エラー:', e); }
+    }
+
+    // メニューHTML
+    let html = '';
+    if (templates.length > 0) {
+      html += '<div class="stm-title">保存済みテンプレート</div>';
+      templates.forEach(t => {
+        const enc = encodeURIComponent(t.SpecDetails || '');
+        html += `<div class="stm-item">
+          <span class="stm-name">${t.Name || '（無題）'}</span>
+          <button class="stm-apply-btn" data-spec="${enc}">適用</button>
+        </div>`;
+      });
+      html += '<div class="stm-divider"></div>';
+    } else {
+      html += '<div class="stm-none">テンプレートがありません</div>';
+    }
+    html += '<button class="stm-save-btn">💾 現在の仕様を保存</button>';
+    menu.innerHTML = html;
+
+    menu.querySelectorAll('.stm-apply-btn').forEach(applyBtn => {
+      applyBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const specText = decodeURIComponent(applyBtn.dataset.spec);
+        applySpecTemplate(itemId, specText, block);
+        menu.remove();
+      });
+    });
+    menu.querySelector('.stm-save-btn').addEventListener('click', async e => {
+      e.stopPropagation();
+      await saveSpecTemplate(item);
+      menu.remove();
+    });
+
+    // 外側クリックで閉じる
+    setTimeout(() => {
+      document.addEventListener('click', () => menu.remove(), { once: true });
+    }, 0);
+  }
+
+  function applySpecTemplate(itemId, specText, block) {
+    const sec = state.sections.find(s => s.items.some(i => i.id === itemId));
+    if (!sec) return;
+    const item = sec.items.find(i => i.id === itemId);
+    if (!item) return;
+    item.specLines = specText.split('\n').map(l => l.trim()).filter(l => l);
+    renderSection(sec, block);
+    updateOutput();
+  }
+
+  async function saveSpecTemplate(item) {
+    if (!zohoReady) { showToast('Zoho未接続', 'warn'); return; }
+    const lines = (item.specLines || []).filter(l => (l || '').trim());
+    if (!lines.length) { showToast('仕様行がありません', 'warn'); return; }
+    const productName = item.name || '（無題）';
+    const specText    = lines.join('\n');
+    try {
+      // 同名テンプレートを検索（自分のもの）
+      const res = await ZOHO.CRM.API.searchRecord({
+        Entity: 'SpecModule', Type: 'word',
+        Query: productName, page: 1, per_page: 10,
+      });
+      const existing = (res?.data || []).find(t =>
+        t.Name === productName &&
+        (!state.currentUserId || t.Owner?.id === state.currentUserId)
+      );
+      if (existing) {
+        if (!confirm(`「${productName}」のテンプレートが既にあります。上書きしますか？`)) return;
+        await ZOHO.CRM.API.updateRecord({
+          Entity: 'SpecModule',
+          APIData: { id: existing.id, SpecDetails: specText },
+          Trigger: [],
+        });
+        showToast('テンプレートを更新しました');
+      } else {
+        await ZOHO.CRM.API.insertRecord({
+          Entity: 'SpecModule',
+          APIData: { Name: productName, SpecDetails: specText },
+          Trigger: [],
+        });
+        showToast('テンプレートを保存しました');
+      }
+    } catch(e) {
+      console.error('テンプレート保存エラー:', e);
+      showToast('テンプレート保存に失敗しました', 'err');
+    }
   }
 
   function updateSectionSubtotal(block) {
@@ -2071,6 +2301,11 @@ const app = (() => {
       if (el) el.value = '';
       updateOutput();
     },
+    // 仕様行
+    addSpecLine,
+    removeSpecLine,
+    onSpecLineInput,
+    showSpecTemplateMenu,
     // CRM保存
     saveToCRM,
   };
