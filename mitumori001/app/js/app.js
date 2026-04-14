@@ -136,19 +136,29 @@ const app = (() => {
    * 歩工合計(total) = INT(d × 減衰率 × 100 + 0.5) / 100
    */
   function calcGensui() {
-    // houdan > 0 のアイテムを calcCategory でグループ化
+    const summaryRows = [];
+    let totalReducedHoukou = 0;
+
+    // houkouDirect > 0 のアイテム: field16の直接値を使用（減衰計算スキップ）
+    state.sections.forEach(sec => {
+      sec.items.forEach(item => {
+        if ((Number(item.houkouDirect) || 0) <= 0) return;
+        item.houkouGoukei = Number(item.houkouDirect);
+        totalReducedHoukou += item.houkouGoukei;
+      });
+    });
+
+    // houdan > 0 かつ houkouDirect <= 0 のアイテムを calcCategory でグループ化
     const groups = {};
     state.sections.forEach(sec => {
       sec.items.forEach(item => {
         if ((Number(item.houdan) || 0) <= 0) return;
+        if ((Number(item.houkouDirect) || 0) > 0) return; // 直接値アイテムはスキップ
         const key = item.calcCategory || '_default';
         if (!groups[key]) groups[key] = [];
         groups[key].push(item);
       });
     });
-
-    const summaryRows = [];
-    let totalReducedHoukou = 0;
 
     Object.values(groups).forEach(items => {
       // d = 累計歩工（Σ qty × 歩単）
@@ -699,6 +709,7 @@ const app = (() => {
         calcCategory: k.field13 || '',            // 算出カテゴリ
         houdan:       parseFloat(k.field14) || 0,   // 歩単（小数型）
         houkouKubun:  k.field15 || '',            // 歩工区分
+        houkouDirect: parseFloat(k.field16) || 0, // 歩工区分（小数）= 直接歩工値
         source:       'koujihi',
       }));
       console.log(`工事費マスタ ${state.koujihi.length} 件読み込み`);
@@ -827,12 +838,15 @@ const app = (() => {
     item.spec         = k.model || '';
     item.unit         = k.unit  || '式';
     item.kouTanka     = k.price || 0;  // 工事商品単価を保存
-    // 金額 = 定価（工事商品単価） × 数量
-    item.unitPrice    = k.price || 0;
-    item.amount       = (k.price || 0) * (item.qty || 1);
-    item.calcCategory = k.calcCategory || '';
-    item.houdan       = k.houdan      || 0;
-    item.houkouKubun  = k.houkouKubun || '';
+    // field16（歩工直接値）がある場合: 人工費 = 工単価 × 歩工
+    // ない場合: 金額 = 工単価 × 数量
+    const direct = k.houkouDirect || 0;
+    item.unitPrice    = direct > 0 ? (k.price || 0) * direct : (k.price || 0);
+    item.amount       = item.unitPrice * (item.qty || 1);
+    item.calcCategory = k.calcCategory  || '';
+    item.houdan       = k.houdan       || 0;
+    item.houkouKubun  = k.houkouKubun  || '';
+    item.houkouDirect = k.houkouDirect || 0;
     section.items.push(item);
   }
 
@@ -1239,6 +1253,7 @@ const app = (() => {
       houdan: 0,        // 歩単（マスタから）
       houkouKubun: '',  // 歩工区分（マスタから）
       houkouGoukei: 0,  // 歩工合計（減衰計算結果 or 手動上書き）
+      houkouDirect: 0,  // 直接歩工値（field16 > 0 なら減衰計算をスキップして使用）
     };
   }
 
@@ -1318,14 +1333,14 @@ const app = (() => {
     item.spec      = specEl?.value   || '';
     item.qty       = Number(qtyEl?.value)   || 0;
     item.unit      = unitEl?.value   || '式';
-    item.unitPrice = priceEl?.value  ? Number(priceEl.value) : null;
+    item.unitPrice = priceEl?.value  ? Number(priceEl.value.replace(/,/g, '')) : null;
 
     // 金額自動計算（数量×単価 が入力されている場合）
     if (item.unitPrice !== null && item.qty) {
       item.amount = item.unitPrice * item.qty;
-      if (amountEl) amountEl.value = item.amount;
+      if (amountEl) amountEl.value = item.amount.toLocaleString('ja-JP');
     } else if (e.target === amountEl) {
-      item.amount = Number(amountEl?.value) || 0;
+      item.amount = Number((amountEl?.value || '').replace(/,/g, '')) || 0;
     }
 
     // 歩工合計（手動上書き）を読み取り、歩工を再計算して表示
@@ -1458,8 +1473,8 @@ const app = (() => {
         row.querySelector('.item-spec').value   = item.spec;
         row.querySelector('.item-qty').value    = item.qty;
         row.querySelector('.item-unit').value   = item.unit;
-        row.querySelector('.item-price').value  = item.unitPrice ?? '';
-        row.querySelector('.item-amount').value = item.amount || '';
+        row.querySelector('.item-price').value  = item.unitPrice != null ? Number(item.unitPrice).toLocaleString('ja-JP') : '';
+        row.querySelector('.item-amount').value = item.amount ? Number(item.amount).toLocaleString('ja-JP') : '';
       }
       // 算出カテゴリバッジを常に更新
       const badge = row.querySelector('.calc-cat-badge');
@@ -1543,7 +1558,9 @@ const app = (() => {
       if (!block) return;
       // 歩工合計の表示のみ更新（金額は onItemInput で管理）
       sec.items.forEach(item => {
-        if ((Number(item.houdan) || 0) <= 0) return;
+        const hasHoudan = (Number(item.houdan) || 0) > 0;
+        const hasDirect = (Number(item.houkouDirect) || 0) > 0;
+        if (!hasHoudan && !hasDirect) return;
         const row = block.querySelector(`[data-item-id="${item.id}"]`);
         if (!row) return;
         const goukeiEl = row.querySelector('.item-houkou-goukei');

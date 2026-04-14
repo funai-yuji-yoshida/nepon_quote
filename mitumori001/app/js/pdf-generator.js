@@ -220,19 +220,51 @@ const QuotationPDF = (() => {
     ]);
 
     // セクション行
+    // 物販・作業の場合はアイテム行を直接表示、工事はセクション集計行
+    const isKouji = (quoteCategory || '').includes('工事');
+    let mirrorRowCount = 0;
     sectionTotals.forEach(s => {
-      tableRows.push([
-        { text: String(s.no || ''), alignment: 'center' },
-        { text: s.name || '' },
-        { text: '1', alignment: 'center' },
-        { text: '式', alignment: 'center' },
-        { text: '' },
-        { text: fmt(s.subtotal), alignment: 'right' },
-      ]);
+      if (isKouji) {
+        // 工事: セクション集計行
+        tableRows.push([
+          { text: String(s.no || ''), alignment: 'center' },
+          { text: s.name || '' },
+          { text: '1', alignment: 'center' },
+          { text: '式', alignment: 'center' },
+          { text: '' },
+          { text: fmt(s.subtotal), alignment: 'right' },
+        ]);
+        mirrorRowCount++;
+      } else {
+        // 物販・作業: 大項目名があれば表示
+        if (s.name && s.name.trim()) {
+          tableRows.push([
+            { text: String(s.no || ''), alignment: 'center' },
+            { text: s.name, bold: true },
+            { text: '', alignment: 'center' },
+            { text: '', alignment: 'center' },
+            { text: '', alignment: 'right' },
+            { text: '', alignment: 'right' },
+          ]);
+          mirrorRowCount++;
+        }
+        // アイテム行を直接表示
+        (s.items || []).filter(i => (Number(i.amount) || 0) > 0).forEach(item => {
+          tableRows.push([
+            { text: '' },
+            { text: item.name || '' },
+            { text: String(item.qty || 1), alignment: 'center' },
+            { text: item.unit || '式', alignment: 'center' },
+            { text: fmt(item.unitPrice), alignment: 'right' },
+            { text: fmt(item.amount), alignment: 'right' },
+          ]);
+          mirrorRowCount++;
+        });
+      }
     });
 
-    // 空白行（最低4行分の高さを確保）
-    const emptyRows = Math.max(0, 10 - sectionTotals.length);
+    // 空白行（最低10行分の高さを確保）
+    const emptyRows = Math.max(0, 10 - mirrorRowCount);
     for (let i = 0; i < emptyRows; i++) {
       tableRows.push([
         { text: '', border: [true, false, true, false] },
