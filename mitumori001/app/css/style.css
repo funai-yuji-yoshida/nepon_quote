@@ -696,6 +696,26 @@ button {
 .font-status.ok { background: #e8f4e8; color: #2a7a2a; }
 .font-status.err { background: #fef0ee; color: #c0392b; }
 
+.print-detail-option {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: #f0f4ff;
+  border: 1px solid #c5cfe8;
+  border-radius: 5px;
+}
+.print-detail-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.print-detail-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
 .btn-generate {
   width: 100%;
   background: #c0392b;

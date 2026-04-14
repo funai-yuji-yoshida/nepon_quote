@@ -341,6 +341,13 @@
             <span class="status-icon">⏳</span> フォント読み込み中...
           </div>
 
+          <div id="printDetailOption" class="print-detail-option" style="display:none">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printDetailPages" checked>
+              明細ページを印刷する
+            </label>
+          </div>
+
           <button class="btn-generate" id="btnGeneratePDF" onclick="app.generatePDF()" disabled>
             📄 PDF生成・ダウンロード
           </button>
@@ -455,8 +462,8 @@
           <option value="セット">セット</option>
         </select>
       </td>
-      <td><input type="number" class="item-price" placeholder="（空欄可）" min="0"></td>
-      <td><input type="number" class="item-amount" placeholder="0" min="0"></td>
+      <td><input type="text" inputmode="numeric" class="item-price" placeholder="（空欄可）"></td>
+      <td><input type="text" inputmode="numeric" class="item-amount" placeholder="0"></td>
       <td class="col-genka"><span class="item-genka"></span></td>
       <td class="col-genka-amount"><span class="item-genka-amount"></span></td>
       <td class="col-houdan"><span class="item-houdan"></span></td>
