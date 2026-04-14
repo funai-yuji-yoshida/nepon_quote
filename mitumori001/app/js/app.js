@@ -389,6 +389,7 @@ const app = (() => {
     const quote = res?.data?.[0];
     if (!quote) { loadDemoData(); return; }
 
+
     // 基本情報
     state.quoteNumber     = quote.Quote_Number || null;
     state.customerName    = quote.Account_Name?.name || quote.Account_Name || '';
@@ -419,7 +420,11 @@ const app = (() => {
         state.exclusions    = parsed.exclusions    || [];
         state.remarks       = parsed.remarks        || state.remarks;
         state.discount      = parsed.discount       || state.discount;
-        state.subformRowIds = parsed.subformRowIds  || [];
+        // JSONに保存済みのサブフォーム行IDを復元（保存時に③で書き直している）
+        if (parsed.subformRowIds?.length) {
+          state.subformRowIds = parsed.subformRowIds;
+          console.log('【サブフォームID復元】 JSON:', state.subformRowIds.length, '件', state.subformRowIds);
+        }
         renumberSections();
         // ID重複を防ぐため nextId をロード済み最大値+1 に更新
         const maxSecId  = Math.max(0, ...state.sections.map(s => s.id || 0));
@@ -1983,31 +1988,11 @@ const app = (() => {
         field60: saveGrandTotal,    // 明細合計（定価）
         field61: saveDiscount,      // 値引き額（0も明示的に送信）
         field62: saveDeliveryPrice, // 貴社お渡し価格
-        // 工事費用サブフォーム（LinkingModule1）
-        // 既存行ID付きで送ると UPDATE（重複なし）、IDなしは新規 ADD
-        LinkingModule1: (() => {
-          const currentItems = state.sections.flatMap(sec =>
-            sec.items.filter(item => item.name || item.unitPrice)
-          );
-          const oldIds = state.subformRowIds || [];
-          const rows = currentItems.map((item, i) => {
-            const row = {
-              quoteType:    item.name              || '',  // 品名
-              Product_Code: item.spec              || '',  // 型番・規格
-              quantity:     Number(item.qty)       || 1,
-              Usage_Unit:   item.unit              || '式',
-              Unit_Price:   Number(item.unitPrice) || 0,
-              field10:      Number(item.amount)    || 0,
-            };
-            if (oldIds[i]) row.id = oldIds[i];  // 既存行はIDで上書き更新
-            return row;
-          });
-          // 旧行数が新行数より多い場合、余分な行を削除マーカー付きで送信
-          for (let i = currentItems.length; i < oldIds.length; i++) {
-            rows.push({ id: oldIds[i], '$state': 'delete_record' });
-          }
-          return rows;
-        })(),
+        // サブフォームは後続の処理で deleteRecord + updateRecord で個別処理
+        // ここでは挿入データのみ準備する
+        _subformCurrentItems: state.sections.flatMap(sec =>
+          sec.items.filter(item => item.name || item.unitPrice)
+        ),
       };
       // undefined のキーを除去
       Object.keys(apiData).forEach(k => { if (apiData[k] === undefined) delete apiData[k]; });
@@ -2050,36 +2035,67 @@ const app = (() => {
         return;
       }
 
-      // ② サブフォームを別リクエストで保存
-      const subformItems = apiData.LinkingModule1 || [];
-      if (subformItems.length > 0) {
-        console.log('【サブフォーム送信データ】', JSON.stringify(subformItems.slice(0, 3)));
-        const subRes = await ZOHO.CRM.API.updateRecord({
+      // ② サブフォームを deleteRecord で旧行削除 → updateRecord で新規挿入
+      const currentItems = apiData._subformCurrentItems || [];
+      delete apiData._subformCurrentItems;
+      const oldIds = state.subformRowIds || [];
+
+      // ②-a 旧行を LinkingModule1 レコードとして直接削除
+      if (oldIds.length > 0) {
+        await ZOHO.CRM.API.deleteRecord({
+          Entity:   'LinkingModule1',
+          RecordID: oldIds,
+        });
+        state.subformRowIds = [];
+      }
+
+      // ②-b 現在の明細を新規挿入
+      let newIds = [];
+      if (currentItems.length > 0) {
+        const insertRows = currentItems.map(item => ({
+          quoteType:    item.name              || '',
+          Product_Code: item.spec              || '',
+          quantity:     Number(item.qty)       || 1,
+          Usage_Unit:   item.unit              || '式',
+          Unit_Price:   Number(item.unitPrice) || 0,
+          field10:      Number(item.amount)    || 0,
+        }));
+        const insRes = await ZOHO.CRM.API.updateRecord({
           Entity:  'Quotes',
-          APIData: { id: state.quoteId, LinkingModule1: subformItems },
+          APIData: { id: state.quoteId, LinkingModule1: insertRows },
           Trigger: [],
         });
-        console.log('updateRecord(subform) response:', JSON.stringify(subRes));
-        const subData = subRes?.data?.[0];
-        if (subData?.code === 'SUCCESS') {
-          // 保存されたサブフォーム行IDを記録（次回保存で重複させない）
-          const savedRows = subData?.details?.LinkingModule1 || [];
-          const newIds = savedRows
+        const insData = insRes?.data?.[0];
+        if (insData?.code === 'SUCCESS') {
+          newIds = (insData?.details?.LinkingModule1 || [])
             .filter(r => r.status === 'success')
-            .map(r => r.id);
-          if (newIds.length > 0) state.subformRowIds = newIds;
-          statusEl.textContent = '✅ 保存しました（' + new Date().toLocaleTimeString('ja-JP') + '）';
-          showToast('CRMに保存しました');
+            .map(r => r.id)
+            .filter(Boolean);
         } else {
-          const errDetail = JSON.stringify(subData?.details || subData);
-          statusEl.textContent = '⚠️ サブフォーム保存失敗: ' + errDetail;
-          showToast('サブフォーム保存に問題があります', 'warn');
-          console.warn('サブフォーム保存レスポンス:', JSON.stringify(subRes));
+          console.warn('サブフォーム挿入失敗:', JSON.stringify(insData));
         }
-      } else {
-        statusEl.textContent = '✅ 保存しました（' + new Date().toLocaleTimeString('ja-JP') + '）';
-        showToast('CRMに保存しました');
       }
+
+      // ③ 新しいIDをJSONに書き直して保存（次回削除のため）
+      state.subformRowIds = newIds;
+      const updatedJson = JSON.stringify({
+        sections:      state.sections,
+        deliveryPrice: state.deliveryPrice,
+        laborCost:     state.laborCost,
+        seqNo:         state.seqNo,
+        revision:      state.revision,
+        exclusions:    state.exclusions,
+        remarks:       state.remarks   || undefined,
+        discount:      state.discount  || undefined,
+        subformRowIds: newIds.length   ? newIds : undefined,
+      });
+      await ZOHO.CRM.API.updateRecord({
+        Entity:  'Quotes',
+        APIData: { id: state.quoteId, JSON: updatedJson },
+        Trigger: [],
+      });
+      statusEl.textContent = '✅ 保存しました（' + new Date().toLocaleTimeString('ja-JP') + '）';
+      showToast('CRMに保存しました');
     } catch (e) {
       const errData = e?.data?.[0];
       const msg = errData
