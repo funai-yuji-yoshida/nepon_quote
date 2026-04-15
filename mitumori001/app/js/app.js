@@ -1831,6 +1831,25 @@ const app = (() => {
     const subtotal = sec.items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
     const el = block.querySelector('.subtotal-val');
     if (el) el.textContent = '¥' + subtotal.toLocaleString('ja-JP');
+
+    // 代理店価格小計（掛率が設定されている行がある場合のみ表示）
+    const globalRate = state.mainRate;
+    const hasDairiRate = globalRate != null || sec.items.some(i => i.dairiRate != null);
+    const dairiWrap = block.querySelector('.dairi-subtotal-wrap');
+    const dairiVal  = block.querySelector('.dairi-subtotal-val');
+    if (dairiWrap && dairiVal) {
+      if (hasDairiRate) {
+        const dairiSubtotal = sec.items.reduce((sum, i) => {
+          const rate = i.dairiRate ?? globalRate;
+          return sum + (rate != null ? Math.round((Number(i.amount) || 0) * rate) : 0);
+        }, 0);
+        dairiVal.textContent = '¥' + dairiSubtotal.toLocaleString('ja-JP');
+        dairiWrap.style.display = '';
+      } else {
+        dairiWrap.style.display = 'none';
+      }
+    }
+
     updateOutput();
   }
 
