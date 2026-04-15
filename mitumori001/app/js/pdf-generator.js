@@ -162,7 +162,8 @@ const QuotationPDF = (() => {
             widths: ['*', 80],
             body: [[
               {
-                text: `${quoteNoStr}　${data.projectName || ''}`,
+                text: [quoteNoStr, data.projectName, data.projectName2, data.projectName3]
+                  .filter(Boolean).join('　'),
                 style: 'pageHdr',
                 border: [false, false, false, true],
               },
@@ -454,6 +455,18 @@ const QuotationPDF = (() => {
                   { width: '*', text: data.projectName || '', decoration: 'underline', fontSize: 9 },
                 ],
               },
+              // 件名2行目
+              ...(data.projectName2 ? [{
+                margin: [67, 1, 0, 0],
+                text: data.projectName2,
+                decoration: 'underline', fontSize: 9,
+              }] : []),
+              // 件名3行目
+              ...(data.projectName3 ? [{
+                margin: [67, 1, 0, 0],
+                text: data.projectName3,
+                decoration: 'underline', fontSize: 9,
+              }] : []),
               // 定型文
               {
                 margin: [25, compact ? 3 : 5, 0, 0],
@@ -871,7 +884,8 @@ const QuotationPDF = (() => {
       },
       content: [
         { text: '見積集計表', style: { fontSize: 14, bold: true }, margin: [0, 0, 0, 4] },
-        { text: `${quoteNoStr}　${data.customerName || ''}　${data.projectName || ''}　${dateStr}`, fontSize: 9, margin: [0, 0, 0, 8] },
+        { text: [quoteNoStr, data.customerName, data.projectName, data.projectName2, data.projectName3, dateStr]
+            .filter(Boolean).join('　'), fontSize: 9, margin: [0, 0, 0, 8] },
         {
           table: {
             headerRows: 1,

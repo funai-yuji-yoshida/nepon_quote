@@ -266,9 +266,12 @@ const app = (() => {
     revision:     1,      // 改訂番号
     customerName:   '',
     projectName:    '',
+    projectName2:   '',  // 件名2行目（field8）
+    projectName3:   '',  // 件名3行目（field7）
     ownerName:      '',
     quoteCategory:  '',  // 見積区分（field63）: 物販 / 作業（100万以下） / 工事（100万超）
     date:         new Date(),
+    submitDate:   null,  // 見積提出日（field64）
     deliveryTerm:   'お打ち合わせ願います',
     deliveryMethod: 'お打ち合わせ願います',
     paymentTerm:    'お打ち合わせ願います',
@@ -396,7 +399,6 @@ const app = (() => {
     state.projectName     = quote.Subject || '';
     state.ownerName       = quote.Owner?.name || '';
     state.quoteCategory   = quote.field63 || '';
-    console.log('[DEBUG] field63 raw value:', JSON.stringify(quote.field63));
     state.deliveryPrice = Number(quote.Grand_Total) || 0;
 
     // カスタムフィールドから読み込み
@@ -408,6 +410,9 @@ const app = (() => {
     state.validDays      = quote.field58 || state.validDays;
     state.remarks        = quote.field59 || '';
     state.discount       = Number(quote.field61) || 0;  // 値引き額
+    state.submitDate     = quote.field64 ? new Date(quote.field64) : null; // 見積提出日
+    state.projectName2   = quote.field8  || '';  // 件名2行目
+    state.projectName3   = quote.field7  || '';  // 件名3行目
 
     // JSON カスタムフィールドから復元（セクション構造・全明細）
     const savedJson = quote.JSON || '';
@@ -465,6 +470,17 @@ const app = (() => {
   function applyStateToForm() {
     setValue('customerName',    state.customerName);
     setValue('projectName',     state.projectName);
+    setValue('projectName2',    state.projectName2);
+    setValue('projectName3',    state.projectName3);
+    // 件名2・3行目の表示切り替え
+    const pn2Row = document.getElementById('projectName2Row');
+    const pn3Row = document.getElementById('projectName3Row');
+    if (pn2Row) pn2Row.style.display = state.projectName2 ? '' : 'none';
+    if (pn3Row) pn3Row.style.display = state.projectName3 ? '' : 'none';
+    // 見積提出日
+    if (state.submitDate) {
+      setValue('quoteDate', formatDateInput(state.submitDate));
+    }
     setValue('ownerName',       state.ownerName);
     // 見積区分表示
     const catEl = document.getElementById('quoteCategoryDisplay');
@@ -1863,6 +1879,8 @@ const app = (() => {
     state.revision       = Number(getValue('quoteRevision'))   || 1;
     state.customerName   = getValue('customerName');
     state.projectName    = getValue('projectName');
+    state.projectName2   = getValue('projectName2') || '';
+    state.projectName3   = getValue('projectName3') || '';
     state.ownerName      = getValue('ownerName');
     state.deliveryTerm   = getValue('deliveryTerm');
     state.deliveryMethod = getValue('deliveryMethod');
@@ -1874,7 +1892,8 @@ const app = (() => {
     state.legalWelfareRate = Number(getValue('legalWelfareRate')) || 14.6;
     state.branchKey      = getValue('branchSelect');
     const dateVal = getValue('quoteDate');
-    state.date = dateVal ? new Date(dateVal) : new Date();
+    state.submitDate = dateVal ? new Date(dateVal) : null;
+    state.date = state.submitDate || new Date();
   }
 
   // ── PDF 生成 ─────────────────────────────────────────────────
@@ -1913,9 +1932,11 @@ const app = (() => {
     return {
       seqNo:           state.seqNo,
       revision:        state.revision,
-      date:            state.date,
+      date:            state.submitDate || state.date,
       customerName:    state.customerName,
       projectName:     state.projectName,
+      projectName2:    state.projectName2 || undefined,
+      projectName3:    state.projectName3 || undefined,
       ownerName:       state.ownerName,
       deliveryTerm:    state.deliveryTerm,
       deliveryMethod:  state.deliveryMethod,
@@ -1988,6 +2009,9 @@ const app = (() => {
         field60: saveGrandTotal,    // 明細合計（定価）
         field61: saveDiscount,      // 値引き額（0も明示的に送信）
         field62: saveDeliveryPrice, // 貴社お渡し価格
+        field64: state.submitDate ? formatDateInput(state.submitDate) : undefined, // 見積提出日
+        field8:  state.projectName2 || undefined, // 件名2行目
+        field7:  state.projectName3 || undefined, // 件名3行目
         // サブフォームは後続の処理で deleteRecord + updateRecord で個別処理
         // ここでは挿入データのみ準備する
         _subformCurrentItems: state.sections.flatMap(sec =>
