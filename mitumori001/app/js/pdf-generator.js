@@ -207,7 +207,7 @@ const QuotationPDF = (() => {
     grandTotal, discount, quoteCategory, deliveryPrice, materialCost, laborCost, legalWelfare, legalRate,
     mainRate, pdfPriceMode }) {
     const useDairi = pdfPriceMode === 'dairi' && mainRate != null;
-    const dairi = v => Math.round((Number(v) || 0) * mainRate);
+    const dairi = (v, item) => Math.round((Number(v) || 0) * ((item?.dairiRate ?? mainRate) ?? mainRate));
     // 値引き額ラベル: 工事を含む場合→「出精値引き」、物販・作業→「値引き額」
     const discountLabel = (quoteCategory || '').includes('工事') ? '出精値引き' : '値引き額';
 
@@ -275,7 +275,9 @@ const QuotationPDF = (() => {
           { text: '1', alignment: 'center', fontSize: itemFs },
           { text: '式', alignment: 'center', fontSize: itemFs },
           { text: '', fontSize: itemFs },
-          { text: fmt(useDairi ? dairi(s.subtotal) : s.subtotal), alignment: 'right', fontSize: itemFs },
+          { text: fmt(useDairi
+            ? (s.items || []).reduce((sum, i) => sum + Math.round((Number(i.amount) || 0) * ((i.dairiRate ?? mainRate) ?? mainRate)), 0)
+            : s.subtotal), alignment: 'right', fontSize: itemFs },
         ]);
       } else if (entry.type === 'sectionHeader') {
         const s = entry.s;
@@ -304,8 +306,8 @@ const QuotationPDF = (() => {
           { text: item.name || '', fontSize: itemFs },
           { text: String(item.qty || 1), alignment: 'center', fontSize: itemFs },
           { text: item.unit || '式', alignment: 'center', fontSize: itemFs },
-          { text: fmt(useDairi ? dairi(item.unitPrice) : item.unitPrice), alignment: 'right', fontSize: itemFs },
-          { text: fmt(useDairi ? dairi(item.amount) : item.amount), alignment: 'right', fontSize: itemFs },
+          { text: fmt(useDairi ? dairi(item.unitPrice, item) : item.unitPrice), alignment: 'right', fontSize: itemFs },
+          { text: fmt(useDairi ? dairi(item.amount, item) : item.amount), alignment: 'right', fontSize: itemFs },
         ]);
       }
     });
@@ -328,7 +330,7 @@ const QuotationPDF = (() => {
       { text: '', border: [true, true, false, false] },
       { text: '合　　計', alignment: 'center', bold: true, fontSize: itemFs, colSpan: 4, border: [false, true, false, false] },
       {}, {}, {},
-      { text: fmt(useDairi ? (data.dairiTotal || dairi(grandTotal)) : grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
+      { text: fmt(useDairi ? (data.dairiTotal || sectionTotals.reduce((sum, s) => sum + (s.items || []).reduce((ss, i) => ss + Math.round((Number(i.amount) || 0) * ((i.dairiRate ?? mainRate) ?? mainRate)), 0), 0)) : grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
     ]);
 
     // 値引き額（0の場合も表示）
@@ -669,8 +671,8 @@ const QuotationPDF = (() => {
           { text: item.name || '' },
           { text: item.qty != null && item.qty !== '' ? String(item.qty) : '', alignment: 'right' },
           { text: item.unit || '', alignment: 'center' },
-          { text: item.unitPrice ? fmt(useDairi ? Math.round(item.unitPrice * mainRate) : item.unitPrice) : '', alignment: 'right' },
-          { text: fmt(useDairi ? Math.round((Number(item.amount) || 0) * mainRate) : item.amount), alignment: 'right' },
+          { text: item.unitPrice ? fmt(useDairi ? Math.round(item.unitPrice * (item.dairiRate ?? mainRate)) : item.unitPrice) : '', alignment: 'right' },
+          { text: fmt(useDairi ? Math.round((Number(item.amount) || 0) * (item.dairiRate ?? mainRate)) : item.amount), alignment: 'right' },
         ]);
         // 仕様行
         (item.specLines || []).filter(l => (l || '').trim()).forEach(line => {
@@ -761,7 +763,7 @@ const QuotationPDF = (() => {
             {
               text: useDairi
                 ? fmt(sectionTotals.reduce((sum, s) =>
-                    sum + (s.items || []).reduce((ss, i) => ss + Math.round((Number(i.amount) || 0) * mainRate), 0), 0))
+                    sum + (s.items || []).reduce((ss, i) => ss + Math.round((Number(i.amount) || 0) * (i.dairiRate ?? mainRate)), 0), 0))
                 : fmt(grandTotal),
               alignment: 'right',
               bold: true,

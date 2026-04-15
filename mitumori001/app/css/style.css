@@ -1201,6 +1201,8 @@ button {
 .rate-val { font-weight: bold; color: #1a4d8f; min-width: 36px; text-align: right; }
 
 /* ── 代理店価格列 ────────────────────────────────────────────── */
+.col-dairi-rate { width: 58px; text-align: center; }
+.item-dairi-rate { width: 100%; text-align: center; font-size: 11px; color: #1a4d8f; }
 .col-dairi { width: 80px; white-space: nowrap; text-align: right; color: #1a4d8f; font-size: 11px; }
 .item-dairi { color: #1a4d8f; font-size: 11px; }
 

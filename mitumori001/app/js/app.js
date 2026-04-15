@@ -1266,6 +1266,7 @@ const app = (() => {
     return {
       id: state.nextItemId++, productId: null,
       name: '', spec: '', qty: 1, unit: '式', unitPrice: null, amount: 0,
+      dairiRate: null,  // null = グローバル main_rate を使用
       calcCategory: '',
       kouTanka:    0,   // 工単価（マスタから、減衰再計算用）
       houdan: 0,        // 歩単（マスタから）
@@ -1362,6 +1363,19 @@ const app = (() => {
       if (amountEl) amountEl.value = item.amount.toLocaleString('ja-JP');
     } else if (e.target === amountEl) {
       item.amount = Number((amountEl?.value || '').replace(/,/g, '')) || 0;
+    }
+
+    // 代理店掛率（行ごとに設定可能、空欄 = グローバル main_rate を使用）
+    const dairiRateEl = row.querySelector('.item-dairi-rate');
+    if (dairiRateEl) {
+      const rateVal = dairiRateEl.value.trim();
+      item.dairiRate = rateVal !== '' ? Number(rateVal) : null;
+      const effectiveRate = item.dairiRate ?? state.mainRate;
+      const dairiEl = row.querySelector('.item-dairi');
+      if (dairiEl) {
+        const amt = Number(item.amount) || 0;
+        dairiEl.textContent = (effectiveRate != null && amt) ? Math.round(amt * effectiveRate).toLocaleString('ja-JP') : '';
+      }
     }
 
     // 歩工合計（手動上書き）を読み取り、歩工を再計算して表示
@@ -1521,12 +1535,18 @@ const app = (() => {
       // data属性にも保持（保存・読み込み時に利用）
       row.dataset.calcCategory = item.calcCategory || '';
 
-      // 代理店価格の反映（main_rate × 金額）
+      // 代理店掛率入力欄
+      const dairiRateEl = row.querySelector('.item-dairi-rate');
+      if (dairiRateEl && dairiRateEl !== document.activeElement) {
+        dairiRateEl.value       = item.dairiRate != null ? item.dairiRate : '';
+        dairiRateEl.placeholder = state.mainRate != null ? String(state.mainRate) : '掛率';
+      }
+      // 代理店価格の反映（行ごとの掛率、未設定時はグローバル main_rate）
       const dairiEl = row.querySelector('.item-dairi');
       if (dairiEl) {
-        const rate = state.mainRate;
+        const effectiveRate = item.dairiRate ?? state.mainRate;
         const amt  = Number(item.amount) || 0;
-        dairiEl.textContent = (rate != null && amt) ? Math.round(amt * rate).toLocaleString('ja-JP') : '';
+        dairiEl.textContent = (effectiveRate != null && amt) ? Math.round(amt * effectiveRate).toLocaleString('ja-JP') : '';
       }
 
       // 原価・原価合計の反映
@@ -1849,11 +1869,14 @@ const app = (() => {
     const grandTotal   = sections.reduce((sum, s) =>
       sum + s.items.reduce((ss, i) => ss + (Number(i.amount) || 0), 0), 0);
 
-    // 代理店価格合計（main_rate が設定されている場合のみ）
+    // 代理店価格合計（main_rate が設定されている場合のみ・行ごとの掛率優先）
     const mainRate = state.mainRate;
     const dairiTotal = mainRate != null
       ? sections.reduce((sum, s) =>
-          sum + s.items.reduce((ss, i) => ss + Math.round((Number(i.amount) || 0) * mainRate), 0), 0)
+          sum + s.items.reduce((ss, i) => {
+            const rate = i.dairiRate ?? mainRate;
+            return ss + Math.round((Number(i.amount) || 0) * rate);
+          }, 0), 0)
       : null;
     state.dairiTotal = dairiTotal;
 
