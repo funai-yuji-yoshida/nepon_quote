@@ -187,6 +187,7 @@ const QuotationPDF = (() => {
           quoteNoStr, dateStr, branch,
           data, sectionTotals, grandTotal, discount, quoteCategory,
           deliveryPrice, materialCost, laborCost, legalWelfare, legalRate,
+          mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode,
         }),
 
         // ====================================================
@@ -203,7 +204,10 @@ const QuotationPDF = (() => {
   // ── 1ページ目（表紙）────────────────────────────────────────
 
   function buildCoverPage({ quoteNoStr, dateStr, branch, data, sectionTotals,
-    grandTotal, discount, quoteCategory, deliveryPrice, materialCost, laborCost, legalWelfare, legalRate }) {
+    grandTotal, discount, quoteCategory, deliveryPrice, materialCost, laborCost, legalWelfare, legalRate,
+    mainRate, pdfPriceMode }) {
+    const useDairi = pdfPriceMode === 'dairi' && mainRate != null;
+    const dairi = v => Math.round((Number(v) || 0) * mainRate);
     // 値引き額ラベル: 工事を含む場合→「出精値引き」、物販・作業→「値引き額」
     const discountLabel = (quoteCategory || '').includes('工事') ? '出精値引き' : '値引き額';
 
@@ -271,7 +275,7 @@ const QuotationPDF = (() => {
           { text: '1', alignment: 'center', fontSize: itemFs },
           { text: '式', alignment: 'center', fontSize: itemFs },
           { text: '', fontSize: itemFs },
-          { text: fmt(s.subtotal), alignment: 'right', fontSize: itemFs },
+          { text: fmt(useDairi ? dairi(s.subtotal) : s.subtotal), alignment: 'right', fontSize: itemFs },
         ]);
       } else if (entry.type === 'sectionHeader') {
         const s = entry.s;
@@ -300,8 +304,8 @@ const QuotationPDF = (() => {
           { text: item.name || '', fontSize: itemFs },
           { text: String(item.qty || 1), alignment: 'center', fontSize: itemFs },
           { text: item.unit || '式', alignment: 'center', fontSize: itemFs },
-          { text: fmt(item.unitPrice), alignment: 'right', fontSize: itemFs },
-          { text: fmt(item.amount), alignment: 'right', fontSize: itemFs },
+          { text: fmt(useDairi ? dairi(item.unitPrice) : item.unitPrice), alignment: 'right', fontSize: itemFs },
+          { text: fmt(useDairi ? dairi(item.amount) : item.amount), alignment: 'right', fontSize: itemFs },
         ]);
       }
     });
@@ -324,7 +328,7 @@ const QuotationPDF = (() => {
       { text: '', border: [true, true, false, false] },
       { text: '合　　計', alignment: 'center', bold: true, fontSize: itemFs, colSpan: 4, border: [false, true, false, false] },
       {}, {}, {},
-      { text: fmt(grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
+      { text: fmt(useDairi ? (data.dairiTotal || dairi(grandTotal)) : grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
     ]);
 
     // 値引き額（0の場合も表示）
