@@ -1468,6 +1468,13 @@ const app = (() => {
       if (s) s.name = nameInput.value;
     });
 
+    // 折りたたみトグル
+    const toggleBtn = block.querySelector('.section-toggle');
+    toggleBtn.addEventListener('click', () => {
+      block.classList.toggle('collapsed');
+      updateCollapsedInfo(sec.id, block);
+    });
+
     return block;
   }
 
@@ -1563,6 +1570,17 @@ const app = (() => {
     tbody.appendChild(fragment);
 
     updateSectionSubtotal(block);
+    updateCollapsedInfo(sec.id, block);
+  }
+
+  function updateCollapsedInfo(secId, block) {
+    const info = block.querySelector('.section-collapsed-info');
+    if (!info) return;
+    const s = state.sections.find(s => s.id === secId);
+    if (!s) return;
+    const count    = s.items.filter(i => i.name || i.unitPrice).length;
+    const subtotal = s.items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    info.textContent = `${count}行　小計: ¥${subtotal.toLocaleString('ja-JP')}`;
   }
 
   function createItemRowDOM(item) {
