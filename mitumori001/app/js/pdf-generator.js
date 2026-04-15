@@ -194,7 +194,7 @@ const QuotationPDF = (() => {
         // ====================================================
         ...(data.printDetail !== false ? [
           { text: '', pageBreak: 'after' },
-          ...buildDetailPages({ quoteNoStr, sectionTotals, grandTotal }),
+          ...buildDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode }),
         ] : []),
       ],
     };
@@ -629,7 +629,8 @@ const QuotationPDF = (() => {
 
   // ── 2ページ目以降（明細書）──────────────────────────────────
 
-  function buildDetailPages({ sectionTotals, grandTotal }) {
+  function buildDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode }) {
+    const useDairi = pdfPriceMode === 'dairi' && mainRate != null;
     const COL_WIDTHS = [22, '*', 36, 30, 58, 58];
     const result = [];
 
@@ -664,8 +665,8 @@ const QuotationPDF = (() => {
           { text: item.name || '' },
           { text: item.qty != null && item.qty !== '' ? String(item.qty) : '', alignment: 'right' },
           { text: item.unit || '', alignment: 'center' },
-          { text: item.unitPrice ? fmt(item.unitPrice) : '', alignment: 'right' },
-          { text: fmt(item.amount), alignment: 'right' },
+          { text: item.unitPrice ? fmt(useDairi ? Math.round(item.unitPrice * mainRate) : item.unitPrice) : '', alignment: 'right' },
+          { text: fmt(useDairi ? Math.round((Number(item.amount) || 0) * mainRate) : item.amount), alignment: 'right' },
         ]);
         // 仕様行
         (item.specLines || []).filter(l => (l || '').trim()).forEach(line => {
@@ -754,7 +755,10 @@ const QuotationPDF = (() => {
             },
             {}, {}, {},
             {
-              text: fmt(grandTotal),
+              text: useDairi
+                ? fmt(sectionTotals.reduce((sum, s) =>
+                    sum + (s.items || []).reduce((ss, i) => ss + Math.round((Number(i.amount) || 0) * mainRate), 0), 0))
+                : fmt(grandTotal),
               alignment: 'right',
               bold: true,
               border: [false, true, true, true],

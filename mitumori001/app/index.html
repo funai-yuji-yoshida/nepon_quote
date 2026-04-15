@@ -62,30 +62,41 @@
 
       <div class="form-section">
         <h3 class="section-title">顧客・工事情報 <span class="crm-badge">CRMより取得</span></h3>
-        <div class="form-row">
-          <label>顧客名</label>
-          <input type="text" id="customerName" placeholder="株式会社〇〇" class="input-wide">
-          <span class="suffix">御中</span>
-        </div>
-        <div class="form-row">
-          <label>工事名</label>
-          <input type="text" id="projectName" placeholder="〇〇設備工事" class="input-wide">
-        </div>
-        <div class="form-row" id="projectName2Row" style="display:none">
-          <label>件名2行目</label>
-          <input type="text" id="projectName2" class="input-wide">
-        </div>
-        <div class="form-row" id="projectName3Row" style="display:none">
-          <label>件名3行目</label>
-          <input type="text" id="projectName3" class="input-wide">
-        </div>
-        <div class="form-row">
-          <label>担当者</label>
-          <input type="text" id="ownerName" placeholder="担当者名" class="input-medium">
-        </div>
-        <div class="form-row">
-          <label>見積区分</label>
-          <span id="quoteCategoryDisplay" class="quote-category-badge">―</span>
+        <div class="customer-rate-layout">
+          <div class="customer-fields">
+            <div class="form-row">
+              <label>顧客名</label>
+              <input type="text" id="customerName" placeholder="株式会社〇〇" class="input-wide">
+              <span class="suffix">御中</span>
+            </div>
+            <div class="form-row">
+              <label>工事名</label>
+              <input type="text" id="projectName" placeholder="〇〇設備工事" class="input-wide">
+            </div>
+            <div class="form-row" id="projectName2Row" style="display:none">
+              <label>件名2行目</label>
+              <input type="text" id="projectName2" class="input-wide">
+            </div>
+            <div class="form-row" id="projectName3Row" style="display:none">
+              <label>件名3行目</label>
+              <input type="text" id="projectName3" class="input-wide">
+            </div>
+            <div class="form-row">
+              <label>担当者</label>
+              <input type="text" id="ownerName" placeholder="担当者名" class="input-medium">
+            </div>
+            <div class="form-row">
+              <label>見積区分</label>
+              <span id="quoteCategoryDisplay" class="quote-category-badge">―</span>
+            </div>
+          </div>
+          <div class="rate-panel">
+            <div class="rate-panel-title">掛率情報</div>
+            <div class="rate-row"><span class="rate-label">代理店掛率</span><span class="rate-val" id="rateMain">―</span></div>
+            <div class="rate-row"><span class="rate-label">製品掛率</span><span class="rate-val" id="rateItem">―</span></div>
+            <div class="rate-row"><span class="rate-label">部品掛率</span><span class="rate-val" id="rateParts">―</span></div>
+            <div class="rate-row"><span class="rate-label">仕入れ品掛率</span><span class="rate-val" id="ratePurchase">―</span></div>
+          </div>
         </div>
       </div>
 
@@ -96,6 +107,13 @@
           <div class="price-group">
             <span class="currency-sign">¥</span>
             <span id="basicGrandTotal" class="display-price">0</span>
+          </div>
+        </div>
+        <div class="form-row" id="rowDairiTotal" style="display:none">
+          <label>代理店価格合計</label>
+          <div class="price-group">
+            <span class="currency-sign">¥</span>
+            <span id="basicDairiTotal" class="display-price" style="color:#1a4d8f">0</span>
           </div>
         </div>
         <div class="form-row">
@@ -329,6 +347,7 @@
           <h4 class="breakdown-title">金額内訳</h4>
           <table class="summary-tbl">
             <tr><td class="lbl">明細合計（定価）</td><td class="val amount" id="sum-total">¥0</td></tr>
+            <tr id="sum-dairi-row" style="display:none"><td class="lbl">　代理店価格合計</td><td class="val amount" id="sum-dairi" style="color:#1a4d8f">¥0</td></tr>
             <tr><td class="lbl">　値引き額</td><td class="val amount" id="sum-discount" style="color:#c0392b">¥0</td></tr>
             <tr class="row-delivery"><td class="lbl">貴社お渡し価格</td><td class="val amount" id="sum-delivery">¥0</td></tr>
             <tr><td class="lbl">　1) 資材費他</td><td class="val amount" id="sum-material">¥0</td></tr>
@@ -354,6 +373,12 @@
               <input type="checkbox" id="printDetailPages" checked>
               明細ページを印刷する
             </label>
+          </div>
+
+          <div id="pdfPriceModeGroup" class="pdf-price-mode-group" style="display:none">
+            <span class="pdf-price-mode-label">印刷価格:</span>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="teika" checked> 定価</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi"> 代理店価格</label>
           </div>
 
           <button class="btn-generate" id="btnGeneratePDF" onclick="app.generatePDF()" disabled>
@@ -431,6 +456,7 @@
             <th class="col-unit">単位</th>
             <th class="col-price">単価</th>
             <th class="col-amount">金額</th>
+            <th class="col-dairi">代理店価格</th>
             <th class="col-genka">原価</th>
             <th class="col-genka-amount">原価合計</th>
             <th class="col-houdan">歩単</th>
@@ -472,6 +498,7 @@
       </td>
       <td><input type="text" inputmode="numeric" class="item-price" placeholder="（空欄可）"></td>
       <td><input type="text" inputmode="numeric" class="item-amount" placeholder="0"></td>
+      <td class="col-dairi"><span class="item-dairi"></span></td>
       <td class="col-genka"><span class="item-genka"></span></td>
       <td class="col-genka-amount"><span class="item-genka-amount"></span></td>
       <td class="col-houdan"><span class="item-houdan"></span></td>

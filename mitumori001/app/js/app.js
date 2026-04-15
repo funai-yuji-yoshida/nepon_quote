@@ -95,18 +95,6 @@ const app = (() => {
       'オイル配管設備工事', '地下オイルタンク設備工事',
       '消火器・標識設備工事', '諸 経 費',
     ]},
-    { label: '諸経費１', items: [
-      '機材運搬費', '試運転調整費', '現場諸経費',
-    ]},
-    { label: '諸経費２', items: [
-      '機材小運搬費', '現場立会い検査費',
-    ]},
-    { label: '諸経費３', items: [
-      '消防関連打合せ費用', '大気汚染防止法関連打合せ費用',
-      '消防立会い検査費', 'タンク水張り検査費', '防油堤・基礎工事費',
-      '油水分離槽工事', '道路横断補強工事', '塗装補修工事', '躯体補修工事',
-      '掘削工事費', '残土処理工事', '機械室建屋工事', '消耗品雑材',
-    ]},
   ];
 
   // ── 人工単価（固定） ─────────────────────────────────────────────
@@ -281,6 +269,10 @@ const app = (() => {
     deliveryPrice:  0,
     laborCost:      null,   // null = 自動計算
     legalWelfareRate: 14.6,
+    mainRate:        null,  // 代理店掛率（main_rate）
+    itemRate:        null,  // 製品掛率（item_rate）
+    partsRate:       null,  // 部品掛率（parts_rate）
+    purchaseRate:    null,  // 仕入れ品掛率（purchase_rate）
     currentUserId:   null,  // ログイン中のZohoユーザーID
     currentUserName: '',
     branchKey:    'honbu',
@@ -413,6 +405,10 @@ const app = (() => {
     state.submitDate     = quote.field64 ? new Date(quote.field64) : null; // 見積提出日
     state.projectName2   = quote.field8  || '';  // 件名2行目
     state.projectName3   = quote.field7  || '';  // 件名3行目
+    state.mainRate    = quote.main_rate    != null ? Number(quote.main_rate)    : null;
+    state.itemRate    = quote.item_rate    != null ? Number(quote.item_rate)    : null;
+    state.partsRate   = quote.parts_rate   != null ? Number(quote.parts_rate)   : null;
+    state.purchaseRate = quote.purchase_rate != null ? Number(quote.purchase_rate) : null;
 
     // JSON カスタムフィールドから復元（セクション構造・全明細）
     const savedJson = quote.JSON || '';
@@ -482,6 +478,13 @@ const app = (() => {
       setValue('quoteDate', formatDateInput(state.submitDate));
     }
     setValue('ownerName',       state.ownerName);
+    // 掛率パネルを更新
+    const fmtRate = v => v != null ? v : '―';
+    const setRateEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = fmtRate(v); };
+    setRateEl('rateMain',     state.mainRate);
+    setRateEl('rateItem',     state.itemRate);
+    setRateEl('rateParts',    state.partsRate);
+    setRateEl('ratePurchase', state.purchaseRate);
     // 見積区分表示
     const catEl = document.getElementById('quoteCategoryDisplay');
     if (catEl) catEl.textContent = state.quoteCategory || '―';
@@ -1511,6 +1514,14 @@ const app = (() => {
       // data属性にも保持（保存・読み込み時に利用）
       row.dataset.calcCategory = item.calcCategory || '';
 
+      // 代理店価格の反映（main_rate × 金額）
+      const dairiEl = row.querySelector('.item-dairi');
+      if (dairiEl) {
+        const rate = state.mainRate;
+        const amt  = Number(item.amount) || 0;
+        dairiEl.textContent = (rate != null && amt) ? Math.round(amt * rate).toLocaleString('ja-JP') : '';
+      }
+
       // 原価・原価合計の反映
       const genkaEl       = row.querySelector('.item-genka');
       const genkaAmtEl    = row.querySelector('.item-genka-amount');
@@ -1820,9 +1831,17 @@ const app = (() => {
     const grandTotal   = sections.reduce((sum, s) =>
       sum + s.items.reduce((ss, i) => ss + (Number(i.amount) || 0), 0), 0);
 
-    // 値引き額（手入力）→ 貴社お渡し価格 = 明細合計 - 値引き額
+    // 代理店価格合計（main_rate が設定されている場合のみ）
+    const mainRate = state.mainRate;
+    const dairiTotal = mainRate != null
+      ? sections.reduce((sum, s) =>
+          sum + s.items.reduce((ss, i) => ss + Math.round((Number(i.amount) || 0) * mainRate), 0), 0)
+      : null;
+    state.dairiTotal = dairiTotal;
+
+    // 値引き額（手入力）→ 貴社お渡し価格 = 代理店価格合計（or 明細合計） - 値引き額
     const discount      = Number(getValue('discountAmount')) || 0;
-    const deliveryPrice = Math.max(0, grandTotal - discount);
+    const deliveryPrice = Math.max(0, (dairiTotal != null ? dairiTotal : grandTotal) - discount);
 
     // state に反映（saveToCRM/buildPdfData で使用）
     state.discount      = discount;
@@ -1830,7 +1849,14 @@ const app = (() => {
 
     // ①基本情報の表示を更新
     setText('basicGrandTotal',   grandTotal.toLocaleString('ja-JP'));
+    // 代理店価格合計行の表示切替
+    const rowDairi = document.getElementById('rowDairiTotal');
+    if (rowDairi) rowDairi.style.display = dairiTotal != null ? '' : 'none';
+    setText('basicDairiTotal', dairiTotal != null ? dairiTotal.toLocaleString('ja-JP') : '0');
     setText('basicDeliveryPrice', deliveryPrice.toLocaleString('ja-JP'));
+    // PDF価格モード選択の表示切替
+    const pdfModeGrp = document.getElementById('pdfPriceModeGroup');
+    if (pdfModeGrp) pdfModeGrp.style.display = dairiTotal != null ? '' : 'none';
     const dpHidden = document.getElementById('deliveryPrice');
     if (dpHidden) dpHidden.value = deliveryPrice;
 
@@ -1853,6 +1879,9 @@ const app = (() => {
     setText('sum-project',    getValue('projectName')  || '-');
     setText('sum-sections',   sections.length);
     setText('sum-total',      '¥' + grandTotal.toLocaleString('ja-JP'));
+    const sumDairiRow = document.getElementById('sum-dairi-row');
+    if (sumDairiRow) sumDairiRow.style.display = dairiTotal != null ? '' : 'none';
+    setText('sum-dairi',      dairiTotal != null ? '¥' + dairiTotal.toLocaleString('ja-JP') : '¥0');
     setText('sum-discount',   discount > 0 ? '¥' + discount.toLocaleString('ja-JP') : '¥0');
     setText('sum-delivery',   '¥' + deliveryPrice.toLocaleString('ja-JP'));
     setText('sum-material',   '¥' + Math.max(0, materialCost).toLocaleString('ja-JP'));
@@ -1957,6 +1986,13 @@ const app = (() => {
         const cb = document.getElementById('printDetailPages');
         return cb ? cb.checked : true;
       })(),
+      dairiTotal:      state.dairiTotal != null ? state.dairiTotal : undefined,
+      mainRate:        state.mainRate   != null ? state.mainRate   : undefined,
+      pdfPriceMode:    (() => {
+        const radios = document.getElementsByName('pdfPriceMode');
+        for (const r of radios) { if (r.checked) return r.value; }
+        return 'teika';
+      })(),
     };
   }
 
@@ -1994,7 +2030,8 @@ const app = (() => {
       const saveGrandTotal    = state.sections.reduce((sum, s) =>
         sum + s.items.reduce((ss, i) => ss + (Number(i.amount) || 0), 0), 0);
       const saveDiscount      = state.discount || 0;
-      const saveDeliveryPrice = Math.max(0, saveGrandTotal - saveDiscount);
+      const saveDairiTotal    = state.dairiTotal;
+      const saveDeliveryPrice = Math.max(0, (saveDairiTotal != null ? saveDairiTotal : saveGrandTotal) - saveDiscount);
 
       const apiData = {
         id:      state.quoteId,
