@@ -1020,6 +1020,7 @@ const app = (() => {
       item.unit      = '式';
       item.unitPrice = product.price;
       item.amount    = product.price;
+      item.genka     = product.cost || 0;   // 標準原価（field1）
       targetSection.items.push(item);
 
       if (product.code) {
