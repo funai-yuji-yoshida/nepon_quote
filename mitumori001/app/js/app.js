@@ -736,7 +736,7 @@ const app = (() => {
           code:   p.Product_Code  || '',
           model:  p.field2        || '',
           price:  Number(p.Unit_Price) || 0,
-          cost:   Number(p.Cost)       || 0,
+          cost:   Number(p.field1)      || 0,  // 標準原価（field1）
           source: 'product',
         }));
       }
