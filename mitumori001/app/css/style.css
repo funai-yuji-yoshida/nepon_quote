@@ -1263,3 +1263,82 @@ button {
   background: #f0fff4; color: #28a745; cursor: pointer; font-size: 12px; font-weight: bold;
 }
 .stm-save-btn:hover { background: #d4edda; }
+
+/* ── テンプレートツールバー ──────────────────────────────── */
+.template-toolbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; background: #f0f4ff;
+  border-radius: 6px; margin-bottom: 6px;
+}
+.template-label { font-size: 12px; color: #555; font-weight: bold; white-space: nowrap; }
+.btn-tpl-load, .btn-tpl-save {
+  font-size: 12px; padding: 4px 12px; cursor: pointer;
+  border-radius: 4px; border: 1px solid #bbb;
+  background: #fff; color: #333; white-space: nowrap;
+}
+.btn-tpl-load:hover { background: #e8f0fe; border-color: #4a90d9; color: #1a73e8; }
+.btn-tpl-save:hover { background: #f0fff4; border-color: #28a745; color: #28a745; }
+
+/* ── モーダル共通 ──────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 10000; display: flex; align-items: center; justify-content: center;
+}
+.modal-dialog {
+  background: #fff; border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  width: 480px; max-width: 95vw; max-height: 85vh;
+  display: flex; flex-direction: column;
+}
+.tpl-load-dialog { width: 560px; }
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; border-bottom: 1px solid #ddd;
+  font-weight: bold; font-size: 14px; flex-shrink: 0;
+}
+.modal-close {
+  background: none; border: none; font-size: 16px; cursor: pointer; color: #666;
+}
+.modal-close:hover { color: #333; }
+.modal-body {
+  padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column;
+}
+.modal-footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 12px 16px; border-top: 1px solid #eee; flex-shrink: 0;
+}
+.modal-form-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+}
+.modal-form-row label { width: 80px; font-size: 12px; color: #555; flex-shrink: 0; }
+.btn-secondary {
+  padding: 6px 16px; border: 1px solid #bbb; border-radius: 4px;
+  background: #fff; color: #555; cursor: pointer; font-size: 13px;
+}
+.btn-secondary:hover { background: #f5f5f5; }
+
+/* ── テンプレート読み込みモーダル ──────────────────────── */
+.tpl-filter-row {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.tpl-list {
+  border: 1px solid #ddd; border-radius: 4px;
+  min-height: 120px; max-height: 260px; overflow-y: auto;
+  margin-bottom: 10px; flex: 1;
+}
+.tpl-loading { padding: 16px; text-align: center; color: #888; font-size: 13px; }
+.tpl-none    { padding: 16px; text-align: center; color: #999; font-size: 13px; }
+.tpl-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer;
+}
+.tpl-item:hover { background: #f0f4ff; }
+.tpl-item.selected { background: #dbeafe; }
+.tpl-item-radio { margin-top: 2px; flex-shrink: 0; }
+.tpl-item-info { flex: 1; }
+.tpl-item-name { font-weight: bold; font-size: 13px; }
+.tpl-item-meta { font-size: 11px; color: #888; margin-top: 2px; }
+.tpl-load-mode {
+  display: flex; gap: 20px; font-size: 13px; padding: 6px 0;
+}
+.tpl-load-mode label { display: flex; align-items: center; gap: 4px; cursor: pointer; }

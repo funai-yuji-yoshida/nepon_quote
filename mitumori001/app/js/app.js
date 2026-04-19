@@ -292,6 +292,9 @@ const app = (() => {
     pendingProduct:  null,     // 検索で選択済み・追加待ちの商品
     savedJson:       null,     // CRM に保存済みの見積JSON
     subformRowIds:   [],       // 前回保存時の LinkingModule1 行ID（重複防止用）
+    templateDepts:   [],       // 所課マスタ（DepartmentsList）
+    templateList:    [],       // 所課別商品マスタ（CustomModule8）
+    selectedTemplateId: null,  // 読み込みモーダルで選択中のテンプレートID
   };
 
   let zohoReady = false;
@@ -446,6 +449,7 @@ const app = (() => {
     loadKanzai();
     loadDenzai();
     loadCurrentUser();
+    loadDepartments();
 
     showToast('CRMデータを読み込みました');
   }
@@ -1838,6 +1842,232 @@ const app = (() => {
     }
   }
 
+  // ── 所課別商品マスタ テンプレート機能 ────────────────────────────
+
+  async function loadDepartments() {
+    if (!zohoReady) return;
+    try {
+      const data = await fetchAllRecords('DepartmentsList', 'Name');
+      state.templateDepts = data.map(d => ({ id: d.id, name: d.Name || '' }));
+    } catch (e) { console.warn('loadDepartments error:', e); }
+  }
+
+  async function loadAllTemplates() {
+    if (!zohoReady) return;
+    try {
+      const data = await fetchAllRecords('CustomModule8', 'Name');
+      state.templateList = data
+        .filter(r => r.JSON)
+        .map(r => ({
+          id:   r.id,
+          name: r.Name || '',
+          type: r.field17 || '',
+          deptId:   r.field21?.id   || '',
+          deptName: r.field21?.name || '',
+        }));
+    } catch (e) { console.warn('loadAllTemplates error:', e); }
+  }
+
+  function populateDeptSelects() {
+    const opts = '<option value="">― 選択 ―</option>' +
+      state.templateDepts.map(d => `<option value="${d.id}">${escHtml(d.name)}</option>`).join('');
+    const saveEl = document.getElementById('tplSaveDept');
+    const filterEl = document.getElementById('tplFilterDept');
+    if (saveEl) saveEl.innerHTML = opts;
+    if (filterEl) filterEl.innerHTML = '<option value="">― 所課で絞り込み ―</option>' +
+      state.templateDepts.map(d => `<option value="${d.id}">${escHtml(d.name)}</option>`).join('');
+  }
+
+  async function showTemplateSaveDialog() {
+    if (!zohoReady) { showToast('Zoho未接続', 'warn'); return; }
+    if (state.sections.length === 0) { showToast('保存する明細がありません', 'warn'); return; }
+    if (state.templateDepts.length === 0) await loadDepartments();
+    populateDeptSelects();
+    const el = document.getElementById('tplSaveModal');
+    if (el) el.style.display = 'flex';
+  }
+
+  async function execTemplateSave() {
+    const name = (document.getElementById('tplSaveName')?.value || '').trim();
+    if (!name) { showToast('テンプレート名を入力してください', 'warn'); return; }
+    const type   = (document.getElementById('tplSaveType')?.value || '').trim();
+    const deptId = document.getElementById('tplSaveDept')?.value || '';
+    const deptName = deptId
+      ? (state.templateDepts.find(d => d.id === deptId)?.name || '')
+      : '';
+
+    const tplData = JSON.stringify({
+      sections: state.sections.map(sec => ({
+        name: sec.name,
+        cat:  sec.cat || '',
+        items: sec.items.map(item => ({
+          name: item.name, spec: item.spec, qty: item.qty, unit: item.unit,
+          unitPrice: item.unitPrice, amount: item.amount, genka: item.genka,
+          dairiRate: item.dairiRate, calcCategory: item.calcCategory,
+          houdan: item.houdan, houkouDirect: item.houkouDirect,
+          houkouKubun: item.houkouKubun, specLines: item.specLines,
+        })),
+      })),
+    });
+
+    try {
+      const apiData = { Name: name, JSON: tplData };
+      if (type) apiData.field17 = type;
+      if (deptId) apiData.field21 = { id: deptId, name: deptName };
+
+      // 同名テンプレートを確認
+      const existing = state.templateList.find(t => t.name === name);
+      if (existing) {
+        if (!confirm(`「${name}」は既に存在します。上書きしますか？`)) return;
+        await ZOHO.CRM.API.updateRecord({
+          Entity: 'CustomModule8', APIData: { id: existing.id, ...apiData }, Trigger: [],
+        });
+        Object.assign(existing, { type, deptId, deptName });
+        showToast('テンプレートを更新しました');
+      } else {
+        const res = await ZOHO.CRM.API.insertRecord({
+          Entity: 'CustomModule8', APIData: apiData, Trigger: [],
+        });
+        const newId = res?.data?.[0]?.details?.id;
+        if (newId) state.templateList.push({ id: newId, name, type, deptId, deptName });
+        showToast('テンプレートを保存しました');
+      }
+      document.getElementById('tplSaveModal').style.display = 'none';
+    } catch (e) {
+      console.error('テンプレート保存エラー:', e);
+      showToast('保存に失敗しました', 'err');
+    }
+  }
+
+  async function showTemplateLoadDialog() {
+    if (!zohoReady) { showToast('Zoho未接続', 'warn'); return; }
+    const loadModal = document.getElementById('tplLoadModal');
+    if (!loadModal) return;
+
+    if (state.templateDepts.length === 0) await loadDepartments();
+    populateDeptSelects();
+
+    document.getElementById('tplFilterDept').value = '';
+    document.getElementById('tplFilterType').value = '';
+    document.getElementById('tplFilterName').value = '';
+    state.selectedTemplateId = null;
+    document.getElementById('btnTplLoad').disabled = true;
+
+    loadModal.style.display = 'flex';
+    const listEl = document.getElementById('tplList');
+    listEl.innerHTML = '<div class="tpl-loading">読み込み中...</div>';
+
+    await loadAllTemplates();
+    filterTemplates();
+  }
+
+  function filterTemplates() {
+    const deptId = document.getElementById('tplFilterDept')?.value || '';
+    const typeQ  = (document.getElementById('tplFilterType')?.value || '').trim().toLowerCase();
+    const nameQ  = (document.getElementById('tplFilterName')?.value || '').trim().toLowerCase();
+
+    let filtered = state.templateList;
+    if (deptId) filtered = filtered.filter(t => t.deptId === deptId);
+    if (typeQ)  filtered = filtered.filter(t => t.type.toLowerCase().includes(typeQ));
+    if (nameQ)  filtered = filtered.filter(t => t.name.toLowerCase().includes(nameQ));
+
+    const listEl = document.getElementById('tplList');
+    if (!listEl) return;
+
+    if (filtered.length === 0) {
+      listEl.innerHTML = '<div class="tpl-none">テンプレートが見つかりません</div>';
+      return;
+    }
+
+    listEl.innerHTML = filtered.map(t => `
+      <div class="tpl-item${state.selectedTemplateId === t.id ? ' selected' : ''}"
+           data-tpl-id="${t.id}" onclick="app.selectTemplate('${t.id}')">
+        <input type="radio" class="tpl-item-radio" name="tplItem"
+               ${state.selectedTemplateId === t.id ? 'checked' : ''}>
+        <div class="tpl-item-info">
+          <div class="tpl-item-name">${escHtml(t.name)}</div>
+          <div class="tpl-item-meta">${[t.deptName, t.type].filter(Boolean).join(' / ') || '―'}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function selectTemplate(id) {
+    state.selectedTemplateId = id;
+    document.getElementById('btnTplLoad').disabled = false;
+    document.querySelectorAll('.tpl-item').forEach(el => {
+      el.classList.toggle('selected', el.dataset.tplId === id);
+      const radio = el.querySelector('input[type=radio]');
+      if (radio) radio.checked = el.dataset.tplId === id;
+    });
+  }
+
+  async function execTemplateLoad() {
+    if (!state.selectedTemplateId) { showToast('テンプレートを選択してください', 'warn'); return; }
+    const mode = document.querySelector('input[name="tplLoadMode"]:checked')?.value || 'add';
+
+    // CRM からテンプレートJSON取得
+    let tplData;
+    try {
+      const res = await ZOHO.CRM.API.getRecord({
+        Entity: 'CustomModule8', RecordID: state.selectedTemplateId,
+      });
+      const record = res?.data?.[0];
+      if (!record?.JSON) { showToast('テンプレートデータが空です', 'warn'); return; }
+      tplData = JSON.parse(record.JSON);
+    } catch (e) {
+      console.error('テンプレート読み込みエラー:', e);
+      showToast('読み込みに失敗しました', 'err');
+      return;
+    }
+
+    const tplSections = tplData?.sections || [];
+    if (tplSections.length === 0) { showToast('セクションがありません', 'warn'); return; }
+
+    if (mode === 'replace') {
+      if (state.sections.length > 0 && !confirm('現在の明細をすべて削除して読み込みますか？')) return;
+      state.sections = [];
+      state.nextSectionId = 1;
+      state.nextItemId    = 1;
+    }
+
+    tplSections.forEach(tplSec => {
+      const section = {
+        id:    state.nextSectionId++,
+        no:    state.sections.length + 1,
+        name:  tplSec.name || '',
+        cat:   tplSec.cat  || '',
+        items: [],
+      };
+      (tplSec.items || []).forEach(tplItem => {
+        const item = createItem();
+        item.name       = tplItem.name       || '';
+        item.spec       = tplItem.spec       || '';
+        item.qty        = tplItem.qty        ?? 1;
+        item.unit       = tplItem.unit       || '式';
+        item.unitPrice  = tplItem.unitPrice  ?? null;
+        item.amount     = tplItem.amount     ?? 0;
+        item.genka      = tplItem.genka      ?? 0;
+        item.dairiRate  = tplItem.dairiRate  ?? null;
+        item.calcCategory  = tplItem.calcCategory  || '';
+        item.houdan        = tplItem.houdan        ?? 0;
+        item.houkouDirect  = tplItem.houkouDirect  ?? 0;
+        item.houkouKubun   = tplItem.houkouKubun   || '';
+        item.specLines     = Array.isArray(tplItem.specLines) ? [...tplItem.specLines] : [];
+        section.items.push(item);
+      });
+      if (section.items.length === 0) section.items.push(createItem());
+      state.sections.push(section);
+    });
+
+    renumberSections();
+    renderSections();
+    updateOutput();
+    document.getElementById('tplLoadModal').style.display = 'none';
+    showToast(`テンプレートを${mode === 'replace' ? '置き換え' : '追加'}しました`);
+    document.getElementById('noSectionsMsg').style.display = 'none';
+  }
+
   function updateSectionSubtotal(block) {
     const secId  = Number(block.dataset.sectionId);
     const sec    = state.sections.find(s => s.id === secId);
@@ -2457,6 +2687,13 @@ const app = (() => {
     removeSpecLine,
     onSpecLineInput,
     showSpecTemplateMenu,
+    // テンプレート
+    showTemplateSaveDialog,
+    execTemplateSave,
+    showTemplateLoadDialog,
+    filterTemplates,
+    selectTemplate,
+    execTemplateLoad,
     // CRM保存
     saveToCRM,
   };

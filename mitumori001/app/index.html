@@ -279,6 +279,13 @@
           明細合計: <strong id="grandTotalDisplay">¥0</strong>
         </div>
 
+        <!-- テンプレートツールバー -->
+        <div class="template-toolbar">
+          <span class="template-label">テンプレート</span>
+          <button class="btn-tpl-load" onclick="app.showTemplateLoadDialog()">📂 読み込み</button>
+          <button class="btn-tpl-save" onclick="app.showTemplateSaveDialog()">💾 保存</button>
+        </div>
+
         <!-- 標準項セレクター -->
         <div class="standard-toolbar">
           <span class="standard-label">標準項</span>
@@ -520,6 +527,66 @@
       </td>
     </tr>
   </template>
+
+  <!-- テンプレート保存モーダル -->
+  <div id="tplSaveModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <span>テンプレートを保存</span>
+        <button class="modal-close" onclick="document.getElementById('tplSaveModal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-form-row">
+          <label>テンプレート名</label>
+          <input type="text" id="tplSaveName" class="input-wide" placeholder="例: 温室暖房標準">
+        </div>
+        <div class="modal-form-row">
+          <label>種別</label>
+          <input type="text" id="tplSaveType" class="input-medium" placeholder="例: 暖房">
+        </div>
+        <div class="modal-form-row">
+          <label>所課</label>
+          <select id="tplSaveDept" class="input-standard">
+            <option value="">― 選択 ―</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('tplSaveModal').style.display='none'">キャンセル</button>
+        <button class="btn-primary" onclick="app.execTemplateSave()">💾 保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- テンプレート読み込みモーダル -->
+  <div id="tplLoadModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog tpl-load-dialog">
+      <div class="modal-header">
+        <span>テンプレートを読み込み</span>
+        <button class="modal-close" onclick="document.getElementById('tplLoadModal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="tpl-filter-row">
+          <select id="tplFilterDept" class="input-standard" onchange="app.filterTemplates()">
+            <option value="">― 所課で絞り込み ―</option>
+          </select>
+          <input type="text" id="tplFilterType" class="input-medium" placeholder="種別..." oninput="app.filterTemplates()">
+          <input type="text" id="tplFilterName" class="input-medium" placeholder="名前..." oninput="app.filterTemplates()">
+        </div>
+        <div id="tplList" class="tpl-list">
+          <div class="tpl-loading">読み込み中...</div>
+        </div>
+        <div class="tpl-load-mode">
+          <label><input type="radio" name="tplLoadMode" value="add" checked> 現在の明細に追加</label>
+          <label><input type="radio" name="tplLoadMode" value="replace"> 現在の明細を置き換え</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('tplLoadModal').style.display='none'">キャンセル</button>
+        <button class="btn-primary" id="btnTplLoad" onclick="app.execTemplateLoad()" disabled>📂 読み込み</button>
+      </div>
+    </div>
+  </div>
 
   <script src="js/pdf-generator.js"></script>
   <script src="js/app.js"></script>
