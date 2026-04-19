@@ -1483,6 +1483,11 @@ const app = (() => {
       if (s) s.name = nameInput.value;
     });
 
+    // フォーカス時に全選択 → datalist の全候補を表示しやすくする
+    nameInput.addEventListener('focus', () => {
+      nameInput.select();
+    });
+
     // 折りたたみトグル
     const toggleBtn = block.querySelector('.section-toggle');
     toggleBtn.addEventListener('click', () => {
