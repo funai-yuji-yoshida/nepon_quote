@@ -227,24 +227,26 @@ const app = (() => {
    * カテゴリ未選択時は全件表示
    */
   function updateNameDatalist(catSel, nameInput) {
-    // 既存の一時 datalist を削除
-    const oldId = nameInput.getAttribute('list');
-    if (oldId) {
-      const old = document.getElementById(oldId);
-      if (old) old.remove();
+    const block      = nameInput.closest('.section-block');
+    const nameSel    = block?.querySelector('.section-name-select');
+    const cat        = SECTION_CATEGORIES.find(c => c.label === catSel.value);
+
+    if (cat && nameSel) {
+      // カテゴリ選択時 → select に切り替え
+      nameSel.innerHTML = '<option value="">― 選択 ―</option>';
+      cat.items.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        nameSel.appendChild(opt);
+      });
+      nameSel.style.display = '';
+      nameInput.style.display = 'none';
+    } else {
+      // カテゴリ未選択 → text input に切り替え
+      if (nameSel) nameSel.style.display = 'none';
+      nameInput.style.display = '';
     }
-    const dlId = 'dl-sec-' + Date.now();
-    const dl = document.createElement('datalist');
-    dl.id = dlId;
-    const cat = SECTION_CATEGORIES.find(c => c.label === catSel.value);
-    const items = cat ? cat.items : SECTION_CATEGORIES.flatMap(c => c.items);
-    items.forEach(name => {
-      const opt = document.createElement('option');
-      opt.value = name;
-      dl.appendChild(opt);
-    });
-    document.body.appendChild(dl);
-    nameInput.setAttribute('list', dlId);
   }
 
   let state = {
@@ -1428,14 +1430,18 @@ const app = (() => {
       block.querySelector('.section-no').textContent = sec.no;
       const catSel   = block.querySelector('.section-cat-select');
       const nameInput = block.querySelector('.section-name-input');
-      if (catSel && catSel !== document.activeElement && nameInput !== document.activeElement) {
+      const nameSel2 = block.querySelector('.section-name-select');
+      if (catSel && catSel !== document.activeElement && nameInput !== document.activeElement && nameSel2 !== document.activeElement) {
         const catLabel = findSectionCategory(sec.name);
         if (catSel.value !== catLabel) {
           catSel.value = catLabel;
           updateNameDatalist(catSel, nameInput);
         }
-        if (nameInput.value !== (sec.name || '')) {
-          nameInput.value = sec.name || '';
+        // select表示中は select に値をセット、非表示中は input に
+        if (nameSel2 && nameSel2.style.display !== 'none') {
+          if (nameSel2.value !== (sec.name || '')) nameSel2.value = sec.name || '';
+        } else {
+          if (nameInput.value !== (sec.name || '')) nameInput.value = sec.name || '';
         }
       }
 
@@ -1477,15 +1483,17 @@ const app = (() => {
       }
     });
 
-    // 大項目名入力 → state 更新
+    // 大項目名入力（テキスト）→ state 更新
     nameInput.addEventListener('input', () => {
       const s = state.sections.find(s => s.id === sec.id);
       if (s) s.name = nameInput.value;
     });
 
-    // フォーカス時に全選択 → datalist の全候補を表示しやすくする
-    nameInput.addEventListener('focus', () => {
-      nameInput.select();
+    // 大項目名選択（select）→ state 更新
+    const nameSel = block.querySelector('.section-name-select');
+    nameSel.addEventListener('change', () => {
+      const s = state.sections.find(s => s.id === sec.id);
+      if (s) s.name = nameSel.value;
     });
 
     // 折りたたみトグル
