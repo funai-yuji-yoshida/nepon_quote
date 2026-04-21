@@ -130,7 +130,7 @@ const QuotationPDF = (() => {
     const laborCost     = Number(data.laborCost) || 0;
     const legalWelfare  = Math.round(laborCost * legalRate);
     const materialCost  = deliveryPrice - laborCost - legalWelfare;
-    const showNaiyaku   = data.showNaiyaku !== false;
+    const showUchiwake   = data.showUchiwake !== false;
 
     const font = fontLoaded ? 'NotoSansJP' : 'Roboto';
 
@@ -255,7 +255,7 @@ const QuotationPDF = (() => {
       }
     });
     // 見積外工事行・固定行（合計3行+内訳4行）も含めてトータル行数を算出
-    const mirrorRowCount = mirrorEntries.length + exRowCount + (showNaiyaku ? 7 : 3);
+    const mirrorRowCount = mirrorEntries.length + exRowCount + (showUchiwake ? 7 : 3);
 
     // 行数に応じてフォントサイズ・パディング・マージンを動的調整（1ページ収容のため）
     let itemFs = 8.5;
@@ -350,7 +350,7 @@ const QuotationPDF = (() => {
       { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
     ]);
 
-    if (showNaiyaku) {
+    if (showUchiwake) {
       // 内訳ヘッダー
       tableRows.push([
         { text: '', border: [true, false, false, false] },

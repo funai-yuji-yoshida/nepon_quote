@@ -2391,7 +2391,7 @@ const app = (() => {
         for (const r of radios) { if (r.checked) return r.value; }
         return 'teika';
       })(),
-      showNaiyaku:     (() => {
+      showUchiwake:     (() => {
         const cat = state.quoteCategory || '';
         if (cat.includes('物販')) return false;
         if (cat.includes('作業')) {
