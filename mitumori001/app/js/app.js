@@ -17,6 +17,7 @@ const app = (() => {
     { col: 'col-unit',          label: '単位',      always: true },
     { col: 'col-price',         label: '単価',      def: true  },
     { col: 'col-amount',        label: '金額',      always: true },
+    { col: 'col-labor-check',   label: '労務',      def: true  },
     { col: 'col-dairi-rate',    label: '掛率',      def: false },
     { col: 'col-dairi',         label: '代理店価格', def: false },
     { col: 'col-genka',         label: '原価',      def: false },
@@ -381,6 +382,7 @@ const app = (() => {
 
     // イベント: 数量・単価 → 金額 自動計算
     document.getElementById('sectionsContainer').addEventListener('input', onItemInput);
+    document.getElementById('sectionsContainer').addEventListener('change', onItemInput);
 
     // イベント: 値引き額・労務費・法定福利費率 変更 → 即時再計算
     document.getElementById('discountAmount').addEventListener('input', updateOutput);
@@ -940,7 +942,8 @@ const app = (() => {
     const direct = k.houkouDirect || 0;
     item.unitPrice    = direct > 0 ? (k.price || 0) * direct : (k.price || 0);
     item.amount       = item.unitPrice * (item.qty || 1);
-    item.calcCategory = k.calcCategory  || '';
+    item.calcCategory   = k.calcCategory  || '';
+    item.includeInLabor = (item.calcCategory === '④工事費');
     item.houdan       = k.houdan       || 0;
     item.houkouKubun  = k.houkouKubun  || '';
     item.houkouDirect = k.houkouDirect || 0;
@@ -1346,6 +1349,7 @@ const app = (() => {
     return {
       id: state.nextItemId++, productId: null,
       name: '', spec: '', qty: 1, unit: '式', unitPrice: null, amount: 0,
+      includeInLabor: false,  // 労務費に含めるか（null=auto: ④工事費なら true）
       dairiRate: null,  // null = グローバル main_rate を使用
       calcCategory: '',
       kouTanka:    0,   // 工単価（マスタから、減衰再計算用）
@@ -1444,6 +1448,10 @@ const app = (() => {
     } else if (e.target === amountEl) {
       item.amount = Number((amountEl?.value || '').replace(/,/g, '')) || 0;
     }
+
+    // 労務費チェックボックス
+    const laborCheckEl = row.querySelector('.item-labor-check');
+    if (laborCheckEl) item.includeInLabor = laborCheckEl.checked;
 
     // 代理店掛率（行ごとに設定可能、空欄 = グローバル main_rate を使用）
     const dairiRateEl = row.querySelector('.item-dairi-rate');
@@ -1625,6 +1633,10 @@ const app = (() => {
       }
       // data属性にも保持（保存・読み込み時に利用）
       row.dataset.calcCategory = item.calcCategory || '';
+
+      // 労務費チェックボックス
+      const laborCheckEl = row.querySelector('.item-labor-check');
+      if (laborCheckEl) laborCheckEl.checked = !!item.includeInLabor;
 
       // 代理店掛率入力欄
       const dairiRateEl = row.querySelector('.item-dairi-rate');
@@ -1974,6 +1986,7 @@ const app = (() => {
         items: sec.items.map(item => ({
           name: item.name, spec: item.spec, qty: item.qty, unit: item.unit,
           unitPrice: item.unitPrice, amount: item.amount, genka: item.genka,
+          includeInLabor: item.includeInLabor,
           dairiRate: item.dairiRate, calcCategory: item.calcCategory,
           houdan: item.houdan, houkouDirect: item.houkouDirect,
           houkouKubun: item.houkouKubun, specLines: item.specLines,
@@ -2119,6 +2132,7 @@ const app = (() => {
         item.unitPrice  = tplItem.unitPrice  ?? null;
         item.amount     = tplItem.amount     ?? 0;
         item.genka      = tplItem.genka      ?? 0;
+        item.includeInLabor = tplItem.includeInLabor ?? false;
         item.dairiRate  = tplItem.dairiRate  ?? null;
         item.calcCategory  = tplItem.calcCategory  || '';
         item.houdan        = tplItem.houdan        ?? 0;
@@ -2236,10 +2250,10 @@ const app = (() => {
     if (dpHidden) dpHidden.value = deliveryPrice;
 
     const legalRate    = (Number(getValue('legalWelfareRate')) || 14.6) / 100;
-    // 労務費 = 手入力 OR 算出カテゴリ「④工事費」の金額合計
+    // 労務費 = 手入力 OR includeInLabor チェックが入った行の金額合計
     const autoLaborCost = state.sections.reduce((sum, s) =>
       sum + s.items.reduce((ss, i) =>
-        ss + (i.calcCategory === '④工事費' ? (Number(i.amount) || 0) : 0), 0), 0);
+        ss + (i.includeInLabor ? (Number(i.amount) || 0) : 0), 0), 0);
     const laborCost    = Number(getValue('laborCost')) || autoLaborCost;
     const legalWelfare = Math.round(laborCost * legalRate);
     const materialCost = deliveryPrice - laborCost - legalWelfare;
@@ -2351,7 +2365,7 @@ const app = (() => {
         ? state.laborCost
         : state.sections.reduce((sum, s) =>
             sum + s.items.reduce((ss, i) =>
-              ss + (i.calcCategory === '④工事費' ? (Number(i.amount) || 0) : 0), 0), 0),
+              ss + (i.includeInLabor ? (Number(i.amount) || 0) : 0), 0), 0),
       legalWelfareRate: state.legalWelfareRate,
       branchKey:       state.branchKey,
       sections:        state.sections,

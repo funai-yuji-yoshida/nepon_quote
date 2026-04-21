@@ -1109,6 +1109,8 @@ button {
 .labor-hint { font-size: 10px; color: #888; }
 
 /* ── アイテム行 上下移動ボタン ──────────────────────────────── */
+.col-labor-check { text-align: center; width: 36px; min-width: 36px; }
+.item-labor-check { cursor: pointer; width: 16px; height: 16px; }
 .col-item-actions { white-space: nowrap; vertical-align: middle; }
 .item-action-btns { display: flex; gap: 2px; align-items: center; }
 .item-spec-btns   { display: flex; gap: 2px; align-items: center; margin-top: 2px; }
