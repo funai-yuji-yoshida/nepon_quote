@@ -92,44 +92,84 @@
           </div>
           <div class="rate-panel">
             <div class="rate-panel-title">掛率情報</div>
-            <div class="rate-row"><span class="rate-label">代理店掛率</span><span class="rate-val" id="rateMain">―</span></div>
-            <div class="rate-row"><span class="rate-label">製品掛率</span><span class="rate-val" id="rateItem">―</span></div>
-            <div class="rate-row"><span class="rate-label">部品掛率</span><span class="rate-val" id="rateParts">―</span></div>
-            <div class="rate-row"><span class="rate-label">仕入れ品掛率</span><span class="rate-val" id="ratePurchase">―</span></div>
+            <div class="rate-row">
+              <span class="rate-label">代理店掛率</span>
+              <input type="number" id="rateMain" class="rate-input" step="0.001" min="0.001" max="9.999" placeholder="―">
+            </div>
+            <div class="rate-row">
+              <span class="rate-label">製品掛率</span>
+              <input type="number" id="rateItem" class="rate-input" step="0.001" min="0.001" max="9.999" placeholder="―">
+            </div>
+            <div class="rate-row">
+              <span class="rate-label">部品掛率</span>
+              <input type="number" id="rateParts" class="rate-input" step="0.001" min="0.001" max="9.999" placeholder="―">
+            </div>
+            <div class="rate-row">
+              <span class="rate-label">仕入れ品掛率</span>
+              <input type="number" id="ratePurchase" class="rate-input" step="0.001" min="0.001" max="9.999" placeholder="―">
+            </div>
+            <button class="btn-apply-rate" onclick="app.applyGlobalRate()">全明細に反映</button>
           </div>
         </div>
       </div>
 
       <div class="form-section">
         <h3 class="section-title">金額情報</h3>
-        <div class="form-row">
-          <label>明細合計（定価）</label>
-          <div class="price-group">
-            <span class="currency-sign">¥</span>
-            <span id="basicGrandTotal" class="display-price">0</span>
+        <div class="price-layout">
+          <div class="price-left">
+            <div class="form-row">
+              <label>明細合計（定価）</label>
+              <div class="price-group">
+                <span class="currency-sign">¥</span>
+                <span id="basicGrandTotal" class="display-price">0</span>
+              </div>
+            </div>
+            <div class="form-row" id="rowDairiTotal" style="display:none">
+              <label>代理店価格合計</label>
+              <div class="price-group">
+                <span class="currency-sign">¥</span>
+                <span id="basicDairiTotal" class="display-price" style="color:#1a4d8f">0</span>
+              </div>
+            </div>
+            <div class="form-row">
+              <label id="discountLabel">値引き額</label>
+              <div class="price-group">
+                <span class="currency-sign">¥</span>
+                <input type="number" id="discountAmount" placeholder="0" min="0" class="input-price">
+              </div>
+            </div>
+            <div class="form-row row-delivery-calc">
+              <label>貴社お渡し価格</label>
+              <div class="price-group">
+                <span class="currency-sign">¥</span>
+                <span id="basicDeliveryPrice" class="display-price delivery-price-val">0</span>
+              </div>
+              <input type="hidden" id="deliveryPrice" value="0">
+            </div>
           </div>
-        </div>
-        <div class="form-row" id="rowDairiTotal" style="display:none">
-          <label>代理店価格合計</label>
-          <div class="price-group">
-            <span class="currency-sign">¥</span>
-            <span id="basicDairiTotal" class="display-price" style="color:#1a4d8f">0</span>
+          <div class="price-right">
+            <div class="form-row">
+              <label>原価合計</label>
+              <div class="price-group">
+                <span class="currency-sign">¥</span>
+                <span id="basicGenkaTotal" class="display-price">0</span>
+              </div>
+            </div>
+            <div class="form-row">
+              <label>粗利</label>
+              <div class="price-group">
+                <span class="currency-sign">¥</span>
+                <span id="basicAraRi" class="display-price">0</span>
+              </div>
+            </div>
+            <div class="form-row">
+              <label>粗利率</label>
+              <div class="price-group">
+                <span id="basicAraRiRate" class="display-price">―</span>
+                <span class="suffix">%</span>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="form-row">
-          <label id="discountLabel">値引き額</label>
-          <div class="price-group">
-            <span class="currency-sign">¥</span>
-            <input type="number" id="discountAmount" placeholder="0" min="0" class="input-price">
-          </div>
-        </div>
-        <div class="form-row row-delivery-calc">
-          <label>貴社お渡し価格</label>
-          <div class="price-group">
-            <span class="currency-sign">¥</span>
-            <span id="basicDeliveryPrice" class="display-price delivery-price-val">0</span>
-          </div>
-          <input type="hidden" id="deliveryPrice" value="0">
         </div>
         <input type="hidden" id="laborCost" value="">
         <input type="hidden" id="legalWelfareRate" value="14.6">

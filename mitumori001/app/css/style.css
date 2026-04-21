@@ -201,7 +201,7 @@ input:focus, select:focus, textarea:focus {
 
 .display-price {
   display: inline-block;
-  min-width: 120px;
+  min-width: 100px;
   text-align: right;
   font-size: 14px;
   font-weight: bold;
@@ -1349,6 +1349,23 @@ button {
 }
 .btn-excl-preset:hover { background: #1a4d8f; color: #fff; }
 
+/* ── 金額情報 2カラムレイアウト ─────────────────────────────── */
+.price-layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.price-left { flex: 0 0 300px; }
+.price-right {
+  flex-shrink: 0;
+  border-left: 1px solid #e0e8f0;
+  padding-left: 16px;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 /* ── 掛率パネル ──────────────────────────────────────────────── */
 .customer-rate-layout { display: flex; gap: 16px; align-items: flex-start; }
 .customer-fields { flex: 1; }
@@ -1360,9 +1377,33 @@ button {
   font-weight: bold; color: #1a4d8f; margin-bottom: 8px;
   font-size: 11px; border-bottom: 1px solid #c5d3e8; padding-bottom: 4px;
 }
-.rate-row { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
-.rate-label { color: #555; }
-.rate-val { font-weight: bold; color: #1a4d8f; min-width: 36px; text-align: right; }
+.rate-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.rate-label { color: #555; white-space: nowrap; }
+.rate-input {
+  width: 70px;
+  text-align: right;
+  font-weight: bold;
+  color: #1a4d8f;
+  font-size: 12px;
+  padding: 3px 5px;
+  border: 1px solid #a8c4e8;
+  border-radius: 3px;
+  background: #fff;
+}
+.rate-input:focus { border-color: #1a4d8f; outline: none; }
+.btn-apply-rate {
+  width: 100%;
+  margin-top: 8px;
+  padding: 5px 0;
+  background: #1a4d8f;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.btn-apply-rate:hover { background: #153d72; }
 
 /* ── 代理店価格列 ────────────────────────────────────────────── */
 .col-dairi-rate { width: 50px; min-width: 50px; text-align: center; }

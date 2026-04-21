@@ -564,9 +564,11 @@ const app = (() => {
       setValue('quoteDate', formatDateInput(state.submitDate));
     }
     setValue('ownerName',       state.ownerName);
-    // 掛率パネルを更新
-    const fmtRate = v => v != null ? v : '―';
-    const setRateEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = fmtRate(v); };
+    // 掛率パネルを更新（input に値をセット）
+    const setRateEl = (id, v) => {
+      const el = document.getElementById(id);
+      if (el) el.value = v != null ? v : '';
+    };
     setRateEl('rateMain',     state.mainRate);
     setRateEl('rateItem',     state.itemRate);
     setRateEl('rateParts',    state.partsRate);
@@ -1448,6 +1450,44 @@ const app = (() => {
     updateSectionSubtotal(block);
     updateOutput();
     showToast(`掛率 ${rate} を適用しました`);
+  }
+
+  function applyGlobalRate() {
+    const mainRateVal    = parseFloat(document.getElementById('rateMain')?.value);
+    const itemRateVal    = parseFloat(document.getElementById('rateItem')?.value);
+    const partsRateVal   = parseFloat(document.getElementById('rateParts')?.value);
+    const purchaseRateVal= parseFloat(document.getElementById('ratePurchase')?.value);
+
+    if (isNaN(mainRateVal) || mainRateVal <= 0) {
+      showToast('代理店掛率を入力してください', 'warn');
+      return;
+    }
+
+    // stateに反映
+    state.mainRate    = mainRateVal;
+    state.itemRate    = !isNaN(itemRateVal)    ? itemRateVal    : state.itemRate;
+    state.partsRate   = !isNaN(partsRateVal)   ? partsRateVal   : state.partsRate;
+    state.purchaseRate= !isNaN(purchaseRateVal) ? purchaseRateVal: state.purchaseRate;
+
+    // 全明細行の dairiRate を更新
+    state.sections.forEach(sec => {
+      sec.items.forEach(item => {
+        item.dairiRate = mainRateVal;
+      });
+    });
+
+    // 全セクションの表示を再描画
+    const container = document.getElementById('sectionsContainer');
+    state.sections.forEach(sec => {
+      const block = container?.querySelector(`[data-section-id="${sec.id}"]`);
+      if (block) {
+        renderSection(sec, block);
+        updateSectionSubtotal(block);
+      }
+    });
+
+    updateOutput();
+    showToast(`代理店掛率 ${mainRateVal} を全明細に反映しました`);
   }
 
   function removeItem(btn) {
@@ -2376,8 +2416,22 @@ const app = (() => {
     state.discount      = discount;
     state.deliveryPrice = deliveryPrice;
 
+    // 原価合計
+    const genkaTotal = sections.reduce((sum, s) =>
+      sum + s.items.reduce((ss, i) => {
+        const genka = Number(i.genka) || 0;
+        const qty   = Number(i.qty)   || 1;
+        return ss + genka * qty;
+      }, 0), 0);
+
     // ①基本情報の表示を更新
+    const araRi     = deliveryPrice - genkaTotal;
+    const araRiRate = deliveryPrice > 0 ? (araRi / deliveryPrice * 100) : null;
+
     setText('basicGrandTotal',   grandTotal.toLocaleString('ja-JP'));
+    setText('basicGenkaTotal',   genkaTotal.toLocaleString('ja-JP'));
+    setText('basicAraRi',        araRi.toLocaleString('ja-JP'));
+    setText('basicAraRiRate',    araRiRate != null ? araRiRate.toFixed(1) : '―');
     // 代理店価格合計行の表示切替
     const rowDairi = document.getElementById('rowDairiTotal');
     if (rowDairi) rowDairi.style.display = dairiTotal != null ? '' : 'none';
@@ -2935,6 +2989,7 @@ const app = (() => {
     moveItemUp,
     moveItemDown,
     applyBulkRate,
+    applyGlobalRate,
     // 商品検索
     searchProducts,
     selectProduct,
