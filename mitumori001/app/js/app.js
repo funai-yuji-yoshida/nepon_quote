@@ -1661,6 +1661,10 @@ const app = (() => {
       if (!row) {
         row = createItemRowDOM(item);
         tbody.appendChild(row);
+      } else if (!row.dataset.dragReady) {
+        row.draggable = true;
+        attachDragEvents(row);
+        row.dataset.dragReady = '1';
       }
       // フォーカス中の行は上書きしない
       if (![...row.querySelectorAll('input,select')].some(el => el === document.activeElement)) {
@@ -1758,8 +1762,66 @@ const app = (() => {
     const tmpl  = document.getElementById('itemRowTemplate');
     const clone = tmpl.content.cloneNode(true);
     const row   = clone.querySelector('.item-row');
-    row.dataset.itemId = item.id;
+    row.dataset.itemId  = item.id;
+    row.dataset.dragReady = '1';
+    attachDragEvents(row);
     return row;
+  }
+
+  let dragSrcRow = null;
+
+  function attachDragEvents(row) {
+    row.addEventListener('dragstart', e => {
+      dragSrcRow = row;
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', row.dataset.itemId);
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      row.closest('.items-tbody')?.querySelectorAll('.item-row').forEach(r => {
+        r.classList.remove('drag-over-top', 'drag-over-bottom');
+      });
+      dragSrcRow = null;
+    });
+    row.addEventListener('dragover', e => {
+      if (!dragSrcRow || dragSrcRow === row) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      const rect = row.getBoundingClientRect();
+      const isTop = e.clientY < rect.top + rect.height / 2;
+      row.closest('.items-tbody')?.querySelectorAll('.item-row').forEach(r => {
+        r.classList.remove('drag-over-top', 'drag-over-bottom');
+      });
+      row.classList.add(isTop ? 'drag-over-top' : 'drag-over-bottom');
+    });
+    row.addEventListener('drop', e => {
+      if (!dragSrcRow || dragSrcRow === row) return;
+      e.preventDefault();
+      const tbody = row.closest('.items-tbody');
+      const block = row.closest('.section-block');
+      const secId = Number(block.dataset.sectionId);
+      const sec   = state.sections.find(s => s.id === secId);
+      if (!sec) return;
+
+      const srcId  = Number(dragSrcRow.dataset.itemId);
+      const dstId  = Number(row.dataset.itemId);
+      const srcIdx = sec.items.findIndex(i => i.id === srcId);
+      const dstIdx = sec.items.findIndex(i => i.id === dstId);
+      if (srcIdx === -1 || dstIdx === -1) return;
+
+      const rect  = row.getBoundingClientRect();
+      const isTop = e.clientY < rect.top + rect.height / 2;
+      const [removed] = sec.items.splice(srcIdx, 1);
+      const insertAt  = srcIdx < dstIdx
+        ? (isTop ? dstIdx - 1 : dstIdx)
+        : (isTop ? dstIdx     : dstIdx + 1);
+      sec.items.splice(insertAt, 0, removed);
+
+      renderSection(sec, block);
+      updateSectionSubtotal(block);
+      updateOutput();
+    });
   }
 
   function createSpecLineRowDOM(itemId, lineIdx, text) {

@@ -475,6 +475,7 @@
       <table class="items-table">
         <thead>
           <tr>
+            <th class="col-drag"></th>
             <th class="col-name">品名</th>
             <th class="col-spec">型番・規格</th>
             <th class="col-qty">数量</th>
@@ -514,7 +515,8 @@
 
   <!-- 明細行テンプレート（非表示） -->
   <template id="itemRowTemplate">
-    <tr class="item-row" data-item-id="" data-calc-category="">
+    <tr class="item-row" draggable="true" data-item-id="" data-calc-category="">
+      <td class="col-drag"><span class="drag-handle" title="ドラッグして移動">⠿</span></td>
       <td class="col-name"><input type="text" class="item-name" placeholder="品名"><span class="calc-cat-badge" style="display:none"></span></td>
       <td class="col-spec"><input type="text" class="item-spec" placeholder="型番・規格"></td>
       <td class="col-qty"><input type="number" class="item-qty" value="1" min="0" step="any"></td>
