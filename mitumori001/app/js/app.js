@@ -1050,9 +1050,37 @@ const app = (() => {
     showToast(`No.${targetSection.no}「${targetSection.name || '無題'}」に ${matched.length} 件追加しました`);
   }
 
+  // ── カテゴリタブ切り替え ─────────────────────────────────────
+
+  let currentCat = 'product';
+
+  function switchCatTab(cat) {
+    currentCat = cat;
+    document.querySelectorAll('.cat-tab').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.cat === cat);
+    });
+    ['product', 'kanzai', 'denzai', 'standard'].forEach(c => {
+      const panel = document.getElementById(`catPanel-${c}`);
+      if (panel) panel.style.display = c === cat ? '' : 'none';
+    });
+  }
+
+  function execCatAdd() {
+    // 共通セレクトの値を各隠しセレクトに同期
+    const val = document.getElementById('commonTargetSection')?.value || 'last';
+    ['productTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'standardTargetSection'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (sel) sel.value = val;
+    });
+    if (currentCat === 'product')   execProductAdd();
+    else if (currentCat === 'kanzai')  execMaterialAdd('kanzai');
+    else if (currentCat === 'denzai')  execMaterialAdd('denzai');
+    else if (currentCat === 'standard') execStandardAdd();
+  }
+
   /** 追加先セクションセレクトを更新（セクション追加・削除時に呼ぶ） */
   function updateTargetSectionSelect() {
-    ['standardTargetSection', 'productTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection'].forEach(id => {
+    ['standardTargetSection', 'productTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'commonTargetSection'].forEach(id => {
       const sel = document.getElementById(id);
       if (!sel) return;
       const cur = sel.value;
@@ -2898,6 +2926,9 @@ const app = (() => {
     removeSection,
     moveSectionUp,
     moveSectionDown,
+    // カテゴリタブ
+    switchCatTab,
+    execCatAdd,
     // 明細行
     addItem,
     removeItem,

@@ -245,64 +245,69 @@
     <div id="tab-items" class="tab-content">
 
       <div class="items-toolbar">
-        <button class="btn-primary" id="btnAddSection" onclick="app.addSection()">＋ 大項目を追加</button>
-        <div class="material-search-row">
-          <!-- 商品 -->
-          <div class="product-search-group">
-            <span class="material-badge badge-product">商品</span>
-            <input type="text" id="productSearch" placeholder="商品名・型番で検索..." class="input-search"
-                   oninput="app.searchProducts(this.value)">
-            <div id="productDropdown" class="product-dropdown" style="display:none"></div>
-            <select id="productTargetSection" class="input-standard" style="flex:0 0 auto;width:80px;"></select>
-            <button class="btn-standard-add" id="btnProductAdd" onclick="app.execProductAdd()" disabled>追加</button>
+        <div class="toolbar-main">
+          <!-- 左: 大項目追加 -->
+          <button class="btn-primary btn-add-section" id="btnAddSection" onclick="app.addSection()">＋ 大項目を追加</button>
+
+          <!-- 中央: タブ切り替え検索 -->
+          <div class="cat-search-wrap">
+            <div class="cat-tabs">
+              <button class="cat-tab active" data-cat="product" onclick="app.switchCatTab('product')">商品</button>
+              <button class="cat-tab" data-cat="kanzai" onclick="app.switchCatTab('kanzai')">管材</button>
+              <button class="cat-tab" data-cat="denzai" onclick="app.switchCatTab('denzai')">電材</button>
+              <button class="cat-tab" data-cat="standard" onclick="app.switchCatTab('standard')">標準項</button>
+            </div>
+            <div class="cat-panel-wrap">
+              <div class="cat-panel" id="catPanel-product">
+                <div class="product-search-group">
+                  <input type="text" id="productSearch" placeholder="商品名・型番で検索..." class="input-search" oninput="app.searchProducts(this.value)">
+                  <div id="productDropdown" class="product-dropdown" style="display:none"></div>
+                </div>
+              </div>
+              <div class="cat-panel" id="catPanel-kanzai" style="display:none">
+                <div class="product-search-group">
+                  <input type="text" id="kanzaiSearch" placeholder="管材名・型式で検索..." class="input-search" oninput="app.searchKanzai(this.value)">
+                  <div id="kanzaiDropdown" class="product-dropdown" style="display:none"></div>
+                </div>
+              </div>
+              <div class="cat-panel" id="catPanel-denzai" style="display:none">
+                <div class="product-search-group">
+                  <input type="text" id="denzaiSearch" placeholder="電材名・型式で検索..." class="input-search" oninput="app.searchDenzai(this.value)">
+                  <div id="denzaiDropdown" class="product-dropdown" style="display:none"></div>
+                </div>
+              </div>
+              <div class="cat-panel" id="catPanel-standard" style="display:none">
+                <select id="standardModelSelect" class="input-search" style="height:30px;">
+                  <option value="">型式を選択...</option>
+                </select>
+                <span class="standard-hint" id="standardHint" style="font-size:11px;color:#888;"></span>
+              </div>
+            </div>
+            <select id="commonTargetSection" class="input-standard cat-target-sel"></select>
+            <button class="btn-cat-add" id="btnCommonAdd" onclick="app.execCatAdd()">追加</button>
           </div>
-          <!-- 管材 -->
-          <div class="product-search-group">
-            <span class="material-badge badge-kanzai">管材</span>
-            <input type="text" id="kanzaiSearch" placeholder="管材名・型式で検索..." class="input-search"
-                   oninput="app.searchKanzai(this.value)">
-            <div id="kanzaiDropdown" class="product-dropdown" style="display:none"></div>
-            <select id="kanzaiTargetSection" class="input-standard" style="flex:0 0 auto;width:80px;"></select>
-            <button class="btn-standard-add" id="btnKanzaiAdd" onclick="app.execMaterialAdd('kanzai')" disabled>追加</button>
+
+          <!-- 右: 所課マスタ・列表示・合計 -->
+          <div class="toolbar-right">
+            <span class="template-label">所課マスタ</span>
+            <button class="btn-tpl-load" onclick="app.showTemplateLoadDialog()">📂 読み込み</button>
+            <button class="btn-tpl-save" onclick="app.showTemplateSaveDialog()">💾 登録</button>
+            <div class="col-dropdown-wrap">
+              <button class="btn-col-toggle" onclick="app.toggleColDropdown()">⚙️ 列表示</button>
+              <div id="colDropdown" class="col-dropdown" style="display:none"></div>
+            </div>
           </div>
-          <!-- 電材 -->
-          <div class="product-search-group">
-            <span class="material-badge badge-denzai">電材</span>
-            <input type="text" id="denzaiSearch" placeholder="電材名・型式で検索..." class="input-search"
-                   oninput="app.searchDenzai(this.value)">
-            <div id="denzaiDropdown" class="product-dropdown" style="display:none"></div>
-            <select id="denzaiTargetSection" class="input-standard" style="flex:0 0 auto;width:80px;"></select>
-            <button class="btn-standard-add" id="btnDenzaiAdd" onclick="app.execMaterialAdd('denzai')" disabled>追加</button>
-          </div>
-        </div>
-        <div class="grand-total-display">
-          明細合計: <strong id="grandTotalDisplay">¥0</strong>
         </div>
 
-        <!-- テンプレートツールバー -->
-        <div class="template-toolbar">
-          <span class="template-label">所課マスタ</span>
-          <button class="btn-tpl-load" onclick="app.showTemplateLoadDialog()">📂 読み込み</button>
-          <button class="btn-tpl-save" onclick="app.showTemplateSaveDialog()">💾 保存</button>
-          <div class="col-dropdown-wrap">
-            <button class="btn-col-toggle" onclick="app.toggleColDropdown()">⚙️ 列表示</button>
-            <div id="colDropdown" class="col-dropdown" style="display:none"></div>
-          </div>
-        </div>
-
-        <!-- 標準項セレクター -->
-        <div class="standard-toolbar">
-          <span class="standard-label">標準項</span>
-          <select id="standardModelSelect" class="input-standard">
-            <option value="">① 型式を選択...</option>
-          </select>
-          <span style="font-size:12px;color:#2e7d32;white-space:nowrap;flex-shrink:0;">② 追加先:</span>
-          <select id="standardTargetSection" class="input-standard" style="flex:0 0 auto;width:90px;">
-            <option value="last">最後</option>
-          </select>
-          <button class="btn-standard-add" id="btnStandardAdd" onclick="app.execStandardAdd()">③ 追加</button>
-          <span class="standard-hint" id="standardHint">（読み込み中）</span>
-        </div>
+        <!-- 既存関数との互換用（非表示） -->
+        <select id="productTargetSection" style="display:none"></select>
+        <select id="kanzaiTargetSection" style="display:none"></select>
+        <select id="denzaiTargetSection" style="display:none"></select>
+        <select id="standardTargetSection" style="display:none"></select>
+        <button id="btnProductAdd" style="display:none"></button>
+        <button id="btnKanzaiAdd" style="display:none"></button>
+        <button id="btnDenzaiAdd" style="display:none"></button>
+        <button id="btnStandardAdd" style="display:none"></button>
       </div>
 
       <div id="sectionsContainer" class="sections-container">
