@@ -129,7 +129,8 @@ const QuotationPDF = (() => {
     const legalRate     = (Number(data.legalWelfareRate) || 14.6) / 100;
     const laborCost     = Number(data.laborCost) || 0;
     const legalWelfare  = Math.round(laborCost * legalRate);
-    const materialCost  = deliveryPrice - laborCost - legalWelfare;
+    const anzenCost     = Number(data.anzenCost) || 0;
+    const materialCost  = deliveryPrice - laborCost - legalWelfare - anzenCost;
     const showUchiwake   = data.showUchiwake !== false;
 
     const font = fontLoaded ? 'NotoSansJP' : 'Roboto';
@@ -187,7 +188,7 @@ const QuotationPDF = (() => {
         ...buildCoverPage({
           quoteNoStr, dateStr, branch,
           data, sectionTotals, grandTotal, discount, quoteCategory,
-          deliveryPrice, materialCost, laborCost, legalWelfare, legalRate,
+          deliveryPrice, materialCost, laborCost, legalWelfare, legalRate, anzenCost,
           mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode,
           showUchiwake,
         }),
@@ -206,7 +207,7 @@ const QuotationPDF = (() => {
   // ── 1ページ目（表紙）────────────────────────────────────────
 
   function buildCoverPage({ quoteNoStr, dateStr, branch, data, sectionTotals,
-    grandTotal, discount, quoteCategory, deliveryPrice, materialCost, laborCost, legalWelfare, legalRate,
+    grandTotal, discount, quoteCategory, deliveryPrice, materialCost, laborCost, legalWelfare, legalRate, anzenCost,
     mainRate, pdfPriceMode, showUchiwake }) {
     const useDairi = pdfPriceMode === 'dairi' && mainRate != null;
     const dairi = (v, item) => Math.round((Number(v) || 0) * ((item?.dairiRate ?? mainRate) ?? mainRate));
@@ -256,7 +257,7 @@ const QuotationPDF = (() => {
       }
     });
     // 見積外工事行・固定行（合計3行+内訳4行）も含めてトータル行数を算出
-    const mirrorRowCount = mirrorEntries.length + exRowCount + (showUchiwake ? 7 : 3);
+    const mirrorRowCount = mirrorEntries.length + exRowCount + (showUchiwake ? 8 : 3);
 
     // 行数に応じてフォントサイズ・パディング・マージンを動的調整（1ページ収容のため）
     let itemFs = 8.5;
@@ -374,10 +375,17 @@ const QuotationPDF = (() => {
       ]);
       // 内訳 3) 法定福利費
       tableRows.push([
-        { text: '', border: [true, false, false, true] },
-        { text: `3）法定福利費（${(legalRate * 100).toFixed(1)}%）`, fontSize: itemFs, colSpan: 4, border: [false, false, false, true] },
+        { text: '', border: [true, false, false, false] },
+        { text: `3）法定福利費（${(legalRate * 100).toFixed(1)}%）`, fontSize: itemFs, colSpan: 4, border: [false, false, false, false] },
         {}, {}, {},
-        { text: fmt(legalWelfare), alignment: 'right', fontSize: itemFs, border: [false, false, true, true] },
+        { text: fmt(legalWelfare), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+      ]);
+      // 内訳 4) 安全衛生経費
+      tableRows.push([
+        { text: '', border: [true, false, false, true] },
+        { text: '4）安全衛生経費', fontSize: itemFs, colSpan: 4, border: [false, false, false, true] },
+        {}, {}, {},
+        { text: fmt(anzenCost), alignment: 'right', fontSize: itemFs, border: [false, false, true, true] },
       ]);
     }
 

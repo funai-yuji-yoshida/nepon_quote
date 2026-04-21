@@ -342,6 +342,7 @@ const app = (() => {
     discount:       0,
     deliveryPrice:  0,
     laborCost:      null,   // null = 自動計算
+    anzenCost:      0,      // 安全衛生経費（手動入力）
     legalWelfareRate: 14.6,
     mainRate:        null,  // 代理店掛率（main_rate）
     itemRate:        null,  // 製品掛率（item_rate）
@@ -387,6 +388,7 @@ const app = (() => {
     // イベント: 値引き額・労務費・法定福利費率 変更 → 即時再計算
     document.getElementById('discountAmount').addEventListener('input', updateOutput);
     document.getElementById('laborCost').addEventListener('input', updateOutput);
+    document.getElementById('anzenCost').addEventListener('input', updateOutput);
     document.getElementById('legalWelfareRate').addEventListener('input', updateOutput);
 
     document.addEventListener('click', e => {
@@ -498,6 +500,7 @@ const app = (() => {
         state.sections      = parsed.sections     || [];
         state.deliveryPrice = parsed.deliveryPrice || state.deliveryPrice;
         state.laborCost     = parsed.laborCost     || null;
+        state.anzenCost     = parsed.anzenCost     || 0;
         state.exclusions    = parsed.exclusions    || [];
         state.remarks       = parsed.remarks        || state.remarks;
         state.discount      = parsed.discount       || state.discount;
@@ -589,6 +592,7 @@ const app = (() => {
     setValue('quoteRevision',   state.revision);
     setValue('discountAmount',  state.discount || '');
     setValue('laborCost',       state.laborCost || '');
+    setValue('anzenCost',       state.anzenCost || '');
     setValue('legalWelfareRate',state.legalWelfareRate);
     setValue('deliveryTerm',    state.deliveryTerm);
     setValue('deliveryMethod',  state.deliveryMethod);
@@ -2261,7 +2265,8 @@ const app = (() => {
         ss + (i.includeInLabor ? (Number(i.amount) || 0) : 0), 0), 0);
     const laborCost    = Number(getValue('laborCost')) || autoLaborCost;
     const legalWelfare = Math.round(laborCost * legalRate);
-    const materialCost = deliveryPrice - laborCost - legalWelfare;
+    const anzenCost    = Number(getValue('anzenCost')) || 0;
+    const materialCost = deliveryPrice - laborCost - legalWelfare - anzenCost;
 
     const seqNo        = getValue('quoteSeqNo');
     const revision     = getValue('quoteRevision') || 1;
@@ -2282,6 +2287,7 @@ const app = (() => {
     setText('sum-labor',      '¥' + laborCost.toLocaleString('ja-JP'));
     setText('sum-welfare',    '¥' + legalWelfare.toLocaleString('ja-JP'));
     setText('sum-welfare-label', `　3) 法定福利費(${(legalRate * 100).toFixed(1)}%)`);
+    setText('sum-anzen',      '¥' + anzenCost.toLocaleString('ja-JP'));
     setText('grandTotalDisplay', '¥' + grandTotal.toLocaleString('ja-JP'));
 
     updateQuoteNoBadge();
@@ -2312,6 +2318,7 @@ const app = (() => {
     state.remarks        = getValue('remarks') || '';
     state.discount       = Number(getValue('discountAmount')) || 0;
     state.laborCost      = getValue('laborCost') ? Number(getValue('laborCost')) : null;
+    state.anzenCost      = Number(getValue('anzenCost')) || 0;
     state.legalWelfareRate = Number(getValue('legalWelfareRate')) || 14.6;
     state.branchKey      = getValue('branchSelect');
     const dateVal = getValue('quoteDate');
@@ -2371,6 +2378,7 @@ const app = (() => {
         : state.sections.reduce((sum, s) =>
             sum + s.items.reduce((ss, i) =>
               ss + (i.includeInLabor ? (Number(i.amount) || 0) : 0), 0), 0),
+      anzenCost:       state.anzenCost || 0,
       legalWelfareRate: state.legalWelfareRate,
       branchKey:       state.branchKey,
       sections:        state.sections,
