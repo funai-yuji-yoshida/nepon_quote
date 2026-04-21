@@ -127,7 +127,7 @@ const QuotationPDF = (() => {
     const quoteCategory   = data.quoteCategory || '';
     const deliveryPrice   = Number(data.deliveryPrice) || grandTotal;
     const legalRate     = (Number(data.legalWelfareRate) || 14.6) / 100;
-    const laborCost     = Number(data.laborCost) || Math.round(deliveryPrice * 0.115);
+    const laborCost     = Number(data.laborCost) || 0;
     const legalWelfare  = Math.round(laborCost * legalRate);
     const materialCost  = deliveryPrice - laborCost - legalWelfare;
 

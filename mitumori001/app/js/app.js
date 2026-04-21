@@ -2347,7 +2347,11 @@ const app = (() => {
       paymentTerm:     state.paymentTerm,
       validDays:       state.validDays,
       deliveryPrice:   state.deliveryPrice,
-      laborCost:       state.laborCost,
+      laborCost:       state.laborCost != null
+        ? state.laborCost
+        : state.sections.reduce((sum, s) =>
+            sum + s.items.reduce((ss, i) =>
+              ss + (i.calcCategory === '④工事費' ? (Number(i.amount) || 0) : 0), 0), 0),
       legalWelfareRate: state.legalWelfareRate,
       branchKey:       state.branchKey,
       sections:        state.sections,
