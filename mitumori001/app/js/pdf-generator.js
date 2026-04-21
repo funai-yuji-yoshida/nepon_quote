@@ -189,6 +189,7 @@ const QuotationPDF = (() => {
           data, sectionTotals, grandTotal, discount, quoteCategory,
           deliveryPrice, materialCost, laborCost, legalWelfare, legalRate,
           mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode,
+          showUchiwake,
         }),
 
         // ====================================================
@@ -206,7 +207,7 @@ const QuotationPDF = (() => {
 
   function buildCoverPage({ quoteNoStr, dateStr, branch, data, sectionTotals,
     grandTotal, discount, quoteCategory, deliveryPrice, materialCost, laborCost, legalWelfare, legalRate,
-    mainRate, pdfPriceMode }) {
+    mainRate, pdfPriceMode, showUchiwake }) {
     const useDairi = pdfPriceMode === 'dairi' && mainRate != null;
     const dairi = (v, item) => Math.round((Number(v) || 0) * ((item?.dairiRate ?? mainRate) ?? mainRate));
     // 値引き額ラベル: 工事を含む場合→「出精値引き」、物販・作業→「値引き額」
