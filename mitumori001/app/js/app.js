@@ -9,6 +9,77 @@
 const app = (() => {
 
   // ── 状態 ──────────────────────────────────────────────────────
+  // ── 列表示設定 ───────────────────────────────────────────────────
+  const COL_DEFS = [
+    { col: 'col-name',          label: '品名',      always: true },
+    { col: 'col-spec',          label: '型番・規格', def: true  },
+    { col: 'col-qty',           label: '数量',      always: true },
+    { col: 'col-unit',          label: '単位',      always: true },
+    { col: 'col-price',         label: '単価',      def: true  },
+    { col: 'col-amount',        label: '金額',      always: true },
+    { col: 'col-dairi-rate',    label: '掛率',      def: false },
+    { col: 'col-dairi',         label: '代理店価格', def: false },
+    { col: 'col-genka',         label: '原価',      def: false },
+    { col: 'col-genka-amount',  label: '原価合計',  def: false },
+    { col: 'col-houdan',        label: '歩単',      def: false },
+    { col: 'col-houkou-kubun',  label: '歩工区分',  def: false },
+    { col: 'col-houkou-goukei', label: '歩工合計',  def: false },
+    { col: 'col-houkou',        label: '歩工',      def: false },
+  ];
+  let colState = {};
+
+  function initColVisibility() {
+    const saved = localStorage.getItem('nepon_col_visibility');
+    if (saved) { try { colState = JSON.parse(saved); } catch(e) {} }
+    COL_DEFS.forEach(c => {
+      if (c.always) { colState[c.col] = true; return; }
+      if (colState[c.col] === undefined) colState[c.col] = c.def !== false;
+    });
+    applyColVisibility();
+  }
+
+  function applyColVisibility() {
+    let style = document.getElementById('colVisibilityStyle');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'colVisibilityStyle';
+      document.head.appendChild(style);
+    }
+    style.textContent = COL_DEFS
+      .filter(c => !c.always && !colState[c.col])
+      .map(c => `.items-table .${c.col} { display: none; }`)
+      .join('\n');
+  }
+
+  function toggleColDropdown() {
+    const dd = document.getElementById('colDropdown');
+    if (!dd) return;
+    if (dd.style.display !== 'none') { dd.style.display = 'none'; return; }
+    dd.innerHTML = COL_DEFS.filter(c => !c.always).map(c => `
+      <label class="col-dd-item">
+        <input type="checkbox" ${colState[c.col] ? 'checked' : ''}
+               onchange="app.setColVisibility('${c.col}', this.checked)">
+        ${c.label}
+      </label>
+    `).join('');
+    dd.style.display = 'block';
+    setTimeout(() => {
+      document.addEventListener('click', function closeDd(e) {
+        const wrap = document.querySelector('.col-dropdown-wrap');
+        if (!wrap || !wrap.contains(e.target)) {
+          dd.style.display = 'none';
+          document.removeEventListener('click', closeDd);
+        }
+      });
+    }, 0);
+  }
+
+  function setColVisibility(col, visible) {
+    colState[col] = visible;
+    localStorage.setItem('nepon_col_visibility', JSON.stringify(colState));
+    applyColVisibility();
+  }
+
   // ── 見積外工事マスタリスト ──────────────────────────────────────
   const EXCLUSION_MASTER = [
     'ポイラ室建屋工事',
@@ -302,6 +373,8 @@ const app = (() => {
   // ── 初期化 ────────────────────────────────────────────────────
 
   function init() {
+    initColVisibility();
+
     // 今日の日付をセット
     const today = new Date();
     document.getElementById('quoteDate').value = formatDateInput(today);
@@ -1514,7 +1587,7 @@ const app = (() => {
     const tbody = block.querySelector('.items-tbody');
 
     // 既存の仕様行・追加ボタン行を一旦クリア
-    tbody.querySelectorAll('.spec-line-row, .spec-add-row').forEach(r => r.remove());
+    tbody.querySelectorAll('.spec-line-row').forEach(r => r.remove());
 
     const existingIds = new Set([...tbody.querySelectorAll('.item-row')].map(r => Number(r.dataset.itemId)));
     const newIds      = new Set(sec.items.map(i => i.id));
@@ -1602,8 +1675,6 @@ const app = (() => {
       (item.specLines || []).forEach((line, idx) => {
         fragment.appendChild(createSpecLineRowDOM(item.id, idx, line));
       });
-      // 仕様追加ボタン行
-      fragment.appendChild(createSpecAddRowDOM(item.id));
     });
     tbody.appendChild(fragment);
 
@@ -1671,7 +1742,7 @@ const app = (() => {
   }
 
   function addSpecLine(btn) {
-    const addRow = btn.closest('.spec-add-row');
+    const addRow = btn.closest('.item-row');
     const block  = btn.closest('.section-block');
     const itemId = Number(addRow.dataset.itemId);
     const sec = state.sections.find(s => s.items.some(i => i.id === itemId));
@@ -1717,7 +1788,7 @@ const app = (() => {
   }
 
   async function showSpecTemplateMenu(btn) {
-    const addRow = btn.closest('.spec-add-row');
+    const addRow = btn.closest('.item-row');
     const itemId = Number(addRow.dataset.itemId);
     const sec = state.sections.find(s => s.items.some(i => i.id === itemId));
     if (!sec) return;
@@ -2687,6 +2758,9 @@ const app = (() => {
     removeSpecLine,
     onSpecLineInput,
     showSpecTemplateMenu,
+    // 列表示
+    toggleColDropdown,
+    setColVisibility,
     // テンプレート
     showTemplateSaveDialog,
     execTemplateSave,

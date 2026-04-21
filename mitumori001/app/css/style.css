@@ -1109,8 +1109,13 @@ button {
 .labor-hint { font-size: 10px; color: #888; }
 
 /* ── アイテム行 上下移動ボタン ──────────────────────────────── */
-.col-item-actions { white-space: nowrap; }
+.col-item-actions { white-space: nowrap; vertical-align: middle; }
 .item-action-btns { display: flex; gap: 2px; align-items: center; }
+.item-spec-btns   { display: flex; gap: 2px; align-items: center; margin-top: 2px; }
+.item-spec-btns .btn-spec-add,
+.item-spec-btns .btn-spec-template {
+  font-size: 10px; padding: 1px 5px;
+}
 .btn-move {
   background: #e8f0fe;
   color: #1a73e8;
@@ -1278,6 +1283,24 @@ button {
 }
 .btn-tpl-load:hover { background: #e8f0fe; border-color: #4a90d9; color: #1a73e8; }
 .btn-tpl-save:hover { background: #f0fff4; border-color: #28a745; color: #28a745; }
+.col-dropdown-wrap { position: relative; margin-left: auto; }
+.btn-col-toggle {
+  font-size: 12px; padding: 4px 10px; cursor: pointer;
+  border-radius: 4px; border: 1px solid #bbb;
+  background: #fff; color: #333; white-space: nowrap;
+}
+.btn-col-toggle:hover { background: #f5f5f5; border-color: #999; }
+.col-dropdown {
+  position: absolute; right: 0; top: calc(100% + 4px);
+  background: #fff; border: 1px solid #ddd; border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  padding: 8px 12px; z-index: 500; min-width: 130px;
+}
+.col-dd-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 0; font-size: 12px; cursor: pointer; white-space: nowrap;
+}
+.col-dd-item input { cursor: pointer; }
 
 /* ── モーダル共通 ──────────────────────────────────────── */
 .modal-overlay {

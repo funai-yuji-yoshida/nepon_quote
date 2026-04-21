@@ -284,6 +284,10 @@
           <span class="template-label">所課マスタ</span>
           <button class="btn-tpl-load" onclick="app.showTemplateLoadDialog()">📂 読み込み</button>
           <button class="btn-tpl-save" onclick="app.showTemplateSaveDialog()">💾 保存</button>
+          <div class="col-dropdown-wrap">
+            <button class="btn-col-toggle" onclick="app.toggleColDropdown()">⚙️ 列表示</button>
+            <div id="colDropdown" class="col-dropdown" style="display:none"></div>
+          </div>
         </div>
 
         <!-- 標準項セレクター -->
@@ -494,10 +498,10 @@
   <!-- 明細行テンプレート（非表示） -->
   <template id="itemRowTemplate">
     <tr class="item-row" data-item-id="" data-calc-category="">
-      <td><input type="text" class="item-name" placeholder="品名"><span class="calc-cat-badge" style="display:none"></span></td>
-      <td><input type="text" class="item-spec" placeholder="型番・規格"></td>
-      <td><input type="number" class="item-qty" value="1" min="0" step="any"></td>
-      <td>
+      <td class="col-name"><input type="text" class="item-name" placeholder="品名"><span class="calc-cat-badge" style="display:none"></span></td>
+      <td class="col-spec"><input type="text" class="item-spec" placeholder="型番・規格"></td>
+      <td class="col-qty"><input type="number" class="item-qty" value="1" min="0" step="any"></td>
+      <td class="col-unit">
         <select class="item-unit">
           <option value="式">式</option>
           <option value="台">台</option>
@@ -508,8 +512,8 @@
           <option value="セット">セット</option>
         </select>
       </td>
-      <td><input type="text" inputmode="numeric" class="item-price" placeholder="（空欄可）"></td>
-      <td><input type="text" inputmode="numeric" class="item-amount" placeholder="0"></td>
+      <td class="col-price"><input type="text" inputmode="numeric" class="item-price" placeholder="（空欄可）"></td>
+      <td class="col-amount"><input type="text" inputmode="numeric" class="item-amount" placeholder="0"></td>
       <td class="col-dairi-rate"><input type="text" inputmode="decimal" class="item-dairi-rate" placeholder=""></td>
       <td class="col-dairi"><span class="item-dairi"></span></td>
       <td class="col-genka"><span class="item-genka"></span></td>
@@ -523,6 +527,10 @@
           <button class="btn-icon btn-move" onclick="app.moveItemUp(this)" title="上へ">▲</button>
           <button class="btn-icon btn-move" onclick="app.moveItemDown(this)" title="下へ">▼</button>
           <button class="btn-icon btn-danger" onclick="app.removeItem(this)" title="削除">✕</button>
+        </div>
+        <div class="item-spec-btns">
+          <button class="btn-spec-add" onclick="app.addSpecLine(this)">＋仕様</button>
+          <button class="btn-spec-template" onclick="app.showSpecTemplateMenu(this)" title="仕様テンプレート">📋</button>
         </div>
       </td>
     </tr>
