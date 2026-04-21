@@ -256,8 +256,10 @@ const QuotationPDF = (() => {
         });
       }
     });
-    // 見積外工事行・固定行（合計3行+内訳4行）も含めてトータル行数を算出
-    const mirrorRowCount = mirrorEntries.length + exRowCount + (showUchiwake ? 8 : 3);
+    const isTeika = pdfPriceMode !== 'dairi';
+    // 見積外工事行・固定行も含めてトータル行数を算出
+    const mirrorRowCount = mirrorEntries.length + exRowCount +
+      (isTeika ? 1 : showUchiwake ? 8 : 3);
 
     // 行数に応じてフォントサイズ・パディング・マージンを動的調整（1ページ収容のため）
     let itemFs = 8.5;
@@ -336,6 +338,7 @@ const QuotationPDF = (() => {
       { text: fmt(useDairi ? (data.dairiTotal || sectionTotals.reduce((sum, s) => sum + (s.items || []).reduce((ss, i) => ss + Math.round((Number(i.amount) || 0) * ((i.dairiRate ?? mainRate) ?? mainRate)), 0), 0)) : grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
     ]);
 
+    if (!isTeika) {
     // 値引き額（0の場合も表示）
     tableRows.push([
       { text: '', border: [true, false, false, false] },
@@ -351,8 +354,9 @@ const QuotationPDF = (() => {
       {}, {}, {},
       { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
     ]);
+    } // end !isTeika
 
-    if (showUchiwake) {
+    if (!isTeika && showUchiwake) {
       // 内訳ヘッダー
       tableRows.push([
         { text: '', border: [true, false, false, false] },
