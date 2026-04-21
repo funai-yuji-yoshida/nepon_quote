@@ -580,6 +580,11 @@ const app = (() => {
     if (printDetailOption) {
       printDetailOption.style.display = isKouji ? 'none' : '';
     }
+    // 内訳印刷オプション: 作業のときのみ表示（物販は常に非表示、工事は常に表示）
+    const isBuhan = (state.quoteCategory || '').includes('物販');
+    const isSagyo = (state.quoteCategory || '').includes('作業');
+    const naiyakuGrp = document.getElementById('naiyakuPrintGroup');
+    if (naiyakuGrp) naiyakuGrp.style.display = isSagyo ? '' : 'none';
     setValue('quoteSeqNo',      state.seqNo);
     setValue('quoteRevision',   state.revision);
     setValue('discountAmount',  state.discount || '');
@@ -2385,6 +2390,15 @@ const app = (() => {
         const radios = document.getElementsByName('pdfPriceMode');
         for (const r of radios) { if (r.checked) return r.value; }
         return 'teika';
+      })(),
+      showNaiyaku:     (() => {
+        const cat = state.quoteCategory || '';
+        if (cat.includes('物販')) return false;
+        if (cat.includes('作業')) {
+          const cb = document.getElementById('printNaiyaku');
+          return cb ? cb.checked : true;
+        }
+        return true; // 工事は常に表示
       })(),
     };
   }

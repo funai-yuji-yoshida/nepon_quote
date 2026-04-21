@@ -130,6 +130,7 @@ const QuotationPDF = (() => {
     const laborCost     = Number(data.laborCost) || 0;
     const legalWelfare  = Math.round(laborCost * legalRate);
     const materialCost  = deliveryPrice - laborCost - legalWelfare;
+    const showNaiyaku   = data.showNaiyaku !== false;
 
     const font = fontLoaded ? 'NotoSansJP' : 'Roboto';
 
@@ -253,8 +254,8 @@ const QuotationPDF = (() => {
         });
       }
     });
-    // 見積外工事行・固定行（合計+内訳7行）も含めてトータル行数を算出
-    const mirrorRowCount = mirrorEntries.length + exRowCount + 7;
+    // 見積外工事行・固定行（合計3行+内訳4行）も含めてトータル行数を算出
+    const mirrorRowCount = mirrorEntries.length + exRowCount + (showNaiyaku ? 7 : 3);
 
     // 行数に応じてフォントサイズ・パディング・マージンを動的調整（1ページ収容のため）
     let itemFs = 8.5;
@@ -349,36 +350,35 @@ const QuotationPDF = (() => {
       { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
     ]);
 
-    // 内訳ヘッダー
-    tableRows.push([
-      { text: '', border: [true, false, false, false] },
-      { text: '＜内訳＞', alignment: 'center', fontSize: itemFs, colSpan: 5, border: [false, false, true, false] },
-      {}, {}, {}, {},
-    ]);
-
-    // 内訳 1) 資材費
-    tableRows.push([
-      { text: '', border: [true, false, false, false] },
-      { text: '1）資材費他', fontSize: itemFs, colSpan: 4, border: [false, false, false, false] },
-      {}, {}, {},
-      { text: fmt(materialCost), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
-    ]);
-
-    // 内訳 2) 労務費
-    tableRows.push([
-      { text: '', border: [true, false, false, false] },
-      { text: '2）労務費', fontSize: itemFs, colSpan: 4, border: [false, false, false, false] },
-      {}, {}, {},
-      { text: fmt(laborCost), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
-    ]);
-
-    // 内訳 3) 法定福利費
-    tableRows.push([
-      { text: '', border: [true, false, false, true] },
-      { text: `3）法定福利費（${(legalRate * 100).toFixed(1)}%）`, fontSize: itemFs, colSpan: 4, border: [false, false, false, true] },
-      {}, {}, {},
-      { text: fmt(legalWelfare), alignment: 'right', fontSize: itemFs, border: [false, false, true, true] },
-    ]);
+    if (showNaiyaku) {
+      // 内訳ヘッダー
+      tableRows.push([
+        { text: '', border: [true, false, false, false] },
+        { text: '＜内訳＞', alignment: 'center', fontSize: itemFs, colSpan: 5, border: [false, false, true, false] },
+        {}, {}, {}, {},
+      ]);
+      // 内訳 1) 資材費
+      tableRows.push([
+        { text: '', border: [true, false, false, false] },
+        { text: '1）資材費他', fontSize: itemFs, colSpan: 4, border: [false, false, false, false] },
+        {}, {}, {},
+        { text: fmt(materialCost), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+      ]);
+      // 内訳 2) 労務費
+      tableRows.push([
+        { text: '', border: [true, false, false, false] },
+        { text: '2）労務費', fontSize: itemFs, colSpan: 4, border: [false, false, false, false] },
+        {}, {}, {},
+        { text: fmt(laborCost), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+      ]);
+      // 内訳 3) 法定福利費
+      tableRows.push([
+        { text: '', border: [true, false, false, true] },
+        { text: `3）法定福利費（${(legalRate * 100).toFixed(1)}%）`, fontSize: itemFs, colSpan: 4, border: [false, false, false, true] },
+        {}, {}, {},
+        { text: fmt(legalWelfare), alignment: 'right', fontSize: itemFs, border: [false, false, true, true] },
+      ]);
+    }
 
     // ── 見積外工事リスト（選択なしの場合は非表示）──────────────
     const half = Math.ceil(exclusions.length / 2);
