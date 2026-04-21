@@ -963,10 +963,12 @@ const QuotationPDF = (() => {
      */
     getBlob(data) {
       return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('PDF生成タイムアウト（30秒）')), 30000);
         try {
           const docDef = buildDocDefinition(data);
-          pdfMake.createPdf(docDef).getBlob(resolve);
+          pdfMake.createPdf(docDef).getBlob(blob => { clearTimeout(timer); resolve(blob); });
         } catch (e) {
+          clearTimeout(timer);
           reject(e);
         }
       });

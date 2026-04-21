@@ -368,6 +368,7 @@ const app = (() => {
     templateDepts:   [],       // 所課マスタ（DepartmentsList）
     templateList:    [],       // 所課別商品マスタ（CustomModule8）
     selectedTemplateId: null,  // 読み込みモーダルで選択中のテンプレートID
+    shoka:           '',       // Quotes.field15（所課）の名前
   };
 
   let zohoReady = false;
@@ -473,6 +474,7 @@ const app = (() => {
     state.projectName     = quote.Subject || '';
     state.ownerName       = quote.Owner?.name || '';
     state.quoteCategory   = quote.field63 || '';
+    state.shoka           = quote.field15?.name || (typeof quote.field15 === 'string' ? quote.field15 : '') || '';
     state.deliveryPrice = Number(quote.Grand_Total) || 0;
 
     // カスタムフィールドから読み込み
@@ -599,6 +601,18 @@ const app = (() => {
     setValue('paymentTerm',     state.paymentTerm);
     setValue('validDays',       state.validDays);
     setValue('remarks',         state.remarks);
+
+    // 営業所設定: 工事→営業サービス本部固定、物販・作業→所課（field15）を使用
+    const branchSel = document.getElementById('branchSelect');
+    const branchCustom = document.getElementById('branchCustomInput');
+    if (!isKouji && state.shoka) {
+      if (branchSel) branchSel.value = 'other';
+      setValue('branchName', state.shoka);
+      if (branchCustom) branchCustom.style.display = '';
+    } else {
+      if (branchSel) branchSel.value = 'honbu';
+      if (branchCustom) branchCustom.style.display = 'none';
+    }
 
     applyExclusionsToForm();
     updateQuoteNoBadge();
@@ -1379,6 +1393,32 @@ const app = (() => {
       renderSection(sec, block);
       updateSectionSubtotal(block);
     }
+  }
+
+  function applyBulkRate(btn) {
+    const block = btn.closest('.section-block');
+    const rateInput = block.querySelector('.section-rate-input');
+    const rate = parseFloat(rateInput.value);
+    if (isNaN(rate) || rate <= 0) {
+      showToast('有効な掛率を入力してください（例: 0.8）', 'warn');
+      return;
+    }
+    const secId = Number(block.dataset.sectionId);
+    const sec   = state.sections.find(s => s.id === secId);
+    if (!sec) return;
+
+    sec.items.forEach(item => {
+      if (item.unitPrice != null && item.unitPrice !== '') {
+        item.unitPrice = Math.round(Number(item.unitPrice) * rate);
+        item.amount    = Math.round(item.unitPrice * (Number(item.qty) || 1));
+      }
+      item.dairiRate = rate;
+    });
+
+    renderSection(sec, block);
+    updateSectionSubtotal(block);
+    updateOutput();
+    showToast(`掛率 ${rate} を適用しました`);
   }
 
   function removeItem(btn) {
@@ -2259,14 +2299,20 @@ const app = (() => {
     if (dpHidden) dpHidden.value = deliveryPrice;
 
     const legalRate    = (Number(getValue('legalWelfareRate')) || 14.6) / 100;
-    // 労務費 = 手入力 OR includeInLabor チェックが入った行の金額合計
-    const autoLaborCost = state.sections.reduce((sum, s) =>
+    // 工事費合計 = 労務チェック行の金額合計（カテゴリ問わず）
+    const koujihi = state.sections.reduce((sum, s) =>
       sum + s.items.reduce((ss, i) =>
         ss + (i.includeInLabor ? (Number(i.amount) || 0) : 0), 0), 0);
-    const laborCost    = Number(getValue('laborCost')) || autoLaborCost;
-    const legalWelfare = Math.round(laborCost * legalRate);
+    // 労務費 = 手入力優先、なければ逆算（工事費 ÷ (1 + 法定福利費率)）
+    const manualLaborCost = Number(getValue('laborCost')) || 0;
+    const laborCost    = manualLaborCost > 0
+      ? manualLaborCost
+      : Math.round(koujihi / (1 + legalRate));
+    const legalWelfare = manualLaborCost > 0
+      ? Math.round(manualLaborCost * legalRate)
+      : koujihi - laborCost;
     const anzenCost    = Number(getValue('anzenCost')) || 0;
-    const materialCost = deliveryPrice - laborCost - legalWelfare - anzenCost;
+    const materialCost = deliveryPrice - koujihi - anzenCost;
 
     const seqNo        = getValue('quoteSeqNo');
     const revision     = getValue('quoteRevision') || 1;
@@ -2343,12 +2389,23 @@ const app = (() => {
 
     try {
       const data = buildPdfData();
-      QuotationPDF.download(data);
+      const blob = await QuotationPDF.getBlob(data);
+      const quoteNo = `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}`;
+      const fname   = `御見積書_${quoteNo}_${data.customerName || ''}.pdf`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fname;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
       statusEl.textContent = '✅ PDFをダウンロードしました';
       showToast('PDF生成完了');
     } catch (e) {
       console.error('PDF生成エラー:', e);
       statusEl.textContent = '❌ PDF生成失敗: ' + e.message;
+      alert('PDF生成失敗: ' + e.message);
       showToast('PDF生成に失敗しました', 'err');
     } finally {
       btn.disabled = false;
@@ -2373,14 +2430,23 @@ const app = (() => {
       paymentTerm:     state.paymentTerm,
       validDays:       state.validDays,
       deliveryPrice:   state.deliveryPrice,
-      laborCost:       state.laborCost != null
-        ? state.laborCost
-        : state.sections.reduce((sum, s) =>
-            sum + s.items.reduce((ss, i) =>
-              ss + (i.includeInLabor ? (Number(i.amount) || 0) : 0), 0), 0),
+      laborCost:       (() => {
+        const koujihi = state.sections.reduce((sum, s) =>
+          sum + s.items.reduce((ss, i) =>
+            ss + (i.includeInLabor ? (Number(i.amount) || 0) : 0), 0), 0);
+        const rate = (Number(state.legalWelfareRate) || 14.6) / 100;
+        return state.laborCost != null
+          ? state.laborCost
+          : Math.round(koujihi / (1 + rate));
+      })(),
       anzenCost:       state.anzenCost || 0,
       legalWelfareRate: state.legalWelfareRate,
       branchKey:       state.branchKey,
+      branchName:      getValue('branchName')    || undefined,
+      branchPostal:    getValue('branchPostal')  || undefined,
+      branchAddress:   getValue('branchAddress') || undefined,
+      branchTel:       getValue('branchTel')     || undefined,
+      branchFax:       getValue('branchFax')     || undefined,
       sections:        state.sections,
       exclusions:      state.exclusions.length > 0 ? state.exclusions : undefined,
       remarks:         state.remarks || undefined,
@@ -2766,6 +2832,7 @@ const app = (() => {
     removeItem,
     moveItemUp,
     moveItemDown,
+    applyBulkRate,
     // 商品検索
     searchProducts,
     selectProduct,

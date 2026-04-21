@@ -499,6 +499,11 @@
 
       <div class="section-footer">
         <button class="btn-add-item" onclick="app.addItem(this)">＋ 行を追加</button>
+        <div class="section-rate-wrap">
+          <label class="section-rate-label">一括掛率</label>
+          <input type="number" class="section-rate-input" step="0.001" min="0.001" max="9.999" placeholder="例: 0.8">
+          <button class="btn-section-rate" onclick="app.applyBulkRate(this)">適用</button>
+        </div>
         <div class="section-subtotal">
           小計: <strong class="subtotal-val">¥0</strong>
           <span class="dairi-subtotal-wrap" style="display:none">　／　代理店: <strong class="dairi-subtotal-val" style="color:#1a4d8f">¥0</strong></span>
