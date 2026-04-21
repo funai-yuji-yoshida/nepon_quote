@@ -2236,10 +2236,10 @@ const app = (() => {
     if (dpHidden) dpHidden.value = deliveryPrice;
 
     const legalRate    = (Number(getValue('legalWelfareRate')) || 14.6) / 100;
-    // 労務費 = 手入力 OR INT(人工単価 × 減衰後歩工合計 / 1000 + 0.5) × 1000
-    const autoLaborCost = totalReducedHoukou > 0
-      ? Math.floor(RODO_TANKA * totalReducedHoukou / 1000 + 0.5) * 1000
-      : 0;
+    // 労務費 = 手入力 OR 算出カテゴリ「④工事費」の金額合計
+    const autoLaborCost = state.sections.reduce((sum, s) =>
+      sum + s.items.reduce((ss, i) =>
+        ss + (i.calcCategory === '④工事費' ? (Number(i.amount) || 0) : 0), 0), 0);
     const laborCost    = Number(getValue('laborCost')) || autoLaborCost;
     const legalWelfare = Math.round(laborCost * legalRate);
     const materialCost = deliveryPrice - laborCost - legalWelfare;
