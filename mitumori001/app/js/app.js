@@ -288,12 +288,23 @@ const app = (() => {
     section.items.forEach(item => {
       if (item.calcCategory === '④工事費') {
         if (group.length > 0) {
-          const d = group.reduce((sum, i) =>
-            sum + (Number(i.qty) || 1) * (Number(i.houdan) || 0), 0);
-          if (d > 0) {
-            const rate = Math.min(1.0,
-              Math.floor(A * Math.pow(d / b, -0.3) * 100 + 0.5) / 100);
-            const houkouTotal = Math.floor(d * rate * 100 + 0.5) / 100;
+          // houkouDirect > 0 の行はその値を直接使用、それ以外は減衰計算
+          const directTotal = group
+            .filter(i => (Number(i.houkouDirect) || 0) > 0)
+            .reduce((sum, i) => sum + Number(i.houkouDirect), 0);
+          const calcGroup = group.filter(i => (Number(i.houkouDirect) || 0) <= 0);
+          let calcTotal = 0;
+          if (calcGroup.length > 0) {
+            const d = calcGroup.reduce((sum, i) =>
+              sum + (Number(i.qty) || 1) * (Number(i.houdan) || 0), 0);
+            if (d > 0) {
+              const rate = Math.min(1.0,
+                Math.floor(A * Math.pow(d / b, -0.3) * 100 + 0.5) / 100);
+              calcTotal = Math.floor(d * rate * 100 + 0.5) / 100;
+            }
+          }
+          const houkouTotal = Math.floor((directTotal + calcTotal) * 100 + 0.5) / 100;
+          if (houkouTotal > 0) {
             item.unitPrice    = Math.round(RODO_TANKA * houkouTotal / 1000) * 1000;
             item.genka        = Math.round(RODO_GENKA  * houkouTotal / 1000) * 1000;
             item.amount       = item.unitPrice * (Number(item.qty) || 1);
@@ -1405,6 +1416,8 @@ const app = (() => {
     renderSections();
     updateOutput();
     document.getElementById('noSectionsMsg').style.display = 'none';
+    const newBlock = document.querySelector(`[data-section-id="${section.id}"]`);
+    if (newBlock) newBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function removeSection(btn) {
@@ -1642,6 +1655,17 @@ const app = (() => {
       item.amount = Number((amountEl?.value || '').replace(/,/g, '')) || 0;
     }
 
+    // 算出カテゴリ変更 → includeInLabor を自動更新
+    const calcCatEl = row.querySelector('.item-calc-cat');
+    if (calcCatEl) {
+      item.calcCategory = calcCatEl.value || '';
+      if (e.target === calcCatEl) {
+        item.includeInLabor = (item.calcCategory === '④工事費');
+        const laborCheckEl2 = row.querySelector('.item-labor-check');
+        if (laborCheckEl2) laborCheckEl2.checked = item.includeInLabor;
+      }
+    }
+
     // 労務費チェックボックス
     const laborCheckEl = row.querySelector('.item-labor-check');
     if (laborCheckEl) item.includeInLabor = laborCheckEl.checked;
@@ -1662,8 +1686,63 @@ const app = (() => {
     // 歩工合計（手動上書き）を読み取り、歩工を再計算して表示
     const goukeiEl = row.querySelector('.item-houkou-goukei');
     const houkouEl = row.querySelector('.item-houkou');
-    if (goukeiEl) item.houkouGoukei = parseFloat(goukeiEl.value) || 0;
-    if (houkouEl) {
+    if (goukeiEl) {
+      const inputVal = parseFloat(goukeiEl.value);
+      if (!isNaN(inputVal)) item.houkouGoukei = inputVal;
+    }
+
+    // 歩工合計を手動入力した場合の再計算
+    if (e.target.classList.contains('item-houkou-goukei')) {
+      const goukei = Number(item.houkouGoukei) || 0;
+      // calcGensui に上書きされないよう houkouDirect に同期
+      item.houkouDirect = goukei;
+      // 歩工 span を更新
+      if (houkouEl) houkouEl.textContent = goukei ? goukei.toFixed(2) : '';
+
+      if (item.calcCategory === '④工事費') {
+        // ④工事費行を直接編集：歩工合計 → 単価・金額を再計算
+        if (goukei > 0) {
+          item.unitPrice = Math.round(RODO_TANKA * goukei / 1000) * 1000;
+          item.genka     = Math.round(RODO_GENKA  * goukei / 1000) * 1000;
+        }
+        item.amount = (item.unitPrice || 0) * (Number(item.qty) || 1);
+        if (priceEl)  priceEl.value  = item.unitPrice ? item.unitPrice.toLocaleString('ja-JP') : '';
+        if (amountEl) amountEl.value = item.amount ? item.amount.toLocaleString('ja-JP') : '';
+        const dairiEl2 = row.querySelector('.item-dairi');
+        if (dairiEl2) {
+          const rate = item.dairiRate ?? state.mainRate;
+          dairiEl2.textContent = (rate != null && item.amount)
+            ? Math.round(item.amount * rate).toLocaleString('ja-JP') : '';
+        }
+      } else if ((Number(item.houdan) || 0) > 0) {
+        // houdan行の歩工合計を手動変更 → セクション内の④工事費を再計算してDOM更新
+        recalcKoujihiInSection(sec);
+        const block2 = e.target.closest('.section-block');
+        sec.items.forEach(koItem => {
+          if (koItem.calcCategory !== '④工事費') return;
+          const koRow = block2?.querySelector(`[data-item-id="${koItem.id}"]`);
+          if (!koRow) return;
+          const koPriceEl   = koRow.querySelector('.item-price');
+          const koAmountEl  = koRow.querySelector('.item-amount');
+          const koGoukeiEl  = koRow.querySelector('.item-houkou-goukei');
+          const koHoukouEl  = koRow.querySelector('.item-houkou');
+          const koDairiEl   = koRow.querySelector('.item-dairi');
+          if (koPriceEl  && koPriceEl  !== document.activeElement) koPriceEl.value  = koItem.unitPrice ? koItem.unitPrice.toLocaleString('ja-JP') : '';
+          if (koAmountEl && koAmountEl !== document.activeElement) koAmountEl.value = koItem.amount ? koItem.amount.toLocaleString('ja-JP') : '';
+          if (koGoukeiEl && koGoukeiEl !== document.activeElement) {
+            koGoukeiEl.value = koItem.houkouGoukei ? koItem.houkouGoukei.toFixed(2) : '';
+          }
+          if (koHoukouEl) {
+            koHoukouEl.textContent = koItem.houkouGoukei ? koItem.houkouGoukei.toFixed(2) : '';
+          }
+          if (koDairiEl) {
+            const rate = koItem.dairiRate ?? state.mainRate;
+            const amt  = Number(koItem.amount) || 0;
+            koDairiEl.textContent = (rate != null && amt) ? Math.round(amt * rate).toLocaleString('ja-JP') : '';
+          }
+        });
+      }
+    } else if (houkouEl) {
       const goukei = Number(item.houkouGoukei) || 0;
       const raw = goukei > 0 ? goukei : (Number(item.qty) * (Number(item.houdan) || 0));
       houkouEl.textContent = raw ? raw.toFixed(2) : '';
@@ -1805,15 +1884,10 @@ const app = (() => {
         row.querySelector('.item-price').value  = item.unitPrice != null ? Number(item.unitPrice).toLocaleString('ja-JP') : '';
         row.querySelector('.item-amount').value = item.amount ? Number(item.amount).toLocaleString('ja-JP') : '';
       }
-      // 算出カテゴリバッジを常に更新
-      const badge = row.querySelector('.calc-cat-badge');
-      if (badge) {
-        if (item.calcCategory) {
-          badge.textContent = item.calcCategory;
-          badge.style.display = '';
-        } else {
-          badge.style.display = 'none';
-        }
+      // 算出カテゴリドロップダウンを常に同期
+      const calcCatEl = row.querySelector('.item-calc-cat');
+      if (calcCatEl && calcCatEl !== document.activeElement) {
+        calcCatEl.value = item.calcCategory || '';
       }
       // data属性にも保持（保存・読み込み時に利用）
       row.dataset.calcCategory = item.calcCategory || '';

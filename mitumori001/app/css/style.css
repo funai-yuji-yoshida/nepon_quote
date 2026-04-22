@@ -1064,6 +1064,24 @@ button {
 }
 .btn-standard-add:hover { background: #1b5e20; }
 
+/* 算出カテゴリドロップダウン */
+.item-calc-cat {
+  display: block;
+  width: 100%;
+  margin-top: 3px;
+  font-size: 10px;
+  padding: 1px 2px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+}
+.item-calc-cat:focus {
+  border-color: #1976d2;
+  outline: none;
+}
+
 /* 算出カテゴリバッジ */
 .calc-cat-badge {
   display: inline-block;
