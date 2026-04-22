@@ -520,16 +520,18 @@ const app = (() => {
       } catch (e) { console.warn('見積JSON解析失敗:', e); }
     }
 
+    // 所課マスタを先取得（営業所セレクト構築に必要）
+    await loadDepartments();
+
     // フォームに反映
     applyStateToForm();
 
-    // 商品マスタ・工事費マスタを取得
+    // その他マスタを取得（並列）
     loadProducts();
     loadKoujihi();
     loadKanzai();
     loadDenzai();
     loadCurrentUser();
-    loadDepartments();
 
     showToast('CRMデータを読み込みました');
   }
@@ -587,11 +589,11 @@ const app = (() => {
     if (printDetailOption) {
       printDetailOption.style.display = isKouji ? 'none' : '';
     }
-    // 内訳印刷オプション: 作業のときのみ表示（物販は常に非表示、工事は常に表示）
+    // 内訳印刷オプション: 工事・作業のとき表示、物販は非表示
     const isBuhan = (state.quoteCategory || '').includes('物販');
     const isSagyo = (state.quoteCategory || '').includes('作業');
     const naiyakuGrp = document.getElementById('naiyakuPrintGroup');
-    if (naiyakuGrp) naiyakuGrp.style.display = isSagyo ? '' : 'none';
+    if (naiyakuGrp) naiyakuGrp.style.display = (isKouji || isSagyo) ? '' : 'none';
     setValue('quoteSeqNo',      state.seqNo);
     setValue('quoteRevision',   state.revision);
     setValue('discountAmount',  state.discount || '');
@@ -608,9 +610,20 @@ const app = (() => {
     const branchSel = document.getElementById('branchSelect');
     const branchCustom = document.getElementById('branchCustomInput');
     if (!isKouji && state.shoka) {
-      if (branchSel) branchSel.value = 'other';
-      setValue('branchName', state.shoka);
-      if (branchCustom) branchCustom.style.display = '';
+      const matchedDept = state.templateDepts.find(d => d.name === state.shoka);
+      if (matchedDept) {
+        if (branchSel) branchSel.value = `crm_${matchedDept.id}`;
+        setValue('branchName',    matchedDept.name);
+        setValue('branchPostal',  matchedDept.postal);
+        setValue('branchAddress', matchedDept.address);
+        setValue('branchTel',     matchedDept.tel);
+        setValue('branchFax',     matchedDept.fax);
+        if (branchCustom) branchCustom.style.display = '';
+      } else {
+        if (branchSel) branchSel.value = 'other';
+        setValue('branchName', state.shoka);
+        if (branchCustom) branchCustom.style.display = '';
+      }
     } else {
       if (branchSel) branchSel.value = 'honbu';
       if (branchCustom) branchCustom.style.display = 'none';
@@ -2111,8 +2124,33 @@ const app = (() => {
     if (!zohoReady) return;
     try {
       const data = await fetchAllRecords('DepartmentsList', 'Name');
-      state.templateDepts = data.map(d => ({ id: d.id, name: d.Name || '' }));
+      state.templateDepts = data.map(d => ({
+        id:      d.id,
+        name:    d.Name   || '',
+        fax:     d.FAX    || '',
+        address: d.field3 || '',
+        tel:     d.field4 || '',
+        postal:  d.field6 || '',
+      }));
+      populateBranchSelect();
+      populateDeptSelects();
     } catch (e) { console.warn('loadDepartments error:', e); }
+  }
+
+  function populateBranchSelect() {
+    const sel = document.getElementById('branchSelect');
+    if (!sel) return;
+    // 既存の CRM オプションを削除
+    Array.from(sel.options).forEach(o => { if (o.dataset.crm) o.remove(); });
+    // 「その他」の直前に所課エントリを挿入
+    const otherOpt = sel.querySelector('option[value="other"]');
+    state.templateDepts.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = `crm_${d.id}`;
+      opt.textContent = d.name;
+      opt.dataset.crm = '1';
+      sel.insertBefore(opt, otherOpt);
+    });
   }
 
   async function loadAllTemplates() {
@@ -2600,6 +2638,7 @@ const app = (() => {
       branchAddress:   getValue('branchAddress') || undefined,
       branchTel:       getValue('branchTel')     || undefined,
       branchFax:       getValue('branchFax')     || undefined,
+      branchNote:      getValue('branchNote')    || undefined,
       sections:        state.sections,
       exclusions:      state.exclusions.length > 0 ? state.exclusions : undefined,
       remarks:         state.remarks || undefined,
@@ -2911,7 +2950,29 @@ const app = (() => {
 
   function onBranchChange() {
     const val = getValue('branchSelect');
-    document.getElementById('branchCustomInput').style.display = val === 'other' ? 'block' : 'none';
+    const customDiv = document.getElementById('branchCustomInput');
+    if (val === 'honbu') {
+      if (customDiv) customDiv.style.display = 'none';
+    } else if (val.startsWith('crm_')) {
+      const deptId = val.replace('crm_', '');
+      const dept = state.templateDepts.find(d => String(d.id) === deptId);
+      if (dept) {
+        setValue('branchName',    dept.name);
+        setValue('branchPostal',  dept.postal);
+        setValue('branchAddress', dept.address);
+        setValue('branchTel',     dept.tel);
+        setValue('branchFax',     dept.fax);
+      }
+      if (customDiv) customDiv.style.display = '';
+    } else {
+      // other: 手入力
+      setValue('branchName',    '');
+      setValue('branchPostal',  '');
+      setValue('branchAddress', '');
+      setValue('branchTel',     '');
+      setValue('branchFax',     '');
+      if (customDiv) customDiv.style.display = '';
+    }
   }
 
   // ── ユーティリティ ────────────────────────────────────────────

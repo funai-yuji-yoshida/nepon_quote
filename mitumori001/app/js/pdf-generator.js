@@ -520,6 +520,7 @@ const QuotationPDF = (() => {
               { text: branch.address, fontSize: 7.5 },
               { text: `TEL　${branch.tel}`, fontSize: 8 },
               { text: `FAX　${branch.fax}`, fontSize: 8 },
+              ...(data.branchNote ? [{ text: data.branchNote, fontSize: 8 }] : []),
             ],
           },
         ],
