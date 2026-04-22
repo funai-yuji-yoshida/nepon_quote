@@ -367,8 +367,16 @@ const app = (() => {
   let state = {
     quoteId:      null,   // ZohoCRM の Quote レコードID
     quoteNumber:  null,   // Zoho自動採番 Quote_Number (整数)
-    seqNo:        '',     // CQR の連番部分（ユーザー入力 or 自動採番）
-    revision:     1,      // 改訂番号
+    seqNo:        '',     // 見積番号（フル形式: CD-32-32-80-0001-0001）
+    revision:     1,      // 改訂番号（後方互換用）
+    koujiCategory:  '',   // 工事カテゴリ (CD/CE/CK/CP/CQ/CQX)
+    createDeptCode: '',   // 作成所課コード
+    createDeptName: '',   // 作成所課名
+    siteDeptCode:   '',   // 現場所課コード
+    siteDeptName:   '',   // 現場所課名
+    kikaShita:      '80', // 期下二桁
+    seqNumber:      0,    // 連番（整数）
+    edaban:         '01',   // 枝番（2桁）
     customerName:   '',
     projectName:    '',
     projectName2:   '',  // 件名2行目（field8）
@@ -521,8 +529,20 @@ const app = (() => {
     state.deliveryPrice = Number(quote.Grand_Total) || 0;
 
     // カスタムフィールドから読み込み
-    state.seqNo          = quote.field55 || '';
-    state.revision       = Number(quote.field56) || 1;
+    state.seqNo    = quote.field55 || '';
+    state.revision = Number(quote.field56) || 1;
+    // 採番コンポーネントを seqNo から復元（形式: CD-32-32-80-0001-0001）
+    if (state.seqNo && state.seqNo.includes('-')) {
+      const parts = state.seqNo.split('-');
+      if (parts.length >= 6) {
+        state.koujiCategory  = parts[0];
+        state.createDeptCode = parts[1];
+        state.siteDeptCode   = parts[2];
+        state.kikaShita      = parts[3];
+        state.seqNumber      = Number(parts[4]) || 0;
+        state.edaban         = String(parts[5] || '01').slice(-2).padStart(2, '0');
+      }
+    }
     state.deliveryTerm   = quote.field6  || state.deliveryTerm;
     state.deliveryMethod = quote.field51 || state.deliveryMethod;
     state.paymentTerm    = quote.field57 || state.paymentTerm;
@@ -637,8 +657,18 @@ const app = (() => {
     const isSagyo = (state.quoteCategory || '').includes('作業');
     const naiyakuGrp = document.getElementById('naiyakuPrintGroup');
     if (naiyakuGrp) naiyakuGrp.style.display = (isKouji || isSagyo) ? '' : 'none';
-    setValue('quoteSeqNo',      state.seqNo);
-    setValue('quoteRevision',   state.revision);
+    // 採番コンポーネントをフォームに反映
+    const koujiCatEl = document.getElementById('koujiCategory');
+    if (koujiCatEl) koujiCatEl.value = state.koujiCategory || '';
+    const createDeptEl = document.getElementById('createDept');
+    if (createDeptEl && state.createDeptCode) createDeptEl.value = state.createDeptCode;
+    const siteDeptEl = document.getElementById('siteDept');
+    if (siteDeptEl && state.siteDeptCode) siteDeptEl.value = state.siteDeptCode;
+    const kikaShitaEl = document.getElementById('kikaShita');
+    if (kikaShitaEl) kikaShitaEl.value = state.kikaShita || '80';
+    const edabanEl = document.getElementById('edaban');
+    if (edabanEl) edabanEl.value = state.edaban || '01';
+    updateQuoteNoBadge();
     setValue('discountAmount',  state.discount || '');
     setValue('laborCost',       state.laborCost || '');
     setValue('anzenCost',       state.anzenCost || '');
@@ -1359,45 +1389,79 @@ const app = (() => {
   // ── 自動採番 ─────────────────────────────────────────────────
 
   async function autoNumber() {
-    const btn = document.getElementById('btnAutoNumber');
+    const btn          = document.getElementById('btnAutoNumber');
+    const categoryEl   = document.getElementById('koujiCategory');
+    const createDeptEl = document.getElementById('createDept');
+    const siteDeptEl   = document.getElementById('siteDept');
+    const kikaShitaEl  = document.getElementById('kikaShita');
+    const edabanEl     = document.getElementById('edaban');
+
+    const category      = categoryEl?.value   || '';
+    const createCode    = createDeptEl?.value || '';
+    const siteCode      = siteDeptEl?.value   || '';
+    const kikaShita     = String(kikaShitaEl?.value || '80').padStart(2, '0');
+    const edaban        = String(edabanEl?.value || '01').padStart(2, '0');
+
+    if (!category || !createCode || !siteCode) {
+      showToast('工事カテゴリ・作成所課・現場所課を選択してください', 'warn');
+      return;
+    }
+
     btn.disabled = true;
     btn.textContent = '採番中...';
 
     try {
-      let maxSeq = 0;
+      // 採番管理キー: {期下二桁}-{カテゴリ}-{作成所課コード}
+      const counterKey = `${kikaShita}-${category}-${createCode}`;
+      let newSeq   = 1;
+      let recordId = null;
 
       if (zohoReady) {
-        // 最近200件の見積を取得し field_seq_no の最大値を探す
-        // ※ Quote_Number は Zoho 内部 ID（18桁）のため使用しない
-        const res = await ZOHO.CRM.API.getAllRecords({
-          Entity:     'Quotes',
-          sort_by:    'Created_Time',
-          sort_order: 'desc',
-          per_page:   200,
+        const res = await ZOHO.CRM.API.searchRecord({
+          Entity: 'CustomModule21',
+          Type:   'criteria',
+          Query:  `(Name:equals:${counterKey})`,
         });
-        const list = res?.data || [];
+        const records = res?.data || [];
+        if (records.length > 0) {
+          recordId = records[0].id;
+          newSeq   = (Number(records[0].number) || 0) + 1;
+        }
 
-        list.forEach(q => {
-          const seq = Number(q.field55) || 0;
-          if (seq > maxSeq) maxSeq = seq;
-        });
-
-        // field55 が全レコード未設定なら件数ベースで採番
-        if (maxSeq === 0) maxSeq = list.length;
+        if (recordId) {
+          await ZOHO.CRM.API.updateRecord({
+            Entity:  'CustomModule21',
+            APIData: { id: recordId, number: newSeq },
+          });
+        } else {
+          await ZOHO.CRM.API.insertRecord({
+            Entity:  'CustomModule21',
+            APIData: { Name: counterKey, number: newSeq },
+          });
+        }
       }
 
-      state.seqNo    = maxSeq + 1;
-      state.revision = 1;
-      setValue('quoteSeqNo',    state.seqNo);
-      setValue('quoteRevision', state.revision);
+      const seqStr  = String(newSeq).padStart(4, '0');
+      const quoteNo = `${category}-${createCode}-${siteCode}-${kikaShita}-${seqStr}-${edaban}`;
+
+      state.seqNo         = quoteNo;
+      state.seqNumber     = newSeq;
+      state.koujiCategory = category;
+      state.createDeptCode = createCode;
+      state.createDeptName = createDeptEl?.options[createDeptEl.selectedIndex]?.dataset?.name || '';
+      state.siteDeptCode  = siteCode;
+      state.siteDeptName  = siteDeptEl?.options[siteDeptEl.selectedIndex]?.dataset?.name || '';
+      state.kikaShita     = kikaShita;
+      state.edaban        = edaban;
+
       updateQuoteNoBadge();
-      showToast(`採番完了: CQR${state.seqNo}-00001`);
+      showToast(`採番完了: ${quoteNo}`);
     } catch (e) {
       const msg = e?.message || JSON.stringify(e);
       showToast('採番に失敗しました: ' + msg, 'err');
     } finally {
       btn.disabled = false;
-      btn.textContent = '🔢 自動採番';
+      btn.textContent = '🔢 採番する';
     }
   }
 
@@ -1834,10 +1898,13 @@ const app = (() => {
       }
     });
 
-    // 大項目名入力（テキスト）→ state 更新
+    // 大項目名入力（テキスト）→ state 更新 ＋ 折りたたみ表示を即時反映
     nameInput.addEventListener('input', () => {
       const s = state.sections.find(s => s.id === sec.id);
-      if (s) s.name = nameInput.value;
+      if (s) {
+        s.name = nameInput.value;
+        updateCollapsedInfo(sec.id, block);
+      }
     });
 
     // 折りたたみトグル
@@ -1959,7 +2026,8 @@ const app = (() => {
     if (!s) return;
     const count    = s.items.filter(i => i.name || i.unitPrice).length;
     const subtotal = s.items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
-    info.textContent = `${count}行　小計: ¥${subtotal.toLocaleString('ja-JP')}`;
+    const nameStr = s.name ? `${s.name}　` : '';
+    info.textContent = `${nameStr}${count}行　小計: ¥${subtotal.toLocaleString('ja-JP')}`;
   }
 
   function createItemRowDOM(item) {
@@ -2249,6 +2317,7 @@ const app = (() => {
       const data = await fetchAllRecords('DepartmentsList', 'Name');
       state.templateDepts = data.map(d => ({
         id:      d.id,
+        code:    d.field1 || '',
         name:    d.Name   || '',
         fax:     d.FAX    || '',
         address: d.field3 || '',
@@ -2257,6 +2326,7 @@ const app = (() => {
       }));
       populateBranchSelect();
       populateDeptSelects();
+      populateQuoteDeptSelects();
     } catch (e) { console.warn('loadDepartments error:', e); }
   }
 
@@ -2274,6 +2344,18 @@ const app = (() => {
       opt.dataset.crm = '1';
       sel.insertBefore(opt, otherOpt);
     });
+  }
+
+  function populateQuoteDeptSelects() {
+    const opts = '<option value="">― 選択 ―</option>' +
+      state.templateDepts
+        .filter(d => d.code)
+        .map(d => `<option value="${escHtml(d.code)}" data-name="${escHtml(d.name)}">${escHtml(d.code)}：${escHtml(d.name)}</option>`)
+        .join('');
+    const createEl = document.getElementById('createDept');
+    const siteEl   = document.getElementById('siteDept');
+    if (createEl) { createEl.innerHTML = opts; if (state.createDeptCode) createEl.value = state.createDeptCode; }
+    if (siteEl)   { siteEl.innerHTML   = opts; if (state.siteDeptCode)   siteEl.value   = state.siteDeptCode; }
   }
 
   async function loadAllTemplates() {
@@ -2627,10 +2709,7 @@ const app = (() => {
     const anzenCost    = Number(getValue('anzenCost')) || 0;
     const materialCost = deliveryPrice - koujihi - anzenCost;
 
-    const seqNo        = getValue('quoteSeqNo');
-    const revision     = getValue('quoteRevision') || 1;
-    const quoteNoStr   = seqNo ? `CQR${seqNo}-${String(revision).padStart(5, '0')}` : '（未採番）';
-
+    const quoteNoStr   = state.seqNo || '（未採番）';
     setText('sum-quoteNo',    quoteNoStr);
     setText('sum-date',       formatDisplayDate(new Date(getValue('quoteDate') || Date.now())));
     setText('sum-customer',   getValue('customerName') || '-');
@@ -2653,18 +2732,16 @@ const app = (() => {
   }
 
   function updateQuoteNoBadge() {
-    const seqNo   = getValue('quoteSeqNo');
-    const revision = getValue('quoteRevision') || 1;
     const badge   = document.getElementById('quoteNoBadge');
-    badge.textContent = seqNo
-      ? `CQR${seqNo}-${String(revision).padStart(5, '0')}`
-      : '採番待ち';
+    const display = document.getElementById('quoteNoDisplay');
+    const text    = state.seqNo || '採番待ち';
+    if (badge)   badge.textContent   = text;
+    if (display) display.textContent = state.seqNo || '（未採番）';
   }
 
   /** フォーム値を state へ読み込む */
   function readFormToState() {
-    state.seqNo          = getValue('quoteSeqNo');
-    state.revision       = Number(getValue('quoteRevision'))   || 1;
+    // seqNo は採番ボタンで確定するため readFormToState では読まない
     state.customerName   = getValue('customerName');
     state.projectName    = getValue('projectName');
     state.projectName2   = getValue('projectName2') || '';
@@ -2703,7 +2780,7 @@ const app = (() => {
     try {
       const data = buildPdfData();
       const blob = await QuotationPDF.getBlob(data);
-      const quoteNo = `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}`;
+      const quoteNo = data.quoteNoStr || data.seqNo || '未採番';
       const fname   = `御見積書_${quoteNo}_${data.customerName || ''}.pdf`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -2731,6 +2808,7 @@ const app = (() => {
     collectExclusions();
     return {
       seqNo:           state.seqNo,
+      quoteNoStr:      state.seqNo || '（未採番）',
       revision:        state.revision,
       date:            state.submitDate || state.date,
       customerName:    state.customerName,

@@ -115,7 +115,7 @@ const QuotationPDF = (() => {
 
     const sections   = data.sections || [];
     const dateStr    = toJpDate(data.date || new Date());
-    const quoteNoStr = `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}`;
+    const quoteNoStr = data.quoteNoStr || (data.seqNo ? `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}` : '（未採番）');
 
     // セクション小計の計算
     const sectionTotals = sections.map(s => {
@@ -164,7 +164,7 @@ const QuotationPDF = (() => {
             widths: ['*', 80],
             body: [[
               {
-                text: quoteNoStr,
+                text: [quoteNoStr, data.projectName ? `　${data.projectName}` : ''],
                 style: 'pageHdr',
                 border: [false, false, false, true],
               },
@@ -813,7 +813,7 @@ const QuotationPDF = (() => {
   function buildSummaryDocDefinition(data) {
     const font      = fontLoaded ? 'NotoSansJP' : 'Roboto';
     const dateStr   = toJpDate(data.date || new Date());
-    const quoteNoStr = `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}`;
+    const quoteNoStr = data.quoteNoStr || (data.seqNo ? `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}` : '（未採番）');
     const sections  = data.sections || [];
 
     // セクション別・カテゴリ別集計
@@ -943,7 +943,7 @@ const QuotationPDF = (() => {
      */
     download(data, filename) {
       const docDef  = buildDocDefinition(data);
-      const quoteNo = `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}`;
+      const quoteNo = data.quoteNoStr || (data.seqNo ? `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}` : '未採番');
       const fname   = filename || `御見積書_${quoteNo}_${data.customerName || ''}.pdf`;
       pdfMake.createPdf(docDef).download(fname);
     },
@@ -981,7 +981,7 @@ const QuotationPDF = (() => {
      */
     downloadSummary(data) {
       const docDef  = buildSummaryDocDefinition(data);
-      const quoteNo = `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}`;
+      const quoteNo = data.quoteNoStr || (data.seqNo ? `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}` : '未採番');
       const fname   = `見積集計表_${quoteNo}_${data.customerName || ''}.pdf`;
       pdfMake.createPdf(docDef).download(fname);
     },
