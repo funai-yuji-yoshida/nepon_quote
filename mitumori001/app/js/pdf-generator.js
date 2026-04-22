@@ -137,7 +137,7 @@ const QuotationPDF = (() => {
 
     return {
       pageSize:    'A4',
-      pageMargins: [18, 18, 18, 18],
+      pageMargins: [18, 38, 18, 18],
 
       defaultStyle: {
         font:       font,
@@ -159,18 +159,17 @@ const QuotationPDF = (() => {
       header(currentPage, pageCount) {
         if (currentPage === 1) return null;
         return {
-          margin: [18, 10, 18, 0],
+          margin: [18, 8, 18, 0],
           table: {
             widths: ['*', 80],
             body: [[
               {
-                text: [quoteNoStr, data.projectName, data.projectName2, data.projectName3]
-                  .filter(Boolean).join('　'),
+                text: quoteNoStr,
                 style: 'pageHdr',
                 border: [false, false, false, true],
               },
               {
-                text: `頁　${currentPage - 1}／${pageCount - 1}`,
+                text: `${currentPage - 1}／${pageCount - 1}`,
                 style: 'pageHdr',
                 alignment: 'right',
                 border: [false, false, false, true],
@@ -231,7 +230,8 @@ const QuotationPDF = (() => {
 
     // セクション行
     // 物販・作業の場合はアイテム行を直接表示、工事はセクション集計行
-    const isKouji = (quoteCategory || '').includes('工事');
+    const isKouji  = (quoteCategory || '').includes('工事');
+    const isBuppan = (quoteCategory || '').includes('物販');
 
     // 見積外工事を先に定義（行数カウントに含めるため）
     const exclusions = (data.exclusions && data.exclusions.length > 0)
@@ -466,11 +466,11 @@ const QuotationPDF = (() => {
                   { text: '　御中', fontSize: midFs },
                 ],
               },
-              // 工事名
+              // 工事名 / 件名
               {
                 margin: [25, compact ? 4 : 8, 0, 0],
                 columns: [
-                  { width: 42, text: '工 事 名', fontSize: 9 },
+                  { width: 42, text: isKouji ? '工 事 名' : '件　　名', fontSize: 9 },
                   { width: '*', text: data.projectName || '', decoration: 'underline', fontSize: 9 },
                 ],
               },
@@ -545,7 +545,7 @@ const QuotationPDF = (() => {
                         bold: true,
                         decoration: 'underline',
                       },
-                      { text: '（法定福利費事業主負担金を含む）', fontSize: 7, margin: [0, 1, 0, 0] },
+                      ...(!isBuppan ? [{ text: '（法定福利費事業主負担金を含む）', fontSize: 7, margin: [0, 1, 0, 0] }] : []),
                     ],
                   },
                 ],
