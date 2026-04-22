@@ -120,9 +120,10 @@ const QuotationPDF = (() => {
     // セクション小計の計算
     const sectionTotals = sections.map(s => {
       const subtotal = (s.items || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-      return { ...s, subtotal };
+      const secQty   = Math.max(1, Number(s.secQty) || 1);
+      return { ...s, subtotal, secQty, effectiveTotal: subtotal * secQty };
     });
-    const grandTotal      = sectionTotals.reduce((sum, s) => sum + s.subtotal, 0);
+    const grandTotal      = sectionTotals.reduce((sum, s) => sum + s.effectiveTotal, 0);
     const discount        = Number(data.discount) || 0;
     const quoteCategory   = data.quoteCategory || '';
     const deliveryPrice   = Number(data.deliveryPrice) || grandTotal;
@@ -274,15 +275,14 @@ const QuotationPDF = (() => {
     mirrorEntries.forEach(entry => {
       if (entry.type === 'section') {
         const s = entry.s;
+        const dairiSubtotal = (s.items || []).reduce((sum, i) => sum + Math.round((Number(i.amount) || 0) * ((i.dairiRate ?? mainRate) ?? mainRate)), 0);
         tableRows.push([
           { text: String(s.no || ''), alignment: 'center', fontSize: itemFs },
           { text: s.name || '', fontSize: itemFs },
-          { text: '1', alignment: 'center', fontSize: itemFs },
+          { text: String(s.secQty || 1), alignment: 'center', fontSize: itemFs },
           { text: '式', alignment: 'center', fontSize: itemFs },
           { text: '', fontSize: itemFs },
-          { text: fmt(useDairi
-            ? (s.items || []).reduce((sum, i) => sum + Math.round((Number(i.amount) || 0) * ((i.dairiRate ?? mainRate) ?? mainRate)), 0)
-            : s.subtotal), alignment: 'right', fontSize: itemFs },
+          { text: fmt(useDairi ? dairiSubtotal * (s.secQty || 1) : s.effectiveTotal), alignment: 'right', fontSize: itemFs },
         ]);
       } else if (entry.type === 'sectionHeader') {
         const s = entry.s;
@@ -335,7 +335,7 @@ const QuotationPDF = (() => {
       { text: '', border: [true, true, false, false] },
       { text: '合　　計', alignment: 'center', bold: true, fontSize: itemFs, colSpan: 4, border: [false, true, false, false] },
       {}, {}, {},
-      { text: fmt(useDairi ? (data.dairiTotal || sectionTotals.reduce((sum, s) => sum + (s.items || []).reduce((ss, i) => ss + Math.round((Number(i.amount) || 0) * ((i.dairiRate ?? mainRate) ?? mainRate)), 0), 0)) : grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
+      { text: fmt(useDairi ? (data.dairiTotal || sectionTotals.reduce((sum, s) => sum + (s.items || []).reduce((ss, i) => ss + Math.round((Number(i.amount) || 0) * ((i.dairiRate ?? mainRate) ?? mainRate)), 0) * (s.secQty || 1), 0)) : grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
     ]);
 
     if (!isTeika) {
@@ -736,6 +736,29 @@ const QuotationPDF = (() => {
         },
       ]);
 
+      // 合計 N式行（secQty > 1 のときのみ）
+      if ((section.secQty || 1) > 1) {
+        rows.push([
+          { text: '', border: [true, false, true, true], fillColor: '#e8f0f8' },
+          {
+            text: `合計　${section.secQty}式`,
+            alignment: 'center',
+            bold: true,
+            colSpan: 4,
+            border: [true, false, true, true],
+            fillColor: '#e8f0f8',
+          },
+          {}, {}, {},
+          {
+            text: fmt(section.effectiveTotal),
+            alignment: 'right',
+            bold: true,
+            border: [true, false, true, true],
+            fillColor: '#e8f0f8',
+          },
+        ]);
+      }
+
       result.push({
         table: {
           widths:     COL_WIDTHS,
@@ -777,7 +800,7 @@ const QuotationPDF = (() => {
             {
               text: useDairi
                 ? fmt(sectionTotals.reduce((sum, s) =>
-                    sum + (s.items || []).reduce((ss, i) => ss + Math.round((Number(i.amount) || 0) * (i.dairiRate ?? mainRate)), 0), 0))
+                    sum + (s.items || []).reduce((ss, i) => ss + Math.round((Number(i.amount) || 0) * (i.dairiRate ?? mainRate)), 0) * (s.secQty || 1), 0))
                 : fmt(grandTotal),
               alignment: 'right',
               bold: true,

@@ -1469,10 +1469,11 @@ const app = (() => {
 
   function addSection() {
     const section = {
-      id:    state.nextSectionId++,
-      no:    state.sections.length + 1,
-      name:  '',
-      items: [],
+      id:     state.nextSectionId++,
+      no:     state.sections.length + 1,
+      name:   '',
+      secQty: 1,
+      items:  [],
     };
     // 最初の行を1つ追加
     section.items.push(createItem());
@@ -1860,6 +1861,12 @@ const app = (() => {
         if (nameInput.value !== (sec.name || '')) nameInput.value = sec.name || '';
       }
 
+      const secQtyInput = block.querySelector('.section-qty-input');
+      if (secQtyInput && secQtyInput !== document.activeElement) {
+        const qv = String(Number(sec.secQty) || 1);
+        if (secQtyInput.value !== qv) secQtyInput.value = qv;
+      }
+
       renderSection(sec, block);
     });
 
@@ -1906,6 +1913,18 @@ const app = (() => {
         updateCollapsedInfo(sec.id, block);
       }
     });
+
+    // 式数入力 → state 更新
+    const secQtyInput = block.querySelector('.section-qty-input');
+    if (secQtyInput) {
+      secQtyInput.addEventListener('input', () => {
+        const s = state.sections.find(s => s.id === sec.id);
+        if (s) {
+          s.secQty = Math.max(1, Number(secQtyInput.value) || 1);
+          updateSectionSubtotal(block);
+        }
+      });
+    }
 
     // 折りたたみトグル
     const toggleBtn = block.querySelector('.section-toggle');
@@ -2404,8 +2423,9 @@ const app = (() => {
 
     const tplData = JSON.stringify({
       sections: state.sections.map(sec => ({
-        name: sec.name,
-        cat:  sec.cat || '',
+        name:   sec.name,
+        cat:    sec.cat || '',
+        secQty: sec.secQty || 1,
         items: sec.items.map(item => ({
           name: item.name, spec: item.spec, qty: item.qty, unit: item.unit,
           unitPrice: item.unitPrice, amount: item.amount, genka: item.genka,
@@ -2581,6 +2601,7 @@ const app = (() => {
     const sec    = state.sections.find(s => s.id === secId);
     if (!sec) return;
     const subtotal = sec.items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    const secQty   = Math.max(1, Number(sec.secQty) || 1);
     const el = block.querySelector('.subtotal-val');
     if (el) el.textContent = '¥' + subtotal.toLocaleString('ja-JP');
 
@@ -2599,6 +2620,20 @@ const app = (() => {
         dairiWrap.style.display = '';
       } else {
         dairiWrap.style.display = 'none';
+      }
+    }
+
+    // 式数合計（secQty > 1 のときのみ表示）
+    const qtyWrap  = block.querySelector('.sec-qty-total-wrap');
+    const qtyNum   = block.querySelector('.sec-qty-num');
+    const qtyTotal = block.querySelector('.sec-qty-total-val');
+    if (qtyWrap && qtyNum && qtyTotal) {
+      if (secQty > 1) {
+        qtyNum.textContent   = secQty;
+        qtyTotal.textContent = '¥' + (subtotal * secQty).toLocaleString('ja-JP');
+        qtyWrap.style.display = '';
+      } else {
+        qtyWrap.style.display = 'none';
       }
     }
 
@@ -2640,17 +2675,23 @@ const app = (() => {
     });
 
     const sections     = state.sections;
-    const grandTotal   = sections.reduce((sum, s) =>
-      sum + s.items.reduce((ss, i) => ss + (Number(i.amount) || 0), 0), 0);
+    const grandTotal   = sections.reduce((sum, s) => {
+      const secQty  = Math.max(1, Number(s.secQty) || 1);
+      const subtotal = s.items.reduce((ss, i) => ss + (Number(i.amount) || 0), 0);
+      return sum + subtotal * secQty;
+    }, 0);
 
     // 代理店価格合計（main_rate が設定されている場合のみ・行ごとの掛率優先）
     const mainRate = state.mainRate;
     const dairiTotal = mainRate != null
-      ? sections.reduce((sum, s) =>
-          sum + s.items.reduce((ss, i) => {
+      ? sections.reduce((sum, s) => {
+          const secQty = Math.max(1, Number(s.secQty) || 1);
+          const dairiSubtotal = s.items.reduce((ss, i) => {
             const rate = i.dairiRate ?? mainRate;
             return ss + Math.round((Number(i.amount) || 0) * rate);
-          }, 0), 0)
+          }, 0);
+          return sum + dairiSubtotal * secQty;
+        }, 0)
       : null;
     state.dairiTotal = dairiTotal;
 
@@ -2663,12 +2704,15 @@ const app = (() => {
     state.deliveryPrice = deliveryPrice;
 
     // 原価合計
-    const genkaTotal = sections.reduce((sum, s) =>
-      sum + s.items.reduce((ss, i) => {
+    const genkaTotal = sections.reduce((sum, s) => {
+      const secQty = Math.max(1, Number(s.secQty) || 1);
+      const sGenka = s.items.reduce((ss, i) => {
         const genka = Number(i.genka) || 0;
         const qty   = Number(i.qty)   || 1;
         return ss + genka * qty;
-      }, 0), 0);
+      }, 0);
+      return sum + sGenka * secQty;
+    }, 0);
 
     // ①基本情報の表示を更新
     const araRi     = deliveryPrice - genkaTotal;

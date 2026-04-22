@@ -532,6 +532,7 @@
         <select class="section-cat-select"><option value="">― カテゴリ ―</option></select>
         <select class="section-name-select" style="display:none"></select>
         <input type="text" class="section-name-input" list="" placeholder="大項目名を入力...">
+        <label class="section-qty-label" title="式数"><input type="number" class="section-qty-input" value="1" min="1" step="1">式</label>
         <span class="section-collapsed-info"></span>
         <div class="section-actions">
           <button class="btn-icon" onclick="app.moveSectionUp(this)" title="上へ">▲</button>
@@ -576,6 +577,7 @@
         <div class="section-subtotal">
           小計: <strong class="subtotal-val">¥0</strong>
           <span class="dairi-subtotal-wrap" style="display:none">　／　代理店: <strong class="dairi-subtotal-val" style="color:#1a4d8f">¥0</strong></span>
+          <span class="sec-qty-total-wrap" style="display:none">　＝ 合計 <span class="sec-qty-num">1</span>式: <strong class="sec-qty-total-val">¥0</strong></span>
         </div>
       </div>
     </div>
