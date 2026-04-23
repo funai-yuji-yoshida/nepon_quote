@@ -433,6 +433,14 @@
         <button class="btn-primary" onclick="app.addSection()">＋ 大項目を追加</button>
       </div>
 
+      <!-- 減衰計算 -->
+      <div class="gensui-toggle-row">
+        <label class="gensui-toggle-label">
+          <input type="checkbox" id="gensuiEnabled" onchange="app.onGensuiToggle()">
+          減衰計算を行う
+        </label>
+      </div>
+
       <!-- 減衰計算サマリー -->
       <div id="gensuiSummary" class="gensui-summary" style="display:none">
         <div class="gensui-summary-header">減衰計算サマリー</div>
@@ -517,8 +525,8 @@
 
           <div id="pdfPriceModeGroup" class="pdf-price-mode-group" style="display:none">
             <span class="pdf-price-mode-label">印刷価格:</span>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="teika" checked> 定価</label>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi"> 代理店価格</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="teika"> 定価</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi" checked> 代理店価格</label>
           </div>
 
           <button class="btn-generate" id="btnGeneratePDF" onclick="app.generatePDF()" disabled>

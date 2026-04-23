@@ -874,7 +874,7 @@ const QuotationPDF = (() => {
         rows.push([
           { text: '', border: [true, false, true, true], fillColor: '#e8f0f8' },
           {
-            text: `合計　${section.secQty}式`,
+            text: `${section.name || '合計'}　${section.secQty}式`,
             alignment: 'center',
             bold: true,
             colSpan: 4,

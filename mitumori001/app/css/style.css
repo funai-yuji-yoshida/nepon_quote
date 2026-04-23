@@ -1282,6 +1282,16 @@ input.item-gensui-b::-webkit-inner-spin-button {
   color: #2e7d32;
 }
 
+/* ── 減衰計算 オン/オフ ───────────────────────────── */
+.gensui-toggle-row {
+  margin: 8px 16px 4px;
+}
+.gensui-toggle-label {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; cursor: pointer; user-select: none;
+}
+.gensui-toggle-label input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; }
+
 /* ── 減衰計算サマリー ─────────────────────────────── */
 .gensui-summary {
   margin: 12px 16px;
