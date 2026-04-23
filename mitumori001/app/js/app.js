@@ -2891,8 +2891,9 @@ const app = (() => {
     // FRPモード時は専用合計を使用
     if (state.frpMode) {
       const shikiriKey   = state.frpAB === 'A' ? 'priceA' : 'priceB';
-      const frpPriceTotal    = state.frpItems.reduce((s, i) => s + i.price * (Number(i.qty)||1), 0);
-      const frpShikiriTotal  = state.frpItems.reduce((s, i) => s + (i[shikiriKey]||0) * (Number(i.qty)||1), 0);
+      const frpItemsSafe     = state.frpItems || [];
+      const frpPriceTotal    = frpItemsSafe.reduce((s, i) => s + i.price * (Number(i.qty)||1), 0);
+      const frpShikiriTotal  = frpItemsSafe.reduce((s, i) => s + (i[shikiriKey]||0) * (Number(i.qty)||1), 0);
       state.deliveryPrice    = frpShikiriTotal;
       state.dairiTotal       = frpShikiriTotal;
 
@@ -2905,12 +2906,16 @@ const app = (() => {
 
       const rowDairi = document.getElementById('rowDairiTotal');
       if (rowDairi) rowDairi.style.display = '';
+      const dpHidden = document.getElementById('deliveryPrice');
+      if (dpHidden) dpHidden.value = frpShikiriTotal;
+      const pdfModeGrp = document.getElementById('pdfPriceModeGroup');
+      if (pdfModeGrp) pdfModeGrp.style.display = '';
 
       setText('sum-quoteNo',   state.seqNo || '（未採番）');
       setText('sum-date',      formatDisplayDate(new Date(getValue('quoteDate') || Date.now())));
       setText('sum-customer',  getValue('customerName') || '-');
       setText('sum-project',   getValue('projectName')  || '-');
-      setText('sum-sections',  state.frpItems.length + '件');
+      setText('sum-sections',  frpItemsSafe.length + '件');
       setText('sum-total',     '¥' + frpPriceTotal.toLocaleString('ja-JP'));
       setText('sum-dairi',     '¥' + frpShikiriTotal.toLocaleString('ja-JP'));
       setText('sum-discount',  '¥0');
