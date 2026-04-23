@@ -1552,6 +1552,83 @@ const app = (() => {
     updateOutput();
   }
 
+  function renderFrpItems() {
+    const tbody = document.getElementById('frpItemsTbody');
+    if (!tbody) return;
+
+    const shikiriKey = state.frpAB === 'A' ? 'priceA' : 'priceB';
+    const rows = [];
+
+    state.frpItems.forEach((item, idx) => {
+      const shikiri      = item[shikiriKey] || 0;
+      const priceTotal   = item.price  * (Number(item.qty) || 1);
+      const shikiriTotal = shikiri     * (Number(item.qty) || 1);
+      const displayName  = `${escHtml(item.name)} ${escHtml(item.itemnum)}`.trim();
+
+      rows.push(`
+        <tr class="frp-item-row" data-frp-id="${item.id}">
+          <td class="frp-col-no" style="text-align:center">${idx + 1}</td>
+          <td class="frp-col-name frp-item-name">${displayName}</td>
+          <td class="frp-col-qty">
+            <input type="number" class="frp-qty-input" value="${item.qty}"
+                   min="0" step="any" data-frp-id="${item.id}">
+          </td>
+          <td class="frp-col-unit" style="text-align:center">${escHtml(item.unit)}</td>
+          <td class="frp-col-price" style="text-align:right">${fmtFrp(item.price)}</td>
+          <td class="frp-col-total" style="text-align:right">${fmtFrp(priceTotal)}</td>
+          <td class="frp-col-shikiri" style="text-align:right">${fmtFrp(shikiri)}</td>
+          <td class="frp-col-shikiri-total" style="text-align:right">${fmtFrp(shikiriTotal)}</td>
+          <td class="frp-col-del">
+            <button onclick="app.removeFrpItem(${item.id})" style="color:#c00;background:none;border:none;cursor:pointer;font-size:14px;">✕</button>
+          </td>
+        </tr>
+      `);
+
+      item.specs.forEach(spec => {
+        rows.push(`
+          <tr class="frp-spec-row">
+            <td></td>
+            <td colspan="8">${escHtml(spec)}</td>
+          </tr>
+        `);
+      });
+    });
+
+    tbody.innerHTML = rows.join('');
+
+    // 数量入力イベント
+    tbody.querySelectorAll('.frp-qty-input').forEach(input => {
+      input.addEventListener('input', () => {
+        const id = Number(input.dataset.frpId);
+        const item = state.frpItems.find(i => i.id === id);
+        if (item) {
+          item.qty = Number(input.value) || 0;
+          renderFrpItems();
+          updateFrpTotals();
+          updateOutput();
+        }
+      });
+    });
+  }
+
+  function updateFrpTotals() {
+    const shikiriKey   = state.frpAB === 'A' ? 'priceA' : 'priceB';
+    const priceTotal   = state.frpItems.reduce((s, i) => s + i.price * (Number(i.qty) || 1), 0);
+    const shikiriTotal = state.frpItems.reduce((s, i) => s + (i[shikiriKey] || 0) * (Number(i.qty) || 1), 0);
+
+    const ptEl = document.getElementById('frpPriceTotal');
+    const stEl = document.getElementById('frpShikiriTotal');
+    if (ptEl) ptEl.textContent = '¥' + priceTotal.toLocaleString('ja-JP');
+    if (stEl) stEl.textContent = '¥' + shikiriTotal.toLocaleString('ja-JP');
+  }
+
+  function fmtFrp(n) {
+    if (n === null || n === undefined || n === '') return '';
+    const num = Number(n);
+    if (isNaN(num) || num === 0) return '';
+    return num.toLocaleString('ja-JP');
+  }
+
   // ── 自動採番 ─────────────────────────────────────────────────
 
   async function autoNumber() {
