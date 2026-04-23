@@ -718,8 +718,9 @@ button {
   vertical-align: middle;
 }
 
-.col-name   { width: 35%; }
-.col-spec   { width: 22%; }
+.col-name      { width: 22%; }
+.col-calc-cat  { width: 13%; }
+.col-spec      { width: 22%; }
 .col-qty    { width: 8%; }
 .col-unit   { width: 8%; }
 .col-price  { width: 12%; }
@@ -1099,8 +1100,7 @@ button {
 .item-calc-cat {
   display: block;
   width: 100%;
-  margin-top: 3px;
-  font-size: 10px;
+  font-size: 11px;
   padding: 1px 2px;
   border: 1px solid #ccc;
   border-radius: 3px;
