@@ -2888,6 +2888,45 @@ const app = (() => {
   function updateOutput() {
     readFormToState();
 
+    // FRPモード時は専用合計を使用
+    if (state.frpMode) {
+      const shikiriKey   = state.frpAB === 'A' ? 'priceA' : 'priceB';
+      const frpPriceTotal    = state.frpItems.reduce((s, i) => s + i.price * (Number(i.qty)||1), 0);
+      const frpShikiriTotal  = state.frpItems.reduce((s, i) => s + (i[shikiriKey]||0) * (Number(i.qty)||1), 0);
+      state.deliveryPrice    = frpShikiriTotal;
+      state.dairiTotal       = frpShikiriTotal;
+
+      setText('basicGrandTotal',   frpPriceTotal.toLocaleString('ja-JP'));
+      setText('basicDairiTotal',   frpShikiriTotal.toLocaleString('ja-JP'));
+      setText('basicDeliveryPrice', frpShikiriTotal.toLocaleString('ja-JP'));
+      setText('basicGenkaTotal',   '0');
+      setText('basicAraRi',        '0');
+      setText('basicAraRiRate',    '―');
+
+      const rowDairi = document.getElementById('rowDairiTotal');
+      if (rowDairi) rowDairi.style.display = '';
+
+      setText('sum-quoteNo',   state.seqNo || '（未採番）');
+      setText('sum-date',      formatDisplayDate(new Date(getValue('quoteDate') || Date.now())));
+      setText('sum-customer',  getValue('customerName') || '-');
+      setText('sum-project',   getValue('projectName')  || '-');
+      setText('sum-sections',  state.frpItems.length + '件');
+      setText('sum-total',     '¥' + frpPriceTotal.toLocaleString('ja-JP'));
+      setText('sum-dairi',     '¥' + frpShikiriTotal.toLocaleString('ja-JP'));
+      setText('sum-discount',  '¥0');
+      setText('sum-delivery',  '¥' + frpShikiriTotal.toLocaleString('ja-JP'));
+      setText('sum-material',  '―');
+      setText('sum-labor',     '―');
+      setText('sum-welfare',   '―');
+      setText('sum-anzen',     '―');
+      const sumDairiRow = document.getElementById('sum-dairi-row');
+      if (sumDairiRow) sumDairiRow.style.display = '';
+
+      setText('grandTotalDisplay', '¥' + frpPriceTotal.toLocaleString('ja-JP'));
+      updateQuoteNoBadge();
+      return; // 通常の集計処理をスキップ
+    }
+
     // 減衰計算: 各行の houkouGoukei を更新し、全グループの減衰後歩工合計を取得
     const totalReducedHoukou = calcGensui();
 
