@@ -420,6 +420,10 @@ const app = (() => {
     templateList:    [],       // 所課別商品マスタ（CustomModule8）
     selectedTemplateId: null,  // 読み込みモーダルで選択中のテンプレートID
     shoka:           '',       // Quotes.field15（所課）の名前
+    frpMode:     false,   // FRPモードフラグ
+    frpAB:       'A',     // 'A' or 'B'
+    frpItems:    [],      // FRP行リスト
+    nextFrpId:   1,       // FRP行ID連番
   };
 
   let zohoReady = false;
@@ -1384,6 +1388,72 @@ const app = (() => {
 
     renderSections();
     updateOutput();
+  }
+
+  // ── FRP見積モード ──────────────────────────────────────────────
+
+  function switchFrpMode() {
+    const entering = !state.frpMode;
+    const hasData  = entering
+      ? (state.sections.length > 0 && state.sections.some(s => s.items.some(i => i.name)))
+      : state.frpItems.length > 0;
+
+    if (hasData) {
+      const msg = entering
+        ? '通常モードのデータが消えます。FRPモードに切り替えますか？'
+        : 'FRPモードのデータが消えます。通常モードに戻しますか？';
+      if (!confirm(msg)) return;
+    }
+
+    if (entering) {
+      state.frpMode   = true;
+      state.frpItems  = [];
+      state.nextFrpId = 1;
+    } else {
+      state.frpMode  = false;
+      state.frpItems = [];
+    }
+
+    applyFrpModeUI();
+    updateOutput();
+  }
+
+  function setFrpAB(ab) {
+    state.frpAB = ab;
+    document.getElementById('btnFrpA').classList.toggle('active', ab === 'A');
+    document.getElementById('btnFrpB').classList.toggle('active', ab === 'B');
+    renderFrpItems();
+    updateFrpTotals();
+    updateOutput();
+  }
+
+  function applyFrpModeUI() {
+    const frpOn = state.frpMode;
+
+    const frpContainer      = document.getElementById('frpContainer');
+    const sectionsContainer = document.getElementById('sectionsContainer');
+    const noSectionsMsg     = document.getElementById('noSectionsMsg');
+    const itemsToolbar      = document.querySelector('#tab-items .items-toolbar');
+    const gensuiSummary     = document.getElementById('gensuiSummary');
+
+    if (frpContainer)      frpContainer.style.display      = frpOn ? '' : 'none';
+    if (sectionsContainer) sectionsContainer.style.display = frpOn ? 'none' : '';
+    if (noSectionsMsg)     noSectionsMsg.style.display     = frpOn ? 'none' : '';
+    if (itemsToolbar)      itemsToolbar.style.display      = frpOn ? 'none' : '';
+    if (gensuiSummary)     gensuiSummary.style.display     = 'none';
+
+    const btn   = document.getElementById('btnFrpMode');
+    const label = document.getElementById('frpModeLabel');
+    if (btn) {
+      btn.textContent = frpOn ? 'FRPモードを終了' : 'FRP見積モードに切り替え';
+      btn.classList.toggle('active', frpOn);
+    }
+    if (label) label.style.display = frpOn ? '' : 'none';
+
+    if (frpOn) {
+      document.getElementById('btnFrpA')?.classList.toggle('active', state.frpAB === 'A');
+      document.getElementById('btnFrpB')?.classList.toggle('active', state.frpAB === 'B');
+    }
   }
 
   // ── 自動採番 ─────────────────────────────────────────────────
@@ -3343,6 +3413,8 @@ const app = (() => {
     execTemplateLoad,
     // CRM保存
     saveToCRM,
+    // FRPモード
+    switchFrpMode, setFrpAB,
   };
 
 })();
