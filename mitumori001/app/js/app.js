@@ -1714,34 +1714,28 @@ const app = (() => {
     btn.textContent = '採番中...';
 
     try {
-      // 採番管理キー: {期下二桁}-{カテゴリ}-{作成所課コード}
-      const counterKey = `${kikaShita}-${category}-${createCode}`;
-      let newSeq   = 1;
-      let recordId = null;
+      let newSeq = 1;
 
       if (zohoReady) {
-        const res = await ZOHO.CRM.API.searchRecord({
-          Entity: 'CustomModule21',
+        // 既存の見積レコード(field55)から同一期・カテゴリ・作成所課の最大連番を取得
+        const searchPrefix = `${category}-${createCode}-`;
+        const qRes = await ZOHO.CRM.API.searchRecord({
+          Entity: 'Quotes',
           Type:   'criteria',
-          Query:  `(Name:equals:${counterKey})`,
+          Query:  `(field55:starts_with:${searchPrefix})`,
         });
-        const records = res?.data || [];
-        if (records.length > 0) {
-          recordId = records[0].id;
-          newSeq   = (Number(records[0].number) || 0) + 1;
-        }
-
-        if (recordId) {
-          await ZOHO.CRM.API.updateRecord({
-            Entity:  'CustomModule21',
-            APIData: { id: recordId, number: newSeq },
-          });
-        } else {
-          await ZOHO.CRM.API.insertRecord({
-            Entity:  'CustomModule21',
-            APIData: { Name: counterKey, number: newSeq },
-          });
-        }
+        const qRecords = qRes?.data || [];
+        let maxSeq = 0;
+        qRecords.forEach(r => {
+          const no = r.field55 || '';
+          const parts = no.split('-');
+          // 形式: category-createCode-siteCode-kikaShita-seqStr-edaban
+          if (parts.length >= 5 && parts[3] === kikaShita) {
+            const seq = parseInt(parts[4]) || 0;
+            if (seq > maxSeq) maxSeq = seq;
+          }
+        });
+        newSeq = maxSeq + 1;
       }
 
       const seqStr  = String(newSeq).padStart(4, '0');
