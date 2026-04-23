@@ -459,6 +459,19 @@ const app = (() => {
     // 見積外工事チェックリスト構築
     buildExclusionUI();
 
+    // FRP検索入力イベント
+    const frpInput = document.getElementById('frpSearchInput');
+    if (frpInput) {
+      let frpSearchTimer;
+      frpInput.addEventListener('input', () => {
+        clearTimeout(frpSearchTimer);
+        frpSearchTimer = setTimeout(() => searchFrp(frpInput.value.trim()), 300);
+      });
+      frpInput.addEventListener('blur', () => {
+        setTimeout(hideFrpDropdown, 200);
+      });
+    }
+
     // フォント初期化
     initFont();
 
@@ -1454,6 +1467,89 @@ const app = (() => {
       document.getElementById('btnFrpA')?.classList.toggle('active', state.frpAB === 'A');
       document.getElementById('btnFrpB')?.classList.toggle('active', state.frpAB === 'B');
     }
+  }
+
+  async function searchFrp(keyword) {
+    if (!keyword || keyword.length < 1) {
+      hideFrpDropdown();
+      return;
+    }
+    try {
+      let results = [];
+      if (zohoReady) {
+        const res = await ZOHO.CRM.API.searchRecord({
+          Entity: 'FRP',
+          Type: 'word',
+          Query: keyword,
+        });
+        results = res?.data || [];
+      }
+      showFrpDropdown(results, keyword);
+    } catch (e) {
+      console.warn('FRP検索エラー:', e);
+      hideFrpDropdown();
+    }
+  }
+
+  function showFrpDropdown(results, keyword) {
+    const dd = document.getElementById('frpSearchDropdown');
+    if (!dd) return;
+    if (results.length === 0) {
+      dd.innerHTML = '<div class="frp-search-item" style="color:#888;">候補なし</div>';
+    } else {
+      dd.innerHTML = results.map((r, i) => `
+        <div class="frp-search-item" data-idx="${i}">
+          <span class="frp-search-item-name">${escHtml(r.Name || '')}</span>
+          <span class="frp-search-item-num">${escHtml(r.itemnum || '')}</span>
+        </div>
+      `).join('');
+      dd.querySelectorAll('.frp-search-item[data-idx]').forEach(el => {
+        el.addEventListener('click', () => {
+          const r = results[Number(el.dataset.idx)];
+          addFrpItem(r);
+          hideFrpDropdown();
+          const inp = document.getElementById('frpSearchInput');
+          if (inp) inp.value = '';
+        });
+      });
+    }
+    dd.style.display = '';
+  }
+
+  function hideFrpDropdown() {
+    const dd = document.getElementById('frpSearchDropdown');
+    if (dd) dd.style.display = 'none';
+  }
+
+  function addFrpItem(record) {
+    const specs = [];
+    for (let i = 1; i <= 9; i++) {
+      const v = record[`spec${i}`] || '';
+      if (v.trim()) specs.push(v.trim());
+    }
+    const item = {
+      id:      state.nextFrpId++,
+      frpId:   record.id || '',
+      name:    record.Name    || '',
+      itemnum: record.itemnum || '',
+      qty:     1,
+      unit:    record.unit    || '',
+      price:   Number(record.price) || 0,
+      priceA:  Number(record.A)     || 0,
+      priceB:  Number(record.B)     || 0,
+      specs,
+    };
+    state.frpItems.push(item);
+    renderFrpItems();
+    updateFrpTotals();
+    updateOutput();
+  }
+
+  function removeFrpItem(itemId) {
+    state.frpItems = state.frpItems.filter(i => i.id !== itemId);
+    renderFrpItems();
+    updateFrpTotals();
+    updateOutput();
   }
 
   // ── 自動採番 ─────────────────────────────────────────────────
@@ -3415,6 +3511,7 @@ const app = (() => {
     saveToCRM,
     // FRPモード
     switchFrpMode, setFrpAB,
+    removeFrpItem,
   };
 
 })();
