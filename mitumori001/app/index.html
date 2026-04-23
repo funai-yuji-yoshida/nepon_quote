@@ -82,6 +82,14 @@
         </div>
       </div>
 
+      <div class="form-section frp-mode-section">
+        <h3 class="section-title">見積モード</h3>
+        <div class="form-row">
+          <button id="btnFrpMode" class="btn-frp-toggle" onclick="app.switchFrpMode()">FRP見積モードに切り替え</button>
+          <span id="frpModeLabel" class="frp-mode-label" style="display:none">● FRPモード有効</span>
+        </div>
+      </div>
+
       <div class="form-section">
         <h3 class="section-title">顧客・工事情報 <span class="crm-badge">CRMより取得</span></h3>
         <div class="customer-rate-layout">
@@ -371,6 +379,48 @@
         <button id="btnKanzaiAdd" style="display:none"></button>
         <button id="btnDenzaiAdd" style="display:none"></button>
         <button id="btnStandardAdd" style="display:none"></button>
+      </div>
+
+      <!-- FRP見積コンテナ（frpMode時のみ表示） -->
+      <div id="frpContainer" style="display:none">
+        <div class="frp-header">
+          <div class="frp-ab-toggle">
+            <span class="frp-ab-label">価格モード：</span>
+            <button class="btn-ab active" id="btnFrpA" onclick="app.setFrpAB('A')">A価</button>
+            <button class="btn-ab" id="btnFrpB" onclick="app.setFrpAB('B')">B価</button>
+          </div>
+          <button class="btn-frp-back" onclick="app.switchFrpMode()">← 通常モードに戻す</button>
+        </div>
+
+        <div class="frp-search-area">
+          <input type="text" id="frpSearchInput" class="frp-search-input"
+                 placeholder="品名・型式で検索..." autocomplete="off">
+          <div id="frpSearchDropdown" class="frp-search-dropdown" style="display:none"></div>
+        </div>
+
+        <table class="frp-table">
+          <thead>
+            <tr>
+              <th class="frp-col-no">番号</th>
+              <th class="frp-col-name">品名</th>
+              <th class="frp-col-qty">数量</th>
+              <th class="frp-col-unit">単位</th>
+              <th class="frp-col-price">定価単価</th>
+              <th class="frp-col-total">定価合計</th>
+              <th class="frp-col-shikiri">仕切単価</th>
+              <th class="frp-col-shikiri-total">仕切合計</th>
+              <th class="frp-col-del"></th>
+            </tr>
+          </thead>
+          <tbody id="frpItemsTbody"></tbody>
+        </table>
+
+        <div class="frp-footer">
+          <span class="frp-footer-label">定価合計：</span>
+          <strong id="frpPriceTotal">¥0</strong>
+          <span class="frp-footer-label" style="margin-left:16px;">仕切合計：</span>
+          <strong id="frpShikiriTotal">¥0</strong>
+        </div>
       </div>
 
       <div id="sectionsContainer" class="sections-container">
