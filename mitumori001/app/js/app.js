@@ -591,6 +591,15 @@ const app = (() => {
           state.subformRowIds = parsed.subformRowIds;
           console.log('【サブフォームID復元】 JSON:', state.subformRowIds.length, '件', state.subformRowIds);
         }
+        // FRPモード復元
+        if (parsed.frpMode) {
+          state.frpMode    = true;
+          state.frpAB      = parsed.frpAB || 'A';
+          state.frpItems   = parsed.frpItems || [];
+          state.nextFrpId  = state.frpItems.length > 0
+            ? Math.max(...state.frpItems.map(i => i.id || 0)) + 1
+            : 1;
+        }
         renumberSections();
         // ID重複を防ぐため nextId をロード済み最大値+1 に更新
         const maxSecId  = Math.max(0, ...state.sections.map(s => s.id || 0));
@@ -723,6 +732,12 @@ const app = (() => {
     updateQuoteNoBadge();
     renderSections();
     updateOutput();
+    // FRPモードUI適用
+    if (state.frpMode) {
+      applyFrpModeUI();
+      renderFrpItems();
+      updateFrpTotals();
+    }
   }
 
   // ── 見積外工事 ────────────────────────────────────────────────
@@ -3232,6 +3247,10 @@ const app = (() => {
         remarks:        state.remarks        || undefined,
         discount:       state.discount       || undefined,
         subformRowIds:  state.subformRowIds?.length ? state.subformRowIds : undefined,
+        // FRP
+        frpMode:       state.frpMode  || undefined,
+        frpAB:         state.frpMode ? state.frpAB : undefined,
+        frpItems:      state.frpMode && state.frpItems.length ? state.frpItems : undefined,
       });
 
       // field60/61/62 用に金額を再計算
