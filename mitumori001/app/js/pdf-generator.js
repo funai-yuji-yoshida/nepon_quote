@@ -114,16 +114,33 @@ const QuotationPDF = (() => {
     };
 
     const sections   = data.sections || [];
+    const frpMode  = data.frpMode  || false;
+    const frpAB    = data.frpAB    || 'A';
+    const frpItems = data.frpItems || [];
+
+    // FRPモード用合計
+    const frpPriceTotal   = frpItems.reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.qty) || 1), 0);
+    const frpShikiriTotal = frpItems.reduce((s, i) => {
+      const p = frpAB === 'A' ? (Number(i.priceA) || 0) : (Number(i.priceB) || 0);
+      return s + p * (Number(i.qty) || 1);
+    }, 0);
+
     const dateStr    = toJpDate(data.date || new Date());
     const quoteNoStr = data.quoteNoStr || (data.seqNo ? `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}` : '（未採番）');
 
     // セクション小計の計算
-    const sectionTotals = sections.map(s => {
-      const subtotal = (s.items || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-      const secQty   = Math.max(1, Number(s.secQty) || 1);
-      return { ...s, subtotal, secQty, effectiveTotal: subtotal * secQty };
-    });
-    const grandTotal      = sectionTotals.reduce((sum, s) => sum + s.effectiveTotal, 0);
+    let sectionTotals, grandTotal;
+    if (frpMode) {
+      sectionTotals = [];
+      grandTotal    = frpShikiriTotal;
+    } else {
+      sectionTotals = sections.map(s => {
+        const subtotal = (s.items || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+        const secQty   = Math.max(1, Number(s.secQty) || 1);
+        return { ...s, subtotal, secQty, effectiveTotal: subtotal * secQty };
+      });
+      grandTotal = sectionTotals.reduce((sum, s) => sum + s.effectiveTotal, 0);
+    }
     const discount        = Number(data.discount) || 0;
     const quoteCategory   = data.quoteCategory || '';
     const deliveryPrice   = Number(data.deliveryPrice) || grandTotal;
@@ -191,6 +208,7 @@ const QuotationPDF = (() => {
           deliveryPrice, materialCost, laborCost, legalWelfare, legalRate, anzenCost,
           mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode,
           showUchiwake,
+          frpMode, frpItems, frpAB, frpPriceTotal, frpShikiriTotal,
         }),
 
         // ====================================================
@@ -198,7 +216,10 @@ const QuotationPDF = (() => {
         // ====================================================
         ...(data.printDetail !== false ? [
           { text: '', pageBreak: 'after' },
-          ...buildDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode }),
+          ...(frpMode
+            ? buildFrpDetailPages({ quoteNoStr, frpItems, frpAB, frpPriceTotal, frpShikiriTotal })
+            : buildDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode })
+          ),
         ] : []),
       ],
     };
@@ -208,7 +229,8 @@ const QuotationPDF = (() => {
 
   function buildCoverPage({ quoteNoStr, dateStr, branch, data, sectionTotals,
     grandTotal, discount, quoteCategory, deliveryPrice, materialCost, laborCost, legalWelfare, legalRate, anzenCost,
-    mainRate, pdfPriceMode, showUchiwake }) {
+    mainRate, pdfPriceMode, showUchiwake,
+    frpMode, frpItems, frpAB, frpPriceTotal, frpShikiriTotal }) {
     const useDairi = pdfPriceMode === 'dairi' && mainRate != null;
     const dairi = (v, item) => Math.round((Number(v) || 0) * ((item?.dairiRate ?? mainRate) ?? mainRate));
     // 値引き額ラベル: 工事を含む場合→「出精値引き」、物販・作業→「値引き額」
@@ -241,22 +263,26 @@ const QuotationPDF = (() => {
 
     // 第1パス: 行データを収集してカウント（フォントサイズ決定のため）
     const mirrorEntries = [];
-    sectionTotals.forEach(s => {
-      if (isKouji) {
-        mirrorEntries.push({ type: 'section', s });
-      } else {
-        if (s.name && s.name.trim()) {
-          mirrorEntries.push({ type: 'sectionHeader', s });
-        }
-        // 単価0円のアイテムも名前があれば表示する
-        (s.items || []).filter(i => i.name && i.name.trim()).forEach(item => {
-          mirrorEntries.push({ type: 'item', item });
-          (item.specLines || []).filter(l => l.trim()).forEach(line => {
-            mirrorEntries.push({ type: 'specLine', text: line });
+    if (!frpMode) {
+      sectionTotals.forEach(s => {
+        if (isKouji) {
+          mirrorEntries.push({ type: 'section', s });
+        } else {
+          if (s.name && s.name.trim()) {
+            mirrorEntries.push({ type: 'sectionHeader', s });
+          }
+          // 単価0円のアイテムも名前があれば表示する
+          (s.items || []).filter(i => i.name && i.name.trim()).forEach(item => {
+            mirrorEntries.push({ type: 'item', item });
+            (item.specLines || []).filter(l => l.trim()).forEach(line => {
+              mirrorEntries.push({ type: 'specLine', text: line });
+            });
           });
-        });
-      }
-    });
+        }
+      });
+    } else {
+      mirrorEntries.push({ type: 'frp' });
+    }
     const isTeika = pdfPriceMode !== 'dairi';
     // 見積外工事行・固定行も含めてトータル行数を算出
     const mirrorRowCount = mirrorEntries.length + exRowCount +
@@ -273,6 +299,17 @@ const QuotationPDF = (() => {
 
     // 第2パス: 決定したフォントサイズで行を生成
     mirrorEntries.forEach(entry => {
+      if (entry.type === 'frp') {
+        tableRows.push([
+          { text: '1', alignment: 'center', fontSize: itemFs },
+          { text: 'FRP機器一式', fontSize: itemFs },
+          { text: '1', alignment: 'center', fontSize: itemFs },
+          { text: '式', alignment: 'center', fontSize: itemFs },
+          { text: '', fontSize: itemFs },
+          { text: fmt(frpShikiriTotal), alignment: 'right', fontSize: itemFs },
+        ]);
+        return;
+      }
       if (entry.type === 'section') {
         const s = entry.s;
         const dairiSubtotal = (s.items || []).reduce((sum, i) => sum + Math.round((Number(i.amount) || 0) * ((i.dairiRate ?? mainRate) ?? mainRate)), 0);
@@ -645,6 +682,102 @@ const QuotationPDF = (() => {
         },
       ] : []),
     ];
+  }
+
+  // ── FRP専用明細ページ ─────────────────────────────────────────
+
+  function buildFrpDetailPages({ quoteNoStr, frpItems, frpAB, frpPriceTotal, frpShikiriTotal }) {
+    const COL_WIDTHS = [22, '*', 25, 20, 45, 45, 50, 50];
+    const shikiriLabel      = `仕切単価(${frpAB}価)`;
+    const shikiriTotalLabel = `仕切合計(${frpAB}価)`;
+
+    const headerRow = [
+      { text: 'No',            style: 'tableHeader' },
+      { text: '品名',          style: 'tableHeader' },
+      { text: '数量',          style: 'tableHeader' },
+      { text: '単位',          style: 'tableHeader' },
+      { text: '定価単価',      style: 'tableHeader' },
+      { text: '定価合計',      style: 'tableHeader' },
+      { text: shikiriLabel,    style: 'tableHeader' },
+      { text: shikiriTotalLabel, style: 'tableHeader' },
+    ];
+
+    const rows = [headerRow];
+    let rowNo = 1;
+
+    frpItems.forEach(item => {
+      const shikiri      = frpAB === 'A' ? (Number(item.priceA) || 0) : (Number(item.priceB) || 0);
+      const qty          = Number(item.qty) || 1;
+      const priceTotal   = (Number(item.price) || 0) * qty;
+      const shikiriTotal = shikiri * qty;
+      const displayName  = `${item.name || ''} ${item.itemnum || ''}`.trim();
+
+      rows.push([
+        { text: String(rowNo++), alignment: 'center' },
+        { text: displayName, bold: true },
+        { text: String(qty), alignment: 'center' },
+        { text: item.unit || '', alignment: 'center' },
+        { text: fmt(item.price),   alignment: 'right' },
+        { text: fmt(priceTotal),   alignment: 'right' },
+        { text: fmt(shikiri),      alignment: 'right' },
+        { text: fmt(shikiriTotal), alignment: 'right' },
+      ]);
+
+      (item.specs || []).forEach(spec => {
+        rows.push([
+          { text: '', border: [true, false, false, false] },
+          { text: `　${spec}`, fontSize: 8, color: '#555', colSpan: 7,
+            border: [false, false, true, false] },
+          {}, {}, {}, {}, {}, {},
+        ]);
+      });
+    });
+
+    // 空白行（最低2行）
+    for (let i = 0; i < 2; i++) {
+      rows.push([
+        { text: '', border: [true, false, true, false] },
+        { text: '', border: [false, false, false, false] },
+        { text: '', border: [false, false, false, false] },
+        { text: '', border: [false, false, false, false] },
+        { text: '', border: [false, false, false, false] },
+        { text: '', border: [false, false, false, false] },
+        { text: '', border: [false, false, false, false] },
+        { text: '', border: [false, false, true, false] },
+      ]);
+    }
+
+    // 合計行
+    rows.push([
+      { text: '', border: [true, true, false, true], fillColor: '#e8f0f8' },
+      { text: '合　　計', alignment: 'center', bold: true, colSpan: 4,
+        border: [false, true, false, true], fillColor: '#e8f0f8' },
+      {}, {}, {},
+      { text: fmt(frpPriceTotal),   alignment: 'right', bold: true,
+        border: [false, true, false, true], fillColor: '#e8f0f8' },
+      { text: '', border: [false, true, false, true], fillColor: '#e8f0f8' },
+      { text: fmt(frpShikiriTotal), alignment: 'right', bold: true,
+        border: [false, true, true, true], fillColor: '#e8f0f8' },
+    ]);
+
+    return [{
+      table: {
+        widths:     COL_WIDTHS,
+        headerRows: 1,
+        body:       rows,
+      },
+      layout: {
+        hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length) ? 0.8 : 0.3,
+        vLineWidth: () => 0.5,
+        paddingLeft:   () => 3,
+        paddingRight:  () => 3,
+        paddingTop:    () => 2,
+        paddingBottom: () => 2,
+        hLineColor: () => '#555',
+        vLineColor: () => '#888',
+      },
+      margin: [0, 0, 0, 0],
+    }];
   }
 
   // ── 2ページ目以降（明細書）──────────────────────────────────
