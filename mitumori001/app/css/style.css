@@ -1613,4 +1613,175 @@ button {
 .tpl-load-mode {
   display: flex; gap: 20px; font-size: 13px; padding: 6px 0;
 }
+
+/* ── FRP見積モード ─────────────────────────────────── */
+
+.frp-mode-section .btn-frp-toggle {
+  background: #1a4d8f;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 18px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.frp-mode-section .btn-frp-toggle.active {
+  background: #c0392b;
+}
+.frp-mode-label {
+  margin-left: 12px;
+  color: #c0392b;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.frp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #eef3fa;
+  border-radius: 6px 6px 0 0;
+  border: 1px solid #c2d3ea;
+  margin-bottom: 0;
+}
+.frp-ab-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.frp-ab-label {
+  font-size: 12px;
+  color: #555;
+}
+.btn-ab {
+  padding: 4px 14px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn-ab.active {
+  background: #1a4d8f;
+  color: #fff;
+  border-color: #1a4d8f;
+}
+.btn-frp-back {
+  background: #fff;
+  color: #555;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.frp-search-area {
+  position: relative;
+  padding: 8px 12px;
+  background: #f8fafd;
+  border: 1px solid #c2d3ea;
+  border-top: none;
+}
+.frp-search-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+.frp-search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 12px;
+  right: 12px;
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 0 0 4px 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+}
+.frp-search-item {
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.frp-search-item:hover {
+  background: #eef3fa;
+}
+.frp-search-item-name {
+  font-weight: bold;
+}
+.frp-search-item-num {
+  color: #666;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.frp-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #c2d3ea;
+  border-top: none;
+  font-size: 13px;
+}
+.frp-table th {
+  background: #dce8f7;
+  padding: 6px 8px;
+  text-align: center;
+  font-weight: bold;
+  border: 1px solid #b0c8e8;
+  font-size: 12px;
+}
+.frp-table td {
+  padding: 5px 8px;
+  border: 1px solid #dde;
+  vertical-align: top;
+}
+.frp-col-no    { width: 36px; text-align: center; }
+.frp-col-qty   { width: 60px; }
+.frp-col-unit  { width: 50px; text-align: center; }
+.frp-col-price, .frp-col-total,
+.frp-col-shikiri, .frp-col-shikiri-total { width: 90px; text-align: right; }
+.frp-col-del   { width: 30px; text-align: center; }
+
+.frp-item-name {
+  font-weight: bold;
+}
+.frp-spec-row td {
+  background: #fafafa;
+  padding: 2px 8px 2px 24px;
+  font-size: 12px;
+  color: #555;
+  border-top: none;
+}
+.frp-qty-input {
+  width: 50px;
+  border: 1px solid #bbb;
+  border-radius: 3px;
+  padding: 3px 4px;
+  text-align: right;
+  font-size: 13px;
+}
+.frp-footer {
+  padding: 10px 14px;
+  text-align: right;
+  background: #f0f4fb;
+  border: 1px solid #c2d3ea;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  font-size: 14px;
+}
+.frp-footer-label {
+  color: #555;
+  font-size: 12px;
+}
+.frp-footer-label-right {
+  margin-left: 16px;
+}
 .tpl-load-mode label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
