@@ -3196,7 +3196,7 @@ const app = (() => {
       quoteCategory:   state.quoteCategory || '',
       printDetail:     (() => {
         const isKouji = (state.quoteCategory || '').includes('工事');
-        if (isKouji) return true; // 工事は常に明細印刷
+        if (isKouji || state.frpMode) return true; // 工事・FRPは常に明細印刷
         const cb = document.getElementById('printDetailPages');
         return cb ? cb.checked : true;
       })(),
@@ -3216,6 +3216,9 @@ const app = (() => {
         }
         return true; // 工事は常に表示
       })(),
+      frpMode:   state.frpMode  || false,
+      frpAB:     state.frpAB    || 'A',
+      frpItems:  state.frpMode ? (state.frpItems || []) : undefined,
     };
   }
 
