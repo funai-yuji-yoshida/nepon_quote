@@ -1215,14 +1215,15 @@ button {
    ---------------------------------------- */
 .col-gensui-kubun, .col-koji-category,
 .col-gensui-a, .col-gensui-b { white-space: nowrap; text-align: center; }
-.col-gensui-kubun  { width: 52px; }
+.col-gensui-kubun  { width: 68px; }
 .col-koji-category { width: 100px; }
 .col-gensui-a      { width: 64px; }
 .col-gensui-b      { width: 64px; }
 .item-koji-category,
 .item-gensui-a, .item-gensui-b { color: #666; font-size: 11px; }
+input.item-gensui-enabled { display: block; margin: 0 auto 2px; width: 14px; height: 14px; cursor: pointer; }
 select.item-gensui-kubun {
-  width: 100%; max-width: 52px; font-size: 11px; padding: 1px 0;
+  width: 100%; font-size: 11px; padding: 1px 0;
   border: 1px solid #ccc; border-radius: 2px; background: #fff;
   box-sizing: border-box;
 }
@@ -1281,16 +1282,6 @@ input.item-gensui-b::-webkit-inner-spin-button {
   font-weight: bold;
   color: #2e7d32;
 }
-
-/* ── 減衰計算 オン/オフ ───────────────────────────── */
-.gensui-toggle-row {
-  margin: 8px 16px 4px;
-}
-.gensui-toggle-label {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 13px; cursor: pointer; user-select: none;
-}
-.gensui-toggle-label input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; }
 
 /* ── 減衰計算サマリー ─────────────────────────────── */
 .gensui-summary {

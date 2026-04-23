@@ -433,14 +433,6 @@
         <button class="btn-primary" onclick="app.addSection()">＋ 大項目を追加</button>
       </div>
 
-      <!-- 減衰計算 -->
-      <div class="gensui-toggle-row">
-        <label class="gensui-toggle-label">
-          <input type="checkbox" id="gensuiEnabled" onchange="app.onGensuiToggle()">
-          減衰計算を行う
-        </label>
-      </div>
-
       <!-- 減衰計算サマリー -->
       <div id="gensuiSummary" class="gensui-summary" style="display:none">
         <div class="gensui-summary-header">減衰計算サマリー</div>
@@ -684,7 +676,7 @@
       <td class="col-dairi"><span class="item-dairi"></span></td>
       <td class="col-genka"><input type="number" class="item-genka" placeholder="" min="0" step="1"></td>
       <td class="col-genka-amount"><span class="item-genka-amount"></span></td>
-      <td class="col-gensui-kubun"><select class="item-gensui-kubun"><option value="">―</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></td>
+      <td class="col-gensui-kubun"><input type="checkbox" class="item-gensui-enabled" title="減衰計算" style="display:none"><select class="item-gensui-kubun"><option value="">―</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></td>
       <td class="col-koji-category"><span class="item-koji-category"></span></td>
       <td class="col-gensui-a"><input type="number" class="item-gensui-a" step="0.1" min="0" placeholder=""></td>
       <td class="col-gensui-b"><input type="number" class="item-gensui-b" step="0.01" min="0" placeholder=""></td>

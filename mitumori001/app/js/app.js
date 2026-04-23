@@ -213,54 +213,46 @@ const app = (() => {
       });
     });
 
-    // houdan > 0 かつ houkouDirect <= 0 のアイテムを減衰区分（gensuiKubun）でグループ化
-    // gensuiKubun 未設定の場合は calcCategory にフォールバック（後方互換）
-    const groups = {};
+    // セクション内で④工事費ごとにグループ化し、各④工事費のgensuiEnabledを使用
     state.sections.forEach(sec => {
+      let group = [];
       sec.items.forEach(item => {
-        if ((Number(item.houdan) || 0) <= 0) return;
-        if ((Number(item.houkouDirect) || 0) > 0) return; // 直接値アイテムはスキップ
-        const key = item.gensuiKubun || item.calcCategory || '_default';
-        if (!groups[key]) groups[key] = [];
-        groups[key].push(item);
-      });
-    });
-
-    Object.values(groups).forEach(items => {
-      // d = 累計歩工（Σ qty × 歩単）
-      const d = items.reduce((sum, it) =>
-        sum + (Number(it.qty) || 1) * (Number(it.houdan) || 0), 0);
-      if (d <= 0) return;
-
-      let rate;
-      if (!state.gensuiEnabled) {
-        rate = 1.0; // 減衰計算オフ: 減衰なし
-      } else {
-        // アイテムに gensuiA/gensuiB が設定されていればそれを使用、なければ従来係数にフォールバック
-        const fallback = getGensuiParam(items[0].calcCategory);
-        const A = (items[0].gensuiA > 0) ? items[0].gensuiA : fallback.A;
-        const b = (items[0].gensuiB > 0) ? items[0].gensuiB : fallback.b;
-        // 減衰率 = MIN(1.0, INT(A × (d/b)^(-0.3) × 100 + 0.5) / 100)
-        rate = Math.min(1.0,
-          Math.floor(A * Math.pow(d / b, -0.3) * 100 + 0.5) / 100);
-      }
-
-      // 歩工合計（グループ全体）= INT(d × 減衰率 × 100 + 0.5) / 100
-      const houkouTotal = Math.floor(d * rate * 100 + 0.5) / 100;
-      totalReducedHoukou += houkouTotal;
-
-      summaryRows.push({
-        category: items[0].kojiCategory || items[0].calcCategory || items[0].gensuiKubun || '（未分類）',
-        d, rate,
-        before: Math.round(d * 100) / 100,
-        after:  houkouTotal,
-        saving: 0,
-      });
-
-      // 各行の houkouGoukei を按分して更新（行の金額は変えない）
-      items.forEach(item => {
-        const itemD = (Number(item.qty) || 1) * (Number(item.houdan) || 0);
-        item.houkouGoukei = Math.floor(houkouTotal * (itemD / d) * 100 + 0.5) / 100;
+        if (item.calcCategory === '④工事費') {
+          if (group.length > 0) {
+            const d = group.reduce((sum, i) =>
+              sum + (Number(i.qty) || 1) * (Number(i.houdan) || 0), 0);
+            if (d > 0) {
+              let rate;
+              if (!item.gensuiEnabled) {
+                rate = 1.0;
+              } else if (item.gensuiA > 0 && item.gensuiB > 0) {
+                rate = Math.min(1.0,
+                  Math.floor(item.gensuiA * Math.pow(d / item.gensuiB, -0.3) * 100 + 0.5) / 100);
+              } else {
+                const fallback = getGensuiParam(group[0].calcCategory);
+                const A = (group[0].gensuiA > 0) ? group[0].gensuiA : fallback.A;
+                const b = (group[0].gensuiB > 0) ? group[0].gensuiB : fallback.b;
+                rate = Math.min(1.0,
+                  Math.floor(A * Math.pow(d / b, -0.3) * 100 + 0.5) / 100);
+              }
+              const houkouTotal = Math.floor(d * rate * 100 + 0.5) / 100;
+              totalReducedHoukou += houkouTotal;
+              summaryRows.push({
+                category: item.kojiCategory || item.calcCategory || item.gensuiKubun || '（未分類）',
+                d, rate,
+                before: Math.round(d * 100) / 100,
+                after:  houkouTotal,
+              });
+              group.forEach(gi => {
+                const itemD = (Number(gi.qty) || 1) * (Number(gi.houdan) || 0);
+                gi.houkouGoukei = Math.floor(houkouTotal * (itemD / d) * 100 + 0.5) / 100;
+              });
+            }
+          }
+          group = [];
+        } else if ((Number(item.houdan) || 0) > 0 && (Number(item.houkouDirect) || 0) <= 0) {
+          group.push(item);
+        }
       });
     });
 
@@ -312,7 +304,7 @@ const app = (() => {
               const d = calcGroup.reduce((sum, i) =>
                 sum + (Number(i.qty) || 1) * (Number(i.houdan) || 0), 0);
               if (d > 0) {
-                const rate = state.gensuiEnabled
+                const rate = item.gensuiEnabled
                   ? Math.min(1.0, Math.floor(item.gensuiA * Math.pow(d / item.gensuiB, -0.3) * 100 + 0.5) / 100)
                   : 1.0;
                 calcTotal = Math.floor(d * rate * 100 + 0.5) / 100;
@@ -332,7 +324,7 @@ const app = (() => {
                 const fallback = getGensuiParam(subItems[0].calcCategory);
                 const A = (subItems[0].gensuiA > 0) ? subItems[0].gensuiA : fallback.A;
                 const b = (subItems[0].gensuiB > 0) ? subItems[0].gensuiB : fallback.b;
-                const rate = state.gensuiEnabled
+                const rate = item.gensuiEnabled
                   ? Math.min(1.0, Math.floor(A * Math.pow(d / b, -0.3) * 100 + 0.5) / 100)
                   : 1.0;
                 calcTotal += Math.floor(d * rate * 100 + 0.5) / 100;
@@ -460,7 +452,6 @@ const app = (() => {
     frpAB:       'A',     // 'A' or 'B'
     frpItems:    [],      // FRP行リスト
     nextFrpId:   1,       // FRP行ID連番
-    gensuiEnabled: false, // 減衰計算オン/オフ
   };
 
   let zohoReady = false;
@@ -1830,10 +1821,11 @@ const app = (() => {
       houkouKubun: '',  // 歩工区分（マスタから）
       houkouGoukei: 0,  // 歩工合計（減衰計算結果 or 手動上書き）
       houkouDirect: 0,  // 直接歩工値（field16 > 0 なら減衰計算をスキップして使用）
-      gensuiKubun:  '',  // 減衰区分（field17: 1〜8）
-      gensuiA:      0,   // 減衰係数A（field A）
-      gensuiB:      0,   // 減衰係数B（field B）
-      kojiCategory: '',  // 工事カテゴリー名（field18）
+      gensuiKubun:  '',    // 減衰区分（field17: 1〜8）
+      gensuiA:      0,     // 減衰係数A（field A）
+      gensuiB:      0,     // 減衰係数B（field B）
+      gensuiEnabled: false, // 減衰計算オン/オフ（④工事費行ごとに制御）
+      kojiCategory: '',    // 工事カテゴリー名（field18）
       specLines: [],    // 仕様行（テキストのみ）
     };
   }
@@ -2059,6 +2051,10 @@ const app = (() => {
     if (gensuiAInputEl) item.gensuiA = parseFloat(gensuiAInputEl.value) || 0;
     if (gensuiBInputEl) item.gensuiB = parseFloat(gensuiBInputEl.value) || 0;
 
+    // 減衰計算チェックボックス（④工事費行ごと）
+    const gensuiEnabledEl = row.querySelector('.item-gensui-enabled');
+    if (gensuiEnabledEl) item.gensuiEnabled = gensuiEnabledEl.checked;
+
     // 歩工合計（手動上書き）を読み取り、歩工を再計算して表示
     const goukeiEl = row.querySelector('.item-houkou-goukei');
     const houkouEl = row.querySelector('.item-houkou');
@@ -2153,10 +2149,11 @@ const app = (() => {
       if (gensuiBEl2) gensuiBEl2.value = item.gensuiB ? item.gensuiB : '';
     }
 
-    // 減衰A・B・区分 変更 → セクション内の④工事費を再計算
+    // 減衰A・B・区分・減衰計算チェック 変更 → セクション内の④工事費を再計算
     const isGensuiChange = e.target.classList.contains('item-gensui-kubun')
       || e.target.classList.contains('item-gensui-a')
-      || e.target.classList.contains('item-gensui-b');
+      || e.target.classList.contains('item-gensui-b')
+      || e.target.classList.contains('item-gensui-enabled');
     if (isGensuiChange) {
       recalcKoujihiInSection(sec);
       const block2 = e.target.closest('.section-block');
@@ -2371,6 +2368,13 @@ const app = (() => {
       const genkaAmt = genka * (Number(item.qty) || 1);
       if (genkaEl    && genkaEl    !== document.activeElement) genkaEl.value = genka ? genka : '';
       if (genkaAmtEl) genkaAmtEl.textContent = genkaAmt ? genkaAmt.toLocaleString('ja-JP') : '';
+
+      // 減衰計算チェックボックス（④工事費行のみ表示）
+      const gensuiEnabledEl = row.querySelector('.item-gensui-enabled');
+      if (gensuiEnabledEl) {
+        gensuiEnabledEl.checked = item.gensuiEnabled || false;
+        gensuiEnabledEl.style.display = item.calcCategory === '④工事費' ? '' : 'none';
+      }
 
       // 減衰区分・工事カテゴリ・減衰A・減衰B の反映
       const gensuiKubunEl  = row.querySelector('.item-gensui-kubun');
@@ -2812,6 +2816,7 @@ const app = (() => {
           houdan: item.houdan, houkouDirect: item.houkouDirect,
           houkouKubun: item.houkouKubun,
           gensuiKubun: item.gensuiKubun, gensuiA: item.gensuiA, gensuiB: item.gensuiB,
+          gensuiEnabled: item.gensuiEnabled,
           kojiCategory: item.kojiCategory,
           specLines: item.specLines,
         })),
@@ -2965,6 +2970,7 @@ const app = (() => {
         item.gensuiKubun   = tplItem.gensuiKubun   || '';
         item.gensuiA       = tplItem.gensuiA       || 0;
         item.gensuiB       = tplItem.gensuiB       || 0;
+        item.gensuiEnabled = tplItem.gensuiEnabled || false;
         item.kojiCategory  = tplItem.kojiCategory  || '';
         item.specLines     = Array.isArray(tplItem.specLines) ? [...tplItem.specLines] : [];
         section.items.push(item);
@@ -3756,31 +3762,6 @@ const app = (() => {
     setTimeout(() => div.remove(), 3100);
   }
 
-  function onGensuiToggle() {
-    const cb = document.getElementById('gensuiEnabled');
-    state.gensuiEnabled = cb ? cb.checked : true;
-    // 全セクションの④工事費を再計算してDOMに反映
-    const container = document.getElementById('sectionsContainer');
-    state.sections.forEach(sec => {
-      recalcKoujihiInSection(sec);
-      const block = container?.querySelector(`[data-section-id="${sec.id}"]`);
-      if (!block) return;
-      sec.items.forEach(koItem => {
-        if (koItem.calcCategory !== '④工事費') return;
-        const koRow = block.querySelector(`[data-item-id="${koItem.id}"]`);
-        if (!koRow) return;
-        const koPriceEl  = koRow.querySelector('.item-price');
-        const koAmountEl = koRow.querySelector('.item-amount');
-        const koGoukeiEl = koRow.querySelector('.item-houkou-goukei');
-        const koHoukouEl = koRow.querySelector('.item-houkou');
-        if (koPriceEl)  koPriceEl.value  = koItem.unitPrice ? koItem.unitPrice.toLocaleString('ja-JP') : '';
-        if (koAmountEl) koAmountEl.value = koItem.amount    ? koItem.amount.toLocaleString('ja-JP')    : '';
-        if (koGoukeiEl) koGoukeiEl.value = koItem.houkouGoukei ? koItem.houkouGoukei.toFixed(2) : '';
-        if (koHoukouEl) koHoukouEl.textContent = koItem.houkouGoukei ? koItem.houkouGoukei.toFixed(2) : '';
-      });
-    });
-    updateOutput();
-  }
 
   // ── 公開API ───────────────────────────────────────────────────
 
@@ -3850,8 +3831,6 @@ const app = (() => {
     // FRPモード
     switchFrpMode, setFrpAB,
     removeFrpItem,
-    // 減衰計算オン/オフ
-    onGensuiToggle,
   };
 
 })();
