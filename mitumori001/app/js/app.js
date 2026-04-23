@@ -2006,6 +2006,10 @@ const app = (() => {
       }
     }
 
+    // 原価（手動入力可）→ state に反映
+    const genkaInputEl = row.querySelector('.item-genka');
+    if (genkaInputEl) item.genka = Number(genkaInputEl.value) || 0;
+
     // 歩工合計（手動上書き）を読み取り、歩工を再計算して表示
     const goukeiEl = row.querySelector('.item-houkou-goukei');
     const houkouEl = row.querySelector('.item-houkou');
@@ -2070,6 +2074,15 @@ const app = (() => {
       const raw = goukei > 0 ? goukei : (Number(item.qty) * (Number(item.houdan) || 0));
       houkouEl.textContent = raw ? raw.toFixed(2) : '';
     }
+
+    // 原価・原価合計 DOM 同期（④工事費の歩工再計算で genka が変わった場合も含む）
+    const genkaInputEl2 = row.querySelector('.item-genka');
+    const genkaAmtEl2   = row.querySelector('.item-genka-amount');
+    if (genkaInputEl2 && genkaInputEl2 !== document.activeElement) {
+      genkaInputEl2.value = item.genka ? item.genka : '';
+    }
+    const genkaAmt2 = (item.genka || 0) * (Number(item.qty) || 1);
+    if (genkaAmtEl2) genkaAmtEl2.textContent = genkaAmt2 ? genkaAmt2.toLocaleString('ja-JP') : '';
 
     updateSectionSubtotal(block);
     updateOutput();
@@ -2259,7 +2272,7 @@ const app = (() => {
       const genkaAmtEl    = row.querySelector('.item-genka-amount');
       const genka    = Number(item.genka) || 0;
       const genkaAmt = genka * (Number(item.qty) || 1);
-      if (genkaEl)    genkaEl.textContent    = genka    ? genka.toLocaleString('ja-JP')    : '';
+      if (genkaEl    && genkaEl    !== document.activeElement) genkaEl.value = genka ? genka : '';
       if (genkaAmtEl) genkaAmtEl.textContent = genkaAmt ? genkaAmt.toLocaleString('ja-JP') : '';
 
       // 歩単・歩工区分・歩工合計・歩工（計算）の反映

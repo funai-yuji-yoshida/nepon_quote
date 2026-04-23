@@ -230,6 +230,7 @@
             <input type="text" id="deliveryMethod" class="input-wide" placeholder="選択または入力">
             <select class="combo-select" onchange="if(this.value){document.getElementById('deliveryMethod').value=this.value;this.selectedIndex=0;}">
               <option value="">▼ 選択</option>
+              <option>搬入・設置・試運転渡し</option>
               <option>お打ち合わせ願います</option>
               <option>現場館側渡し</option>
               <option>ご指定地車上渡し</option>
@@ -591,6 +592,7 @@
         </div>
       </div>
 
+      <div class="items-table-wrapper">
       <table class="items-table">
         <thead>
           <tr>
@@ -617,6 +619,7 @@
         <tbody class="items-tbody">
         </tbody>
       </table>
+      </div><!-- /.items-table-wrapper -->
 
       <div class="section-footer">
         <button class="btn-add-item" onclick="app.addItem(this)">＋ 行を追加</button>
@@ -668,7 +671,7 @@
       <td class="col-labor-check"><input type="checkbox" class="item-labor-check" title="労務費に含める"></td>
       <td class="col-dairi-rate"><input type="text" inputmode="decimal" class="item-dairi-rate" placeholder=""></td>
       <td class="col-dairi"><span class="item-dairi"></span></td>
-      <td class="col-genka"><span class="item-genka"></span></td>
+      <td class="col-genka"><input type="number" class="item-genka" placeholder="" min="0" step="1"></td>
       <td class="col-genka-amount"><span class="item-genka-amount"></span></td>
       <td class="col-houdan"><span class="item-houdan"></span></td>
       <td class="col-houkou-kubun"><span class="item-houkou-kubun"></span></td>

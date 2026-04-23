@@ -692,8 +692,13 @@ button {
 }
 
 /* 明細テーブル */
+.items-table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
 .items-table {
   width: 100%;
+  min-width: 1000px;
   border-collapse: collapse;
   font-size: 12px;
 }
@@ -718,13 +723,13 @@ button {
   vertical-align: middle;
 }
 
-.col-name      { width: 22%; }
-.col-calc-cat  { width: 13%; }
-.col-spec      { width: 22%; }
-.col-qty    { width: 8%; }
-.col-unit   { width: 8%; }
-.col-price  { width: 12%; }
-.col-amount { width: 12%; }
+.col-name      { width: 17%; }
+.col-calc-cat  { width: 10%; }
+.col-spec      { width: 16%; }
+.col-qty    { width: 6%; }
+.col-unit   { width: 5%; }
+.col-price  { width: 10%; }
+.col-amount { width: 10%; }
 .col-actions{ width: 3%; }
 
 .col-drag {
@@ -786,7 +791,7 @@ button {
 .section-block.collapsed .section-toggle {
   transform: rotate(-90deg);
 }
-.section-block.collapsed .items-table,
+.section-block.collapsed .items-table-wrapper,
 .section-block.collapsed .section-footer {
   display: none;
 }
@@ -1470,9 +1475,18 @@ button {
 
 /* ── 原価列 ─────────────────────────────────────────────────── */
 .col-genka, .col-genka-amount { white-space: nowrap; text-align: right; }
-.col-genka { width: 60px; color: #888; font-size: 11px; }
+.col-genka { width: 90px; min-width: 90px; color: #888; font-size: 11px; }
 .col-genka-amount { width: 70px; color: #888; font-size: 11px; }
-.item-genka, .item-genka-amount { color: #999; font-size: 11px; }
+.item-genka-amount { color: #999; font-size: 11px; }
+.item-genka {
+  width: 100%;
+  text-align: right;
+  font-size: 11px;
+  color: #666;
+  border: 1px solid #ccc !important;
+  background: #fafafa !important;
+  border-radius: 3px;
+}
 
 /* ── 仕様行 ──────────────────────────────────────────────────── */
 .spec-line-row td { background: #fafafa; padding: 1px 2px; }
