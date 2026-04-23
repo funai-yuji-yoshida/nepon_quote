@@ -1211,6 +1211,35 @@ button {
 }
 
 /* ----------------------------------------
+   減衰区分・工事カテゴリ・減衰A・減衰B 列
+   ---------------------------------------- */
+.col-gensui-kubun, .col-koji-category,
+.col-gensui-a, .col-gensui-b { white-space: nowrap; text-align: center; }
+.col-gensui-kubun  { width: 52px; }
+.col-koji-category { width: 100px; }
+.col-gensui-a      { width: 64px; }
+.col-gensui-b      { width: 64px; }
+.item-koji-category,
+.item-gensui-a, .item-gensui-b { color: #666; font-size: 11px; }
+select.item-gensui-kubun {
+  width: 100%; max-width: 52px; font-size: 11px; padding: 1px 0;
+  border: 1px solid #ccc; border-radius: 2px; background: #fff;
+  box-sizing: border-box;
+}
+input.item-gensui-a, input.item-gensui-b {
+  width: 100%; font-size: 11px; padding: 1px 2px; text-align: center;
+  border: 1px solid #ccc; border-radius: 2px; background: #fff;
+  box-sizing: border-box;
+  -moz-appearance: textfield;
+}
+input.item-gensui-a::-webkit-outer-spin-button,
+input.item-gensui-a::-webkit-inner-spin-button,
+input.item-gensui-b::-webkit-outer-spin-button,
+input.item-gensui-b::-webkit-inner-spin-button {
+  -webkit-appearance: none; margin: 0;
+}
+
+/* ----------------------------------------
    歩単・歩工 列
    ---------------------------------------- */
 .col-houdan,

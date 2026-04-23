@@ -444,7 +444,6 @@
               <th>減衰率</th>
               <th>歩工合計（減衰前）</th>
               <th>歩工合計（減衰後）</th>
-              <th>削減</th>
             </tr>
           </thead>
           <tbody id="gensuiSummaryBody"></tbody>
@@ -609,6 +608,10 @@
             <th class="col-dairi">代理店価格</th>
             <th class="col-genka">原価</th>
             <th class="col-genka-amount">原価合計</th>
+            <th class="col-gensui-kubun">減衰区分</th>
+            <th class="col-koji-category">工事カテゴリ</th>
+            <th class="col-gensui-a">減衰A</th>
+            <th class="col-gensui-b">減衰B</th>
             <th class="col-houdan">歩単</th>
             <th class="col-houkou-kubun">歩工区分</th>
             <th class="col-houkou-goukei">歩工合計</th>
@@ -673,6 +676,10 @@
       <td class="col-dairi"><span class="item-dairi"></span></td>
       <td class="col-genka"><input type="number" class="item-genka" placeholder="" min="0" step="1"></td>
       <td class="col-genka-amount"><span class="item-genka-amount"></span></td>
+      <td class="col-gensui-kubun"><select class="item-gensui-kubun"><option value="">―</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></td>
+      <td class="col-koji-category"><span class="item-koji-category"></span></td>
+      <td class="col-gensui-a"><input type="number" class="item-gensui-a" step="0.1" min="0" placeholder=""></td>
+      <td class="col-gensui-b"><input type="number" class="item-gensui-b" step="0.01" min="0" placeholder=""></td>
       <td class="col-houdan"><span class="item-houdan"></span></td>
       <td class="col-houkou-kubun"><span class="item-houkou-kubun"></span></td>
       <td class="col-houkou-goukei"><input type="number" class="item-houkou-goukei" placeholder="-" min="0" step="any" title="手動入力で自動計算を上書き"></td>
