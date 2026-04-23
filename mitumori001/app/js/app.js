@@ -1440,7 +1440,7 @@ const app = (() => {
     if (sectionsContainer) sectionsContainer.style.display = frpOn ? 'none' : '';
     if (noSectionsMsg)     noSectionsMsg.style.display     = frpOn ? 'none' : '';
     if (itemsToolbar)      itemsToolbar.style.display      = frpOn ? 'none' : '';
-    if (gensuiSummary)     gensuiSummary.style.display     = 'none';
+    if (gensuiSummary)     gensuiSummary.style.display     = frpOn ? 'none' : '';
 
     const btn   = document.getElementById('btnFrpMode');
     const label = document.getElementById('frpModeLabel');
