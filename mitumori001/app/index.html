@@ -43,23 +43,22 @@
     <div id="tab-basic" class="tab-content active">
       <div class="form-section">
         <h3 class="section-title">見積番号</h3>
-        <div class="form-row">
+        <div class="form-row" id="rowKoujiCategory">
           <label>工事カテゴリ</label>
           <select id="koujiCategory">
             <option value="">― 選択 ―</option>
-            <option value="CD">CD：熱機器</option>
-            <option value="CE">CE：缶体交換</option>
-            <option value="CK">CK：環境施設</option>
-            <option value="CP">CP：衛生</option>
             <option value="CQ">CQ：農用施設</option>
             <option value="CQX">CQX：農用施設（大規模等）</option>
+            <option value="CD">CD：熱機器</option>
+            <option value="CE">CE：缶体交換</option>
+            <option value="CP">CP：衛生</option>
           </select>
         </div>
         <div class="form-row">
           <label>作成所課</label>
           <select id="createDept"><option value="">― 読込中 ―</option></select>
         </div>
-        <div class="form-row">
+        <div class="form-row" id="rowSiteDept">
           <label>現場所課</label>
           <select id="siteDept"><option value="">― 読込中 ―</option></select>
         </div>
@@ -74,7 +73,7 @@
         </div>
         <div class="form-row">
           <label>枝番</label>
-          <input type="text" id="edaban" value="01" class="input-small" maxlength="2" placeholder="01">
+          <input type="text" id="edaban" value="1" class="input-small" maxlength="4" placeholder="1">
         </div>
         <div class="form-row">
           <label>見積提出日</label>
@@ -327,6 +326,7 @@
               <button class="cat-tab active" data-cat="product" onclick="app.switchCatTab('product')">商品</button>
               <button class="cat-tab" data-cat="kanzai" onclick="app.switchCatTab('kanzai')">管材</button>
               <button class="cat-tab" data-cat="denzai" onclick="app.switchCatTab('denzai')">電材</button>
+              <button class="cat-tab" data-cat="kouji" onclick="app.switchCatTab('kouji')">工事</button>
               <button class="cat-tab" data-cat="standard" onclick="app.switchCatTab('standard')">標準項</button>
             </div>
             <div class="cat-panel-wrap">
@@ -347,6 +347,17 @@
                   <input type="text" id="denzaiSearch" placeholder="電材名・型式で検索..." class="input-search" oninput="app.searchDenzai(this.value)">
                   <div id="denzaiDropdown" class="product-dropdown" style="display:none"></div>
                 </div>
+              </div>
+              <div class="cat-panel" id="catPanel-kouji" style="display:none">
+                <select id="koujiKubunSelect" class="input-search" style="height:30px;width:100px;" onchange="app.onKoujiKubunChange(this.value)">
+                  <option value="">― 工事区分 ―</option>
+                  <option value="機械工事">機械工事</option>
+                  <option value="配管工事">配管工事</option>
+                  <option value="雑工">雑工</option>
+                </select>
+                <select id="koujiNameSelect" class="input-search" style="height:30px;width:220px;">
+                  <option value="">― 工事名称を選択 ―</option>
+                </select>
               </div>
               <div class="cat-panel" id="catPanel-standard" style="display:none">
                 <select id="standardModelSelect" class="input-search" style="height:30px;">
@@ -515,6 +526,13 @@
             </label>
           </div>
 
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printSummaryMode">
+              見積まとめを追加印刷する（明細の後に①②③④集計ページを追加）
+            </label>
+          </div>
+
           <div id="pdfPriceModeGroup" class="pdf-price-mode-group" style="display:none">
             <span class="pdf-price-mode-label">印刷価格:</span>
             <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="teika"> 定価</label>
@@ -582,7 +600,7 @@
         <select class="section-cat-select"><option value="">― カテゴリ ―</option></select>
         <select class="section-name-select" style="display:none"></select>
         <input type="text" class="section-name-input" list="" placeholder="大項目名を入力...">
-        <label class="section-qty-label" title="式数"><input type="number" class="section-qty-input" value="1" min="1" step="1">式</label>
+        <label class="section-qty-label" title="式数"><input type="text" class="section-qty-input" value="1">式</label>
         <span class="section-collapsed-info"></span>
         <div class="section-actions">
           <button class="btn-icon" onclick="app.moveSectionUp(this)" title="上へ">▲</button>
@@ -605,6 +623,7 @@
             <th class="col-amount">金額</th>
             <th class="col-labor-check" title="労務費に含める">労務</th>
             <th class="col-dairi-rate">掛率</th>
+            <th class="col-dairi-unit">代理店単価</th>
             <th class="col-dairi">代理店価格</th>
             <th class="col-genka">原価</th>
             <th class="col-genka-amount">原価合計</th>
@@ -628,7 +647,7 @@
         <button class="btn-add-item" onclick="app.addItem(this)">＋ 行を追加</button>
         <div class="section-rate-wrap">
           <label class="section-rate-label">一括掛率</label>
-          <input type="number" class="section-rate-input" step="0.001" min="0.001" max="9.999" placeholder="例: 0.8">
+          <input type="text" inputmode="decimal" class="section-rate-input" placeholder="例: 0.8">
           <button class="btn-section-rate" onclick="app.applyBulkRate(this)">適用</button>
         </div>
         <div class="section-subtotal">
@@ -645,7 +664,7 @@
     <tr class="item-row" draggable="true" data-item-id="" data-calc-category="">
       <td class="col-drag"><span class="drag-handle" title="ドラッグして移動">⠿</span></td>
       <td class="col-name">
-        <input type="text" class="item-name" placeholder="品名">
+        <input type="text" class="item-name" lang="ja" placeholder="品名">
       </td>
       <td class="col-calc-cat">
         <select class="item-calc-cat">
@@ -654,35 +673,56 @@
           <option value="②支持具雑材">②支持具雑材</option>
           <option value="③配線部材">③配線部材</option>
           <option value="④工事費">④工事費</option>
+          <option value="⑤その他">⑤その他</option>
         </select>
       </td>
       <td class="col-spec"><input type="text" class="item-spec" placeholder="型番・規格"></td>
       <td class="col-qty"><input type="number" class="item-qty" value="1" min="0" step="any"></td>
       <td class="col-unit">
         <select class="item-unit">
-          <option value="式">式</option>
-          <option value="台">台</option>
-          <option value="本">本</option>
-          <option value="個">個</option>
-          <option value="m">m</option>
-          <option value="基">基</option>
           <option value="セット">セット</option>
+          <option value="組">組</option>
+          <option value="ユニット">ユニット</option>
+          <option value="ダース">ダース</option>
+          <option value="基">基</option>
+          <option value="台">台</option>
+          <option value="個">個</option>
+          <option value="本">本</option>
+          <option value="巻">巻</option>
+          <option value="缶">缶</option>
+          <option value="m">m</option>
+          <option value="㎡">㎡</option>
+          <option value="㎥">㎥</option>
+          <option value="リットル">リットル</option>
+          <option value="袋">袋</option>
+          <option value="kg">kg</option>
+          <option value="トン">トン</option>
+          <option value="a">a</option>
+          <option value="ha">ha</option>
+          <option value="式">式</option>
+          <option value="面">面</option>
         </select>
       </td>
       <td class="col-price"><input type="text" inputmode="numeric" class="item-price" placeholder="（空欄可）"></td>
       <td class="col-amount"><input type="text" inputmode="numeric" class="item-amount" placeholder="0"></td>
       <td class="col-labor-check"><input type="checkbox" class="item-labor-check" title="労務費に含める"></td>
       <td class="col-dairi-rate"><input type="text" inputmode="decimal" class="item-dairi-rate" placeholder=""></td>
+      <td class="col-dairi-unit">
+        <div class="dairi-unit-wrap">
+          <input type="text" inputmode="numeric" class="item-dairi-unit" placeholder="">
+          <button class="btn-dairi-unit-lock" onclick="app.clearDairiUnitPrice(this)" title="手動入力をクリアして自動計算に戻す" style="display:none">🔒</button>
+        </div>
+      </td>
       <td class="col-dairi"><span class="item-dairi"></span></td>
-      <td class="col-genka"><input type="number" class="item-genka" placeholder="" min="0" step="1"></td>
+      <td class="col-genka"><input type="text" inputmode="numeric" class="item-genka" placeholder=""></td>
       <td class="col-genka-amount"><span class="item-genka-amount"></span></td>
       <td class="col-gensui-kubun"><input type="checkbox" class="item-gensui-enabled" title="減衰計算" style="display:none"><select class="item-gensui-kubun"><option value="">―</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></td>
       <td class="col-koji-category"><span class="item-koji-category"></span></td>
-      <td class="col-gensui-a"><input type="number" class="item-gensui-a" step="0.1" min="0" placeholder=""></td>
-      <td class="col-gensui-b"><input type="number" class="item-gensui-b" step="0.01" min="0" placeholder=""></td>
-      <td class="col-houdan"><span class="item-houdan"></span></td>
+      <td class="col-gensui-a"><input type="text" inputmode="decimal" class="item-gensui-a" placeholder=""></td>
+      <td class="col-gensui-b"><input type="text" inputmode="decimal" class="item-gensui-b" placeholder=""></td>
+      <td class="col-houdan"><input type="text" inputmode="decimal" class="item-houdan" placeholder=""></td>
       <td class="col-houkou-kubun"><span class="item-houkou-kubun"></span></td>
-      <td class="col-houkou-goukei"><input type="number" class="item-houkou-goukei" placeholder="-" min="0" step="any" title="手動入力で自動計算を上書き"></td>
+      <td class="col-houkou-goukei"><input type="text" inputmode="decimal" class="item-houkou-goukei" placeholder="-" title="手動入力で自動計算を上書き"></td>
       <td class="col-houkou"><span class="item-houkou"></span></td>
       <td class="col-item-actions">
         <div class="item-action-btns">

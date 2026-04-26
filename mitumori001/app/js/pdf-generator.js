@@ -220,6 +220,11 @@ const QuotationPDF = (() => {
             ? buildFrpDetailPages({ quoteNoStr, frpItems, frpAB, frpPriceTotal, frpShikiriTotal })
             : buildDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode })
           ),
+          // 見積まとめモード: 明細ページの後にまとめページを追加
+          ...(data.printSummaryMode && !frpMode ? [
+            { text: '', pageBreak: 'after' },
+            ...buildSummaryDetailPages({ sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode }),
+          ] : []),
         ] : []),
       ],
     };
@@ -232,7 +237,14 @@ const QuotationPDF = (() => {
     mainRate, pdfPriceMode, showUchiwake,
     frpMode, frpItems, frpAB, frpPriceTotal, frpShikiriTotal }) {
     const useDairi = pdfPriceMode === 'dairi' && mainRate != null;
-    const dairi = (v, item) => Math.round((Number(v) || 0) * ((item?.dairiRate ?? mainRate) ?? mainRate));
+    const dairi = (v, item) => {
+      if (item?.dairiUnitPrice != null) return item.dairiUnitPrice * (Number(item?.qty) || 1);
+      return Math.round((Number(v) || 0) * ((item?.dairiRate ?? mainRate) ?? mainRate));
+    };
+    const dairiUnit = (item) => {
+      if (item?.dairiUnitPrice != null) return item.dairiUnitPrice;
+      return item?.unitPrice ? Math.round(item.unitPrice * ((item.dairiRate ?? mainRate) ?? mainRate)) : null;
+    };
     // 値引き額ラベル: 工事を含む場合→「出精値引き」、物販・作業→「値引き額」
     const discountLabel = (quoteCategory || '').includes('工事') ? '出精値引き' : '値引き額';
 
@@ -312,7 +324,11 @@ const QuotationPDF = (() => {
       }
       if (entry.type === 'section') {
         const s = entry.s;
-        const dairiSubtotal = (s.items || []).reduce((sum, i) => sum + Math.round((Number(i.amount) || 0) * ((i.dairiRate ?? mainRate) ?? mainRate)), 0);
+        const dairiSubtotal = (s.items || []).reduce((sum, i) => {
+          const qty = Number(i.qty) || 1;
+          if (i.dairiUnitPrice != null) return sum + i.dairiUnitPrice * qty;
+          return sum + Math.round((Number(i.amount) || 0) * ((i.dairiRate ?? mainRate) ?? mainRate));
+        }, 0);
         tableRows.push([
           { text: String(s.no || ''), alignment: 'center', fontSize: itemFs },
           { text: s.name || '', fontSize: itemFs },
@@ -348,7 +364,7 @@ const QuotationPDF = (() => {
           { text: item.name || '', fontSize: itemFs },
           { text: String(item.qty || 1), alignment: 'center', fontSize: itemFs },
           { text: item.unit || '式', alignment: 'center', fontSize: itemFs },
-          { text: fmt(useDairi ? dairi(item.unitPrice, item) : item.unitPrice), alignment: 'right', fontSize: itemFs },
+          { text: fmt(useDairi ? dairiUnit(item) : item.unitPrice), alignment: 'right', fontSize: itemFs },
           { text: fmt(useDairi ? dairi(item.amount, item) : item.amount), alignment: 'right', fontSize: itemFs },
         ]);
       }
@@ -372,7 +388,11 @@ const QuotationPDF = (() => {
       { text: '', border: [true, true, false, false] },
       { text: '合　　計', alignment: 'center', bold: true, fontSize: itemFs, colSpan: 4, border: [false, true, false, false] },
       {}, {}, {},
-      { text: fmt(useDairi ? (data.dairiTotal || sectionTotals.reduce((sum, s) => sum + (s.items || []).reduce((ss, i) => ss + Math.round((Number(i.amount) || 0) * ((i.dairiRate ?? mainRate) ?? mainRate)), 0) * (s.secQty || 1), 0)) : grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
+      { text: fmt(useDairi ? (data.dairiTotal || sectionTotals.reduce((sum, s) => sum + (s.items || []).reduce((ss, i) => {
+          const qty = Number(i.qty) || 1;
+          if (i.dairiUnitPrice != null) return ss + i.dairiUnitPrice * qty;
+          return ss + Math.round((Number(i.amount) || 0) * ((i.dairiRate ?? mainRate) ?? mainRate));
+        }, 0) * (s.secQty || 1), 0)) : grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
     ]);
 
     if (!isTeika) {
@@ -421,13 +441,13 @@ const QuotationPDF = (() => {
         {}, {}, {},
         { text: fmt(legalWelfare), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
       ]);
-      // 内訳 4) 安全衛生経費
-      tableRows.push([
-        { text: '', border: [true, false, false, true] },
-        { text: '4）安全衛生経費', fontSize: itemFs, colSpan: 4, border: [false, false, false, true] },
-        {}, {}, {},
-        { text: fmt(anzenCost), alignment: 'right', fontSize: itemFs, border: [false, false, true, true] },
-      ]);
+      // 内訳 4) 安全衛生経費 ※後日実装予定のため一時非表示
+      // tableRows.push([
+      //   { text: '', border: [true, false, false, true] },
+      //   { text: '4）安全衛生経費', fontSize: itemFs, colSpan: 4, border: [false, false, false, true] },
+      //   {}, {}, {},
+      //   { text: fmt(anzenCost), alignment: 'right', fontSize: itemFs, border: [false, false, true, true] },
+      // ]);
     }
 
     // ── 見積外工事リスト（選択なしの場合は非表示）──────────────
@@ -780,10 +800,170 @@ const QuotationPDF = (() => {
     }];
   }
 
+  // ── 2ページ目以降（見積まとめモード）──────────────────────────
+
+  function buildSummaryDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode }) {
+    const useDairi = pdfPriceMode === 'dairi' && mainRate != null;
+    const dairiItemAmt = (item) => {
+      const qty = Number(item.qty) || 1;
+      if (item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
+      return Math.round((Number(item.amount) || 0) * (item.dairiRate ?? mainRate));
+    };
+    const dairiItemUnit = (item) => {
+      if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
+      return item.unitPrice ? Math.round(item.unitPrice * (item.dairiRate ?? mainRate)) : null;
+    };
+    const COL_WIDTHS = [22, '*', 36, 30, 58, 58];
+    const result = [];
+
+    const headerRow = [
+      { text: 'No.', style: 'tableHeader' },
+      { text: '項　　　目', style: 'tableHeader' },
+      { text: '数量', style: 'tableHeader' },
+      { text: '単位', style: 'tableHeader' },
+      { text: '単　価', style: 'tableHeader' },
+      { text: '金　　額', style: 'tableHeader' },
+    ];
+
+    sectionTotals.forEach((section, sIdx) => {
+      const rows = [headerRow];
+
+      // セクションヘッダー
+      rows.push([
+        { text: String(section.no || sIdx + 1), alignment: 'center', style: 'sectionHdr' },
+        { text: `※${section.name || ''}`, style: 'sectionHdr', colSpan: 5 },
+        {}, {}, {}, {},
+      ]);
+
+      // ①②③④ カテゴリ別集計 / それ以外は個別表示
+      const catTotals    = {};
+      const catDairiTotals = {};
+      const normalItems  = [];
+      (section.items || []).forEach(item => {
+        const prefix = (item.calcCategory || '').trim().charAt(0);
+        if (CALC_CATEGORY_LABELS[prefix]) {
+          catTotals[prefix]      = (catTotals[prefix]      || 0) + (Number(item.amount) || 0);
+          catDairiTotals[prefix] = (catDairiTotals[prefix] || 0) + dairiItemAmt(item);
+        } else {
+          normalItems.push(item);
+        }
+      });
+
+      // カテゴリなし → 個別行
+      normalItems.forEach(item => {
+        rows.push([
+          { text: '' },
+          { text: item.name || '' },
+          { text: item.qty != null && item.qty !== '' ? String(item.qty) : '', alignment: 'right' },
+          { text: item.unit || '', alignment: 'center' },
+          { text: useDairi ? fmt(dairiItemUnit(item)) : (item.unitPrice ? fmt(item.unitPrice) : ''), alignment: 'right' },
+          { text: fmt(useDairi ? dairiItemAmt(item) : item.amount), alignment: 'right' },
+        ]);
+      });
+
+      // カテゴリあり → 集計行
+      CALC_CATEGORY_ORDER.forEach(prefix => {
+        const amount = useDairi ? catDairiTotals[prefix] : catTotals[prefix];
+        if (!amount) return;
+        rows.push([
+          { text: '' },
+          { text: CALC_CATEGORY_LABELS[prefix] },
+          { text: '1', alignment: 'right' },
+          { text: '式', alignment: 'center' },
+          { text: '', alignment: 'right' },
+          { text: fmt(amount), alignment: 'right' },
+        ]);
+      });
+
+      // 空白行
+      for (let i = 0; i < 2; i++) {
+        rows.push([
+          { text: '', border: [true, false, true, false] },
+          { text: '', border: [false, false, false, false] },
+          { text: '', border: [false, false, false, false] },
+          { text: '', border: [false, false, false, false] },
+          { text: '', border: [false, false, false, false] },
+          { text: '', border: [false, false, true, false] },
+        ]);
+      }
+
+      // 小計行
+      const dairiSub = (section.items || []).reduce((sum, i) => sum + dairiItemAmt(i), 0);
+      rows.push([
+        { text: '', border: [true, true, true, true], fillColor: '#f0f0f0' },
+        { text: '─────小計─────', alignment: 'center', bold: true, colSpan: 4, border: [true, true, true, true], fillColor: '#f0f0f0' },
+        {}, {}, {},
+        { text: fmt(useDairi ? dairiSub : section.subtotal), alignment: 'right', bold: true, border: [true, true, true, true], fillColor: '#f0f0f0' },
+      ]);
+
+      // 合計N式行
+      if ((section.secQty || 1) > 1) {
+        rows.push([
+          { text: '', border: [true, false, true, true], fillColor: '#e8f0f8' },
+          { text: `${section.name || '合計'}　${section.secQty}式`, alignment: 'center', bold: true, colSpan: 4, border: [true, false, true, true], fillColor: '#e8f0f8' },
+          {}, {}, {},
+          { text: fmt(useDairi ? dairiSub * (section.secQty || 1) : section.effectiveTotal), alignment: 'right', bold: true, border: [true, false, true, true], fillColor: '#e8f0f8' },
+        ]);
+      }
+
+      result.push({
+        table: { widths: COL_WIDTHS, headerRows: 1, body: rows, dontBreakRows: false },
+        layout: {
+          hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length) ? 0.8 : 0.3,
+          vLineWidth: () => 0.5,
+          paddingLeft:   () => 3,
+          paddingRight:  () => 3,
+          paddingTop:    () => 2,
+          paddingBottom: () => 2,
+          hLineColor: () => '#555',
+          vLineColor: () => '#888',
+        },
+        margin: sIdx > 0 ? [0, 12, 0, 0] : [0, 0, 0, 0],
+      });
+    });
+
+    // 合計行
+    if (sectionTotals.length > 0) {
+      const totalDairi = sectionTotals.reduce((sum, s) =>
+        sum + (s.items || []).reduce((ss, i) => ss + dairiItemAmt(i), 0) * (s.secQty || 1), 0);
+      result.push({
+        margin: [0, 0, 0, 0],
+        table: {
+          widths: COL_WIDTHS,
+          body: [[
+            { text: '', border: [true, true, false, true], fillColor: '#e8f0f8' },
+            { text: '合　　計', alignment: 'center', bold: true, colSpan: 4, border: [false, true, false, true], fillColor: '#e8f0f8' },
+            {}, {}, {},
+            { text: fmt(useDairi ? totalDairi : grandTotal), alignment: 'right', bold: true, border: [false, true, true, true], fillColor: '#e8f0f8' },
+          ]],
+        },
+        layout: {
+          hLineWidth: () => 0.8,
+          vLineWidth: () => 0.5,
+          paddingLeft:   () => 3,
+          paddingRight:  () => 3,
+          paddingTop:    () => 3,
+          paddingBottom: () => 3,
+        },
+      });
+    }
+
+    return result;
+  }
+
   // ── 2ページ目以降（明細書）──────────────────────────────────
 
   function buildDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode }) {
     const useDairi = pdfPriceMode === 'dairi' && mainRate != null;
+    const dairiItemUnit = (item) => {
+      if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
+      return item.unitPrice ? Math.round(item.unitPrice * (item.dairiRate ?? mainRate)) : null;
+    };
+    const dairiItemAmt = (item) => {
+      const qty = Number(item.qty) || 1;
+      if (item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
+      return Math.round((Number(item.amount) || 0) * (item.dairiRate ?? mainRate));
+    };
     const COL_WIDTHS = [22, '*', 36, 30, 58, 58];
     const result = [];
 
@@ -818,8 +998,8 @@ const QuotationPDF = (() => {
           { text: item.name || '' },
           { text: item.qty != null && item.qty !== '' ? String(item.qty) : '', alignment: 'right' },
           { text: item.unit || '', alignment: 'center' },
-          { text: item.unitPrice ? fmt(useDairi ? Math.round(item.unitPrice * (item.dairiRate ?? mainRate)) : item.unitPrice) : '', alignment: 'right' },
-          { text: fmt(useDairi ? Math.round((Number(item.amount) || 0) * (item.dairiRate ?? mainRate)) : item.amount), alignment: 'right' },
+          { text: useDairi ? fmt(dairiItemUnit(item)) : (item.unitPrice ? fmt(item.unitPrice) : ''), alignment: 'right' },
+          { text: fmt(useDairi ? dairiItemAmt(item) : item.amount), alignment: 'right' },
         ]);
         // 仕様行
         (item.specLines || []).filter(l => (l || '').trim()).forEach(line => {
@@ -849,6 +1029,7 @@ const QuotationPDF = (() => {
       }
 
       // 小計行
+      const dairiSub = (section.items || []).reduce((sum, i) => sum + dairiItemAmt(i), 0);
       rows.push([
         { text: '', border: [true, true, true, true], fillColor: '#f0f0f0' },
         {
@@ -861,7 +1042,7 @@ const QuotationPDF = (() => {
         },
         {}, {}, {},
         {
-          text: fmt(section.subtotal),
+          text: fmt(useDairi ? dairiSub : section.subtotal),
           alignment: 'right',
           bold: true,
           border: [true, true, true, true],
@@ -883,7 +1064,7 @@ const QuotationPDF = (() => {
           },
           {}, {}, {},
           {
-            text: fmt(section.effectiveTotal),
+            text: fmt(useDairi ? dairiSub * (section.secQty || 1) : section.effectiveTotal),
             alignment: 'right',
             bold: true,
             border: [true, false, true, true],
@@ -933,7 +1114,7 @@ const QuotationPDF = (() => {
             {
               text: useDairi
                 ? fmt(sectionTotals.reduce((sum, s) =>
-                    sum + (s.items || []).reduce((ss, i) => ss + Math.round((Number(i.amount) || 0) * (i.dairiRate ?? mainRate)), 0) * (s.secQty || 1), 0))
+                    sum + (s.items || []).reduce((ss, i) => ss + dairiItemAmt(i), 0) * (s.secQty || 1), 0))
                 : fmt(grandTotal),
               alignment: 'right',
               bold: true,
