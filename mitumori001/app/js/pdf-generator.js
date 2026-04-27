@@ -816,7 +816,7 @@ const QuotationPDF = (() => {
     const COL_WIDTHS = [22, '*', 36, 30, 58, 58];
     const result = [];
 
-    const headerRow = [
+    const makeHeaderRow = () => [
       { text: 'No.', style: 'tableHeader' },
       { text: '項　　　目', style: 'tableHeader' },
       { text: '数量', style: 'tableHeader' },
@@ -826,7 +826,7 @@ const QuotationPDF = (() => {
     ];
 
     sectionTotals.forEach((section, sIdx) => {
-      const rows = [headerRow];
+      const rows = [makeHeaderRow()];
 
       // セクションヘッダー
       rows.push([
@@ -907,7 +907,7 @@ const QuotationPDF = (() => {
       }
 
       result.push({
-        table: { widths: COL_WIDTHS, headerRows: 1, body: rows, dontBreakRows: false },
+        table: { widths: COL_WIDTHS, headerRows: 0, body: rows, dontBreakRows: false },
         layout: {
           hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length) ? 0.8 : 0.3,
           vLineWidth: () => 0.5,
@@ -967,8 +967,7 @@ const QuotationPDF = (() => {
     const COL_WIDTHS = [22, '*', 36, 30, 58, 58];
     const result = [];
 
-    // テーブルヘッダー行（各ページ先頭で繰り返す用）
-    const headerRow = [
+    const makeHeaderRow = () => [
       { text: 'No.', style: 'tableHeader' },
       { text: '項　　　目', style: 'tableHeader' },
       { text: '数量', style: 'tableHeader' },
@@ -978,7 +977,7 @@ const QuotationPDF = (() => {
     ];
 
     sectionTotals.forEach((section, sIdx) => {
-      const rows = [headerRow];
+      const rows = [makeHeaderRow()];
 
       // セクションヘッダー行
       rows.push([
@@ -1076,7 +1075,7 @@ const QuotationPDF = (() => {
       result.push({
         table: {
           widths:     COL_WIDTHS,
-          headerRows: 1,
+          headerRows: 0,
           body:       rows,
           dontBreakRows: false,
         },
