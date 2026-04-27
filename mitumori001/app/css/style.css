@@ -659,8 +659,14 @@ button {
   flex-shrink: 0;
   width: 130px;
 }
-.section-name-input {
+.section-name-wrap {
+  position: relative;
   flex: 1;
+  min-width: 0;
+}
+.section-name-input {
+  width: 100%;
+  box-sizing: border-box;
   border: 1px solid #aac;
   border-radius: 4px;
   padding: 5px 8px;
@@ -668,7 +674,31 @@ button {
   font-weight: bold;
   background: #fff;
   color: #1a3a6a;
-  min-width: 0;
+}
+.section-name-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #aac;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 9999;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+.section-name-dropdown .dd-item {
+  padding: 6px 10px;
+  font-size: 13px;
+  color: #1a3a6a;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.section-name-dropdown .dd-item:hover,
+.section-name-dropdown .dd-item.active {
+  background: #ddeeff;
 }
 
 .section-qty-label {
@@ -812,7 +842,7 @@ button {
 .section-block.collapsed .section-collapsed-info {
   display: block;
 }
-.section-block.collapsed .section-name-input,
+.section-block.collapsed .section-name-wrap,
 .section-block.collapsed .section-cat-select,
 .section-block.collapsed .section-qty-label {
   display: none;

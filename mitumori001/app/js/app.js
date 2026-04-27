@@ -540,29 +540,65 @@ const app = (() => {
   }
 
   /**
-   * カテゴリに応じた datalist を生成し input の list 属性に紐づける
+   * カテゴリに応じて nameInput に紐づくドロップダウン候補リストを更新する
    * カテゴリ未選択時は全件表示
    */
   function updateNameDatalist(catSel, nameInput) {
-    const block   = nameInput.closest('.section-block');
-    const nameSel = block?.querySelector('.section-name-select');
-    const cat     = SECTION_CATEGORIES.find(c => c.label === catSel.value);
-
-    // section-name-select は常に非表示（datalist 方式に統一）
-    if (nameSel) nameSel.style.display = 'none';
-    nameInput.style.display = '';
-
-    // datalist を生成して候補を提供（自由入力は常に可能）
-    const listId = nameInput.id ? `dl-${nameInput.id}` : `dl-${Math.random().toString(36).slice(2)}`;
-    let dl = document.getElementById(listId);
-    if (!dl) {
-      dl = document.createElement('datalist');
-      dl.id = listId;
-      nameInput.parentNode.appendChild(dl);
-      nameInput.setAttribute('list', listId);
-    }
+    const cat   = SECTION_CATEGORIES.find(c => c.label === catSel.value);
     const items = cat ? cat.items : SECTION_CATEGORIES.flatMap(c => c.items);
-    dl.innerHTML = items.map(n => `<option value="${n}">`).join('');
+    nameInput._ddItems = items;
+  }
+
+  // グローバルシングルトンドロップダウン（overflow:hidden を escape するため body に配置）
+  const _nameDd = (() => {
+    const dd = document.createElement('div');
+    dd.className = 'section-name-dropdown';
+    dd.style.cssText = 'position:fixed;display:none;z-index:9999';
+    document.body.appendChild(dd);
+    // 候補クリック → _onSelect コールバックで state 更新
+    dd.addEventListener('mousedown', (e) => {
+      const item = e.target.closest('.dd-item');
+      if (!item || !dd._input) return;
+      e.preventDefault();
+      dd._input.value = item.dataset.value;
+      dd.style.display = 'none';
+      if (dd._onSelect) dd._onSelect(item.dataset.value);
+      dd._input.focus();
+    });
+    // 画面スクロール/リサイズで位置を追従
+    const reposition = () => {
+      if (dd.style.display === 'none' || !dd._input) return;
+      const r = dd._input.getBoundingClientRect();
+      dd.style.top   = r.bottom + 'px';
+      dd.style.left  = r.left  + 'px';
+      dd.style.width = r.width + 'px';
+    };
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition);
+    return dd;
+  })();
+
+  /** カスタムドロップダウンを開く（filter: 絞り込み文字列、onSelect: 選択時コールバック） */
+  function openNameDropdown(nameInput, filter, onSelect) {
+    const items   = nameInput._ddItems || [];
+    const q       = (filter || '').trim().toLowerCase();
+    const matched = q ? items.filter(n => n.toLowerCase().includes(q)) : items;
+    if (matched.length === 0) { _nameDd.style.display = 'none'; return; }
+    _nameDd._input    = nameInput;
+    _nameDd._onSelect = onSelect || null;
+    _nameDd.innerHTML = matched
+      .map(n => `<div class="dd-item" data-value="${n}">${n}</div>`)
+      .join('');
+    const r = nameInput.getBoundingClientRect();
+    _nameDd.style.top   = r.bottom + 'px';
+    _nameDd.style.left  = r.left   + 'px';
+    _nameDd.style.width = r.width  + 'px';
+    _nameDd.style.display = 'block';
+  }
+
+  /** カスタムドロップダウンを閉じる */
+  function closeNameDropdown(nameInput) {
+    if (_nameDd._input === nameInput) _nameDd.style.display = 'none';
   }
 
   let state = {
@@ -2599,13 +2635,34 @@ const app = (() => {
       }
     });
 
-    // 大項目名入力（テキスト）→ state 更新 ＋ 折りたたみ表示を即時反映
-    nameInput.addEventListener('input', () => {
+    // state 更新 + 折りたたみ反映（ドロップダウン選択・直接入力共通）
+    const applyName = (value) => {
       const s = state.sections.find(s => s.id === sec.id);
       if (s) {
-        s.name = nameInput.value;
+        s.name = value;
         updateCollapsedInfo(sec.id, block);
       }
+    };
+
+    // 大項目名入力（テキスト）→ 絞り込みドロップダウン表示
+    nameInput.addEventListener('input', () => {
+      applyName(nameInput.value);
+      openNameDropdown(nameInput, nameInput.value, applyName);
+    });
+
+    // フォーカス取得 or クリック: 全候補を表示
+    const showAll = () => openNameDropdown(nameInput, '', applyName);
+    nameInput.addEventListener('focus', showAll);
+    nameInput.addEventListener('click', showAll);
+
+    // フォーカスを外したら閉じる
+    nameInput.addEventListener('blur', () => {
+      setTimeout(() => closeNameDropdown(nameInput), 150);
+    });
+
+    // Escape で閉じる
+    nameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeNameDropdown(nameInput);
     });
 
     // 式数入力 → state 更新
