@@ -317,61 +317,70 @@
 
       <div class="items-toolbar">
         <div class="toolbar-main">
-          <!-- 左: 大項目追加 -->
-          <button class="btn-primary btn-add-section" id="btnAddSection" onclick="app.addSection()">＋ 大項目を追加</button>
-
-          <!-- 中央: タブ切り替え検索 -->
-          <div class="cat-search-wrap">
-            <div class="cat-tabs">
-              <button class="cat-tab active" data-cat="product" onclick="app.switchCatTab('product')">商品</button>
-              <button class="cat-tab" data-cat="kanzai" onclick="app.switchCatTab('kanzai')">管材</button>
-              <button class="cat-tab" data-cat="denzai" onclick="app.switchCatTab('denzai')">電材</button>
-              <button class="cat-tab" data-cat="kouji" onclick="app.switchCatTab('kouji')">工事</button>
-              <button class="cat-tab" data-cat="standard" onclick="app.switchCatTab('standard')">標準項</button>
-            </div>
-            <div class="cat-panel-wrap">
-              <div class="cat-panel" id="catPanel-product">
-                <div class="product-search-group">
-                  <input type="text" id="productSearch" placeholder="商品名・型番で検索..." class="input-search" oninput="app.searchProducts(this.value)">
-                  <div id="productDropdown" class="product-dropdown" style="display:none"></div>
-                </div>
-              </div>
-              <div class="cat-panel" id="catPanel-kanzai" style="display:none">
-                <div class="product-search-group">
-                  <input type="text" id="kanzaiSearch" placeholder="管材名・型式で検索..." class="input-search" oninput="app.searchKanzai(this.value)">
-                  <div id="kanzaiDropdown" class="product-dropdown" style="display:none"></div>
-                </div>
-              </div>
-              <div class="cat-panel" id="catPanel-denzai" style="display:none">
-                <div class="product-search-group">
-                  <input type="text" id="denzaiSearch" placeholder="電材名・型式で検索..." class="input-search" oninput="app.searchDenzai(this.value)">
-                  <div id="denzaiDropdown" class="product-dropdown" style="display:none"></div>
-                </div>
-              </div>
-              <div class="cat-panel" id="catPanel-kouji" style="display:none">
-                <select id="koujiKubunSelect" class="input-search" style="height:30px;width:100px;" onchange="app.onKoujiKubunChange(this.value)">
-                  <option value="">― 工事区分 ―</option>
-                  <option value="機械工事">機械工事</option>
-                  <option value="配管工事">配管工事</option>
-                  <option value="雑工">雑工</option>
-                </select>
-                <select id="koujiNameSelect" class="input-search" style="height:30px;width:220px;">
-                  <option value="">― 工事名称を選択 ―</option>
-                </select>
-              </div>
-              <div class="cat-panel" id="catPanel-standard" style="display:none">
-                <select id="standardModelSelect" class="input-search" style="height:30px;">
-                  <option value="">型式を選択...</option>
-                </select>
-                <span class="standard-hint" id="standardHint" style="font-size:11px;color:#888;"></span>
-              </div>
-            </div>
-            <select id="commonTargetSection" class="input-standard cat-target-sel"></select>
-            <button class="btn-cat-add" id="btnCommonAdd" onclick="app.execCatAdd()">追加</button>
+          <!-- グループ1: 大項目追加 -->
+          <div class="toolbar-group">
+            <button class="btn-primary btn-add-section" id="btnAddSection" onclick="app.addSection()">＋ 大項目を追加</button>
           </div>
 
-          <!-- 右: 所課マスタ・列表示・合計 -->
-          <div class="toolbar-right">
+          <!-- グループ2: 品目検索・追加 -->
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;">
+            <div class="cat-search-wrap" style="flex:1;min-width:0;">
+              <div class="cat-tabs">
+                <button class="cat-tab active" data-cat="product" onclick="app.switchCatTab('product')">商品</button>
+                <button class="cat-tab" data-cat="kanzai" onclick="app.switchCatTab('kanzai')">管材</button>
+                <button class="cat-tab" data-cat="denzai" onclick="app.switchCatTab('denzai')">電材</button>
+                <button class="cat-tab" data-cat="kouji" onclick="app.switchCatTab('kouji')">工事</button>
+                <button class="cat-tab" data-cat="standard" onclick="app.switchCatTab('standard')">標準項</button>
+              </div>
+              <div class="cat-panel-wrap">
+                <div class="cat-panel" id="catPanel-product">
+                  <div class="product-search-group">
+                    <input type="text" id="productSearch" placeholder="商品名・型番で検索..." class="input-search" oninput="app.searchProducts(this.value)">
+                    <div id="productDropdown" class="product-dropdown" style="display:none"></div>
+                  </div>
+                </div>
+                <div class="cat-panel" id="catPanel-kanzai" style="display:none">
+                  <div class="product-search-group">
+                    <input type="text" id="kanzaiSearch" placeholder="管材名・型式で検索..." class="input-search" oninput="app.searchKanzai(this.value)">
+                    <div id="kanzaiDropdown" class="product-dropdown" style="display:none"></div>
+                  </div>
+                </div>
+                <div class="cat-panel" id="catPanel-denzai" style="display:none">
+                  <div class="product-search-group">
+                    <input type="text" id="denzaiSearch" placeholder="電材名・型式で検索..." class="input-search" oninput="app.searchDenzai(this.value)">
+                    <div id="denzaiDropdown" class="product-dropdown" style="display:none"></div>
+                  </div>
+                </div>
+                <div class="cat-panel" id="catPanel-kouji" style="display:none">
+                  <select id="koujiKubunSelect" class="input-search" style="height:30px;width:100px;" onchange="app.onKoujiKubunChange(this.value)">
+                    <option value="">― 工事区分 ―</option>
+                    <option value="機械工事">機械工事</option>
+                    <option value="配管工事">配管工事</option>
+                    <option value="雑工">雑工</option>
+                  </select>
+                  <select id="koujiNameSelect" class="input-search" style="height:30px;width:220px;">
+                    <option value="">― 工事名称を選択 ―</option>
+                  </select>
+                </div>
+                <div class="cat-panel" id="catPanel-standard" style="display:none">
+                  <select id="standardModelSelect" class="input-search" style="height:30px;">
+                    <option value="">型式を選択...</option>
+                  </select>
+                  <span class="standard-hint" id="standardHint" style="font-size:11px;color:#888;"></span>
+                </div>
+              </div>
+              <select id="commonTargetSection" class="input-standard cat-target-sel"></select>
+              <button class="btn-cat-add" id="btnCommonAdd" onclick="app.execCatAdd()">追加</button>
+            </div>
+          </div>
+
+          <!-- グループ3: 切り上げ -->
+          <div class="toolbar-group toolbar-group-sep">
+            <button class="btn-rounding" id="btnToggleRounding" onclick="app.toggleRounding()" title="単価を桁数に応じて切り上げ表示">切り上げ</button>
+          </div>
+
+          <!-- グループ4: 所課マスタ・列表示 -->
+          <div class="toolbar-group toolbar-group-sep toolbar-right">
             <span class="template-label">所課マスタ</span>
             <button class="btn-tpl-load" onclick="app.showTemplateLoadDialog()">📂 読み込み</button>
             <button class="btn-tpl-save" onclick="app.showTemplateSaveDialog()">💾 登録</button>

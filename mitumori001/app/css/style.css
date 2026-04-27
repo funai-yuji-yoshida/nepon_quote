@@ -426,11 +426,22 @@ button {
 .toolbar-main {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
   padding: 6px 10px;
   background: #f5f7fa;
   border: 1px solid #dde3ec;
   border-radius: 6px;
+}
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.toolbar-group-sep {
+  border-left: 1px solid #c8d0dc;
+  margin-left: 10px;
+  padding-left: 10px;
 }
 
 .btn-add-section {
@@ -519,12 +530,7 @@ button {
 
 /* 右ツールエリア */
 .toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-  border-left: 1px solid #dde3ec;
-  padding-left: 8px;
+  margin-left: auto;
 }
 
 .grand-total-display {
@@ -761,6 +767,25 @@ button {
 .col-qty    { width: 6%; }
 .col-unit   { width: 5%; }
 .col-price  { width: 10%; }
+.price-wrap { display: flex; align-items: center; gap: 2px; justify-content: flex-end; }
+.price-wrap .item-price { flex: 1; min-width: 0; }
+.item-price.is-auto-rounded { background: #fffbe6 !important; border-color: #f0b429 !important; }
+.item-price.is-overridden   { background: #fff0f0 !important; border-color: #e05c5c !important; }
+.btn-price-reset {
+  background: none; border: none; padding: 0 2px;
+  cursor: pointer; font-size: 13px; line-height: 1;
+  opacity: 0.65; flex-shrink: 0; color: #c0392b;
+}
+.btn-price-reset:hover { opacity: 1; }
+.btn-rounding {
+  font-size: 12px; padding: 4px 10px; cursor: pointer;
+  border-radius: 4px; border: 1px solid #bbb;
+  background: #fff; color: #333; white-space: nowrap;
+}
+.btn-rounding:hover { background: #f5f5f5; border-color: #999; }
+.btn-rounding.is-active {
+  background: #1a4d8f; color: #fff; border-color: #1a4d8f;
+}
 .col-amount { width: 10%; }
 .col-actions{ width: 3%; }
 
