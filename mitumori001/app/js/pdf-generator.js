@@ -1152,88 +1152,128 @@ const QuotationPDF = (() => {
     const dateStr   = toJpDate(data.date || new Date());
     const quoteNoStr = data.quoteNoStr || (data.seqNo ? `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}` : '（未採番）');
     const sections  = data.sections || [];
+    const showDairi = data.summaryShowDairi && data.mainRate != null;
+    const rate      = data.mainRate;
+
+    const dairiItemAmt  = item => {
+      if (item.dairiUnitPrice != null) return item.dairiUnitPrice * (Number(item.qty) || 1);
+      return Math.round((Number(item.amount) || 0) * rate);
+    };
+    const dairiItemUnit = item => {
+      if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
+      return item.unitPrice ? Math.round(Number(item.unitPrice) * rate) : null;
+    };
 
     // セクション別・カテゴリ別集計
     const sectionRows = sections.map(sec => {
-      const catTotals = {};
-      const noCategory = [];
+      const catTotals      = {};
+      const catDairiTotals = {};
+      const noCategory     = [];
 
       (sec.items || []).forEach(item => {
         const prefix = (item.calcCategory || '').trim().charAt(0);
         if (CALC_CATEGORY_LABELS[prefix]) {
-          if (!catTotals[prefix]) catTotals[prefix] = 0;
-          catTotals[prefix] += Number(item.amount) || 0;
+          catTotals[prefix]      = (catTotals[prefix]      || 0) + (Number(item.amount) || 0);
+          catDairiTotals[prefix] = (catDairiTotals[prefix] || 0) + dairiItemAmt(item);
         } else {
           noCategory.push(item);
         }
       });
 
-      return { sec, catTotals, noCategory };
+      return { sec, catTotals, catDairiTotals, noCategory };
     });
 
-    // テーブル行を組み立て
-    const tableRows = [[
-      { text: 'No.', style: 'tableHeader', alignment: 'center' },
-      { text: '項　　　目', style: 'tableHeader' },
-      { text: '数量', style: 'tableHeader', alignment: 'center' },
-      { text: '単位', style: 'tableHeader', alignment: 'center' },
-      { text: '単　価', style: 'tableHeader', alignment: 'center' },
-      { text: '金　　額', style: 'tableHeader', alignment: 'center' },
-    ]];
+    // テーブル列定義
+    const colWidths = showDairi ? [22, '*', 30, 24, 48, 48, 48, 48] : [22, '*', 36, 30, 58, 58];
+    const colCount  = colWidths.length;
+    const hdrSpan   = colCount - 2; // No.列と金額列を除いた span 数
 
-    sectionRows.forEach(({ sec, catTotals, noCategory }) => {
+    const hdr = (text) => ({ text, style: 'tableHeader', alignment: 'center' });
+    const headerRow = showDairi
+      ? [hdr('No.'), hdr('項　　　目'), hdr('数量'), hdr('単位'), hdr('単　価'), hdr('金　　額'), hdr('代理店単価'), hdr('代理店価格')]
+      : [hdr('No.'), hdr('項　　　目'), hdr('数量'), hdr('単位'), hdr('単　価'), hdr('金　　額')];
+
+    const tableRows = [headerRow];
+    const empties = (n) => Array(n).fill({});
+
+    sectionRows.forEach(({ sec, catTotals, catDairiTotals, noCategory }) => {
       // セクションヘッダー
       tableRows.push([
         { text: String(sec.no || ''), alignment: 'center', bold: true, fillColor: '#e8edf5' },
-        { text: `※${sec.name || ''}`, bold: true, colSpan: 5, fillColor: '#e8edf5' },
-        {}, {}, {}, {},
+        { text: `※${sec.name || ''}`, bold: true, colSpan: colCount - 1, fillColor: '#e8edf5' },
+        ...empties(colCount - 2),
       ]);
 
       // カテゴリなし → 個別行
       noCategory.forEach(item => {
-        tableRows.push([
+        const row = [
           { text: '' },
           { text: item.name || '' },
           { text: item.qty != null ? String(item.qty) : '1', alignment: 'right' },
           { text: item.unit || '式', alignment: 'center' },
           { text: item.unitPrice ? fmt(item.unitPrice) : '', alignment: 'right' },
           { text: fmt(item.amount), alignment: 'right' },
-        ]);
+        ];
+        if (showDairi) {
+          const du = dairiItemUnit(item);
+          row.push({ text: du != null ? fmt(du) : '', alignment: 'right' });
+          row.push({ text: fmt(dairiItemAmt(item)), alignment: 'right' });
+        }
+        tableRows.push(row);
       });
 
       // カテゴリあり → 集計行
       CALC_CATEGORY_ORDER.forEach(prefix => {
         const amount = catTotals[prefix];
         if (!amount) return;
-        tableRows.push([
+        const row = [
           { text: '' },
           { text: CALC_CATEGORY_LABELS[prefix] },
           { text: '1', alignment: 'right' },
           { text: '式', alignment: 'center' },
           { text: '', alignment: 'right' },
           { text: fmt(amount), alignment: 'right' },
-        ]);
+        ];
+        if (showDairi) {
+          row.push({ text: '', alignment: 'right' });
+          row.push({ text: fmt(catDairiTotals[prefix] || 0), alignment: 'right' });
+        }
+        tableRows.push(row);
       });
 
       // セクション小計
-      const subtotal = (sec.items || []).reduce((s, i) => s + (Number(i.amount) || 0), 0);
-      tableRows.push([
-        { text: '', border: [true, true, true, true], fillColor: '#f5f5f5' },
-        { text: '─ 小 計 ─', alignment: 'center', bold: true, colSpan: 4, border: [true, true, true, true], fillColor: '#f5f5f5' },
+      // 列構成: [No.] [─小計─(colSpan:4)] [{}{}{}] [金額] ([代理店単価] [代理店価格])
+      const subtotal      = (sec.items || []).reduce((s, i) => s + (Number(i.amount) || 0), 0);
+      const subtotalDairi = showDairi ? (sec.items || []).reduce((s, i) => s + dairiItemAmt(i), 0) : 0;
+      const F = '#f5f5f5';
+      const subtotalRow = [
+        { text: '', border: [true, true, true, true], fillColor: F },
+        { text: '─ 小 計 ─', alignment: 'center', bold: true, colSpan: 4, border: [true, true, true, true], fillColor: F },
         {}, {}, {},
-        { text: fmt(subtotal), alignment: 'right', bold: true, border: [true, true, true, true], fillColor: '#f5f5f5' },
-      ]);
+        { text: fmt(subtotal), alignment: 'right', bold: true, border: [true, true, true, true], fillColor: F },
+      ];
+      if (showDairi) {
+        subtotalRow.push({ text: '', border: [true, true, true, true], fillColor: F });
+        subtotalRow.push({ text: fmt(subtotalDairi), alignment: 'right', bold: true, border: [true, true, true, true], fillColor: F });
+      }
+      tableRows.push(subtotalRow);
     });
 
     // 全体合計
-    const grandTotal = sections.reduce((s, sec) =>
-      s + (sec.items || []).reduce((ss, i) => ss + (Number(i.amount) || 0), 0), 0);
-    tableRows.push([
+    // 列構成: [No.] [合計(colSpan:4)] [{}{}{}] [金額] ([代理店単価] [代理店価格])
+    const grandTotal      = sections.reduce((s, sec) => s + (sec.items || []).reduce((ss, i) => ss + (Number(i.amount) || 0), 0), 0);
+    const grandDairiTotal = showDairi ? sections.reduce((s, sec) => s + (sec.items || []).reduce((ss, i) => ss + dairiItemAmt(i), 0), 0) : 0;
+    const grandRow = [
       { text: '', border: [true, true, false, false] },
       { text: '合　　計', alignment: 'center', bold: true, colSpan: 4, border: [false, true, false, false] },
       {}, {}, {},
       { text: fmt(grandTotal), alignment: 'right', bold: true, border: [false, true, true, false] },
-    ]);
+    ];
+    if (showDairi) {
+      grandRow.push({ text: '', border: [false, true, false, false] });
+      grandRow.push({ text: fmt(grandDairiTotal), alignment: 'right', bold: true, border: [false, true, true, false] });
+    }
+    tableRows.push(grandRow);
 
     return {
       pageSize: 'A4',
@@ -1250,7 +1290,7 @@ const QuotationPDF = (() => {
         {
           table: {
             headerRows: 1,
-            widths: [22, '*', 36, 30, 58, 58],
+            widths: colWidths,
             body: tableRows,
           },
           layout: {

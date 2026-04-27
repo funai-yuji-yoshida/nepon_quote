@@ -577,6 +577,10 @@
     <div id="tab-summary" class="tab-content">
       <div class="summary-tab-toolbar">
         <button class="btn-primary" onclick="app.generateSummaryPDF()">📄 集計表PDF出力</button>
+        <label class="print-detail-label" style="margin-left:12px;">
+          <input type="checkbox" id="summaryShowDairi">
+          集計表PDFに代理店価格を含める
+        </label>
         <span class="summary-tab-hint">算出カテゴリ（①〜④）ごとに金額を集計して表示します</span>
       </div>
 

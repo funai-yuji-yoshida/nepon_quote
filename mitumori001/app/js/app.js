@@ -1989,9 +1989,17 @@ const app = (() => {
     const kikaShita  = String(kikaShitaEl?.value || '80').padStart(2, '0');
     const edaban     = String(parseInt(edabanEl?.value) || 1);
 
-    if (!category || !createCode || !siteCode) {
-      showToast('工事カテゴリ・作成所課・現場所課を選択してください', 'warn');
-      return;
+    const isKouji = (state.quoteCategory || '').includes('工事');
+    if (isKouji) {
+      if (!category || !createCode || !siteCode) {
+        showToast('工事カテゴリ・作成所課・現場所課を選択してください', 'warn');
+        return;
+      }
+    } else {
+      if (!createCode) {
+        showToast('作成所課を選択してください', 'warn');
+        return;
+      }
     }
 
     btn.disabled = true;
@@ -4090,64 +4098,96 @@ const app = (() => {
       return;
     }
 
+    const rate = state.mainRate != null ? state.mainRate : null;
+    const fmtN = n => (n != null ? Number(n).toLocaleString('ja-JP') : '');
+    const dairiAmt  = item => {
+      if (item.dairiUnitPrice != null) return item.dairiUnitPrice * (Number(item.qty) || 1);
+      return rate != null ? Math.round((Number(item.amount) || 0) * rate) : null;
+    };
+    const dairiUnit = item => {
+      if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
+      return (rate != null && item.unitPrice) ? Math.round(Number(item.unitPrice) * rate) : null;
+    };
+
     let grandTotal = 0;
+    let grandDairi = 0;
     let html = '';
 
     state.sections.forEach(sec => {
-      const catTotals = {};
-      const normalItems = [];
+      const catTotals      = {};
+      const catDairiTotals = {};
+      const normalItems    = [];
 
       (sec.items || []).forEach(item => {
         const prefix = (item.calcCategory || '').trim().charAt(0);
         if (SUMMARY_CATEGORIES[prefix]) {
-          catTotals[prefix] = (catTotals[prefix] || 0) + (Number(item.amount) || 0);
+          catTotals[prefix]      = (catTotals[prefix]      || 0) + (Number(item.amount) || 0);
+          catDairiTotals[prefix] = (catDairiTotals[prefix] || 0) + (dairiAmt(item) ?? 0);
         } else {
           normalItems.push(item);
         }
       });
 
       const secTotal = (sec.items || []).reduce((s, i) => s + (Number(i.amount) || 0), 0);
+      const secDairi = rate != null
+        ? (sec.items || []).reduce((s, i) => s + (dairiAmt(i) ?? 0), 0)
+        : null;
       grandTotal += secTotal;
+      if (secDairi != null) grandDairi += secDairi;
 
       html += `<div class="summary-section-block">
         <div class="summary-section-header">No.${sec.no}　${escHtml(sec.name || '')}</div>
         <table class="summary-detail-table">
-          <thead><tr><th>項目</th><th>数量</th><th>単位</th><th>単価</th><th>金額</th></tr></thead>
+          <thead><tr>
+            <th>項目</th><th>数量</th><th>単位</th>
+            <th>単価</th><th>金額</th>
+            <th>代理店単価</th><th>代理店価格</th>
+          </tr></thead>
           <tbody>`;
 
       normalItems.forEach(item => {
+        const du = dairiUnit(item);
+        const da = dairiAmt(item);
         html += `<tr>
           <td>${escHtml(item.name || '')}</td>
           <td class="num">${item.qty || 1}</td>
           <td class="center">${escHtml(item.unit || '式')}</td>
-          <td class="num">${item.unitPrice ? Number(item.unitPrice).toLocaleString('ja-JP') : ''}</td>
-          <td class="num">${(Number(item.amount) || 0).toLocaleString('ja-JP')}</td>
+          <td class="num">${item.unitPrice ? fmtN(item.unitPrice) : ''}</td>
+          <td class="num">${fmtN(item.amount)}</td>
+          <td class="num dairi-col">${du != null ? fmtN(du) : (rate == null ? '―' : '')}</td>
+          <td class="num dairi-col">${da != null ? fmtN(da) : (rate == null ? '―' : '')}</td>
         </tr>`;
       });
 
       SUMMARY_ORDER.forEach(prefix => {
         const amount = catTotals[prefix];
         if (!amount) return;
+        const cd = catDairiTotals[prefix];
         html += `<tr class="summary-cat-row">
           <td>${escHtml(SUMMARY_CATEGORIES[prefix])}</td>
-          <td class="num">1</td>
-          <td class="center">式</td>
+          <td class="num">1</td><td class="center">式</td>
           <td class="num"></td>
-          <td class="num">${amount.toLocaleString('ja-JP')}</td>
+          <td class="num">${fmtN(amount)}</td>
+          <td class="num dairi-col"></td>
+          <td class="num dairi-col">${rate != null ? fmtN(cd) : '―'}</td>
         </tr>`;
       });
 
+      const dairiColspan = rate != null ? '' : '―';
       html += `</tbody>
           <tfoot><tr class="summary-subtotal">
             <td colspan="4" class="center">小　計</td>
-            <td class="num">${secTotal.toLocaleString('ja-JP')}</td>
+            <td class="num">${fmtN(secTotal)}</td>
+            <td class="num dairi-col"></td>
+            <td class="num dairi-col">${secDairi != null ? fmtN(secDairi) : dairiColspan}</td>
           </tr></tfoot>
         </table>
       </div>`;
     });
 
+    const dairiGrandStr = rate != null ? `　代理店合計　<span>¥${fmtN(grandDairi)}</span>` : '';
     html += `<div class="summary-grand-total">
-      合　計　<span>¥${grandTotal.toLocaleString('ja-JP')}</span>
+      合　計　<span>¥${fmtN(grandTotal)}</span>${dairiGrandStr}
     </div>`;
 
     container.innerHTML = html;
@@ -4155,6 +4195,8 @@ const app = (() => {
 
   function generateSummaryPDF() {
     const data = buildPdfData();
+    const cb = document.getElementById('summaryShowDairi');
+    data.summaryShowDairi = cb ? cb.checked : false;
     QuotationPDF.downloadSummary(data);
   }
 
