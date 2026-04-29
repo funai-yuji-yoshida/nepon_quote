@@ -12,18 +12,21 @@ const app = (() => {
   // ── 列表示設定 ───────────────────────────────────────────────────
   const COL_DEFS = [
     { col: 'col-name',          label: '品名',      always: true },
-    { col: 'col-calc-cat',      label: 'カテゴリ',  def: true  },
+    { col: 'col-calc-cat',      label: 'カテゴリ',  def: true,  buhanDef: false },
     { col: 'col-spec',          label: '型番・規格', def: true  },
     { col: 'col-qty',           label: '数量',      always: true },
     { col: 'col-unit',          label: '単位',      always: true },
     { col: 'col-price',         label: '単価',      def: true  },
     { col: 'col-amount',        label: '金額',      always: true },
-    { col: 'col-labor-check',   label: '労務',      def: true  },
-    { col: 'col-dairi-rate',    label: '掛率',      def: false },
-    { col: 'col-dairi-unit',    label: '代理店単価', def: false },
-    { col: 'col-dairi',         label: '代理店価格', def: false },
-    { col: 'col-genka',         label: '原価',      def: false },
-    { col: 'col-genka-amount',  label: '原価合計',  def: false },
+    { col: 'col-labor-check',   label: '労務',      def: true,  buhanDef: false },
+    { col: 'col-dairi-rate',    label: '掛率',        def: false, buhanDef: true },
+    { col: 'col-dairi-unit',    label: '代理店単価',  def: false, buhanDef: true },
+    { col: 'col-final-dairi',    label: '最終代理店単価', def: false, sagyo: true },
+    { col: 'col-dairi',          label: '代理店価格',  def: false, buhanDef: true },
+    { col: 'col-buhan-discount', label: '値引き',      def: true,  buhan: true, buhanDef: false },
+    { col: 'col-hanbaika',       label: '販売価格',    def: true,  buhan: true },
+    { col: 'col-genka',         label: '原価',      def: false, buhanDef: true },
+    { col: 'col-genka-amount',  label: '原価合計',  def: false, buhanDef: true },
     { col: 'col-gensui-kubun',  label: '減衰区分',  def: false },
     { col: 'col-koji-category', label: '工事カテゴリ', def: false },
     { col: 'col-gensui-a',      label: '減衰A',     def: false },
@@ -35,12 +38,22 @@ const app = (() => {
   ];
   let colState = {};
 
+  function colStorageKey() {
+    return (state.quoteCategory || '').includes('物販')
+      ? 'nepon_col_visibility_buhan'
+      : 'nepon_col_visibility';
+  }
+
   function initColVisibility() {
-    const saved = localStorage.getItem('nepon_col_visibility');
+    const isBuhan = (state.quoteCategory || '').includes('物販');
+    const saved = localStorage.getItem(colStorageKey());
+    colState = {};
     if (saved) { try { colState = JSON.parse(saved); } catch(e) {} }
     COL_DEFS.forEach(c => {
       if (c.always) { colState[c.col] = true; return; }
-      if (colState[c.col] === undefined) colState[c.col] = c.def !== false;
+      if (colState[c.col] === undefined) {
+        colState[c.col] = isBuhan && c.buhanDef !== undefined ? c.buhanDef !== false : c.def !== false;
+      }
     });
     applyColVisibility();
   }
@@ -52,8 +65,10 @@ const app = (() => {
       style.id = 'colVisibilityStyle';
       document.head.appendChild(style);
     }
+    const isSagyo = (state.quoteCategory || '').includes('作業');
+    const isBuhan = (state.quoteCategory || '').includes('物販');
     style.textContent = COL_DEFS
-      .filter(c => !c.always && !colState[c.col])
+      .filter(c => !c.always && (!colState[c.col] || (c.sagyo && !isSagyo) || (c.buhan && !isBuhan)))
       .map(c => `.items-table .${c.col} { display: none; }`)
       .join('\n');
   }
@@ -62,7 +77,9 @@ const app = (() => {
     const dd = document.getElementById('colDropdown');
     if (!dd) return;
     if (dd.style.display !== 'none') { dd.style.display = 'none'; return; }
-    dd.innerHTML = COL_DEFS.filter(c => !c.always).map(c => `
+    const isSagyoDd = (state.quoteCategory || '').includes('作業');
+    const isBuhanDd = (state.quoteCategory || '').includes('物販');
+    dd.innerHTML = COL_DEFS.filter(c => !c.always && (!c.sagyo || isSagyoDd) && (!c.buhan || isBuhanDd)).map(c => `
       <label class="col-dd-item">
         <input type="checkbox" ${colState[c.col] ? 'checked' : ''}
                onchange="app.setColVisibility('${c.col}', this.checked)">
@@ -83,7 +100,7 @@ const app = (() => {
 
   function setColVisibility(col, visible) {
     colState[col] = visible;
-    localStorage.setItem('nepon_col_visibility', JSON.stringify(colState));
+    localStorage.setItem(colStorageKey(), JSON.stringify(colState));
     applyColVisibility();
   }
 
@@ -357,7 +374,8 @@ const app = (() => {
             }
           }
           group = [];
-        } else if ((Number(item.houdan) || 0) > 0 && (Number(item.houkouDirect) || 0) <= 0) {
+        } else if ((Number(item.houdan) || 0) > 0 && (Number(item.houkouDirect) || 0) <= 0
+            && item.calcCategory !== '⑥配管材料' && item.calcCategory !== '⑦支持具・雑材費') {
           group.push(item);
         }
       });
@@ -394,6 +412,31 @@ const app = (() => {
           d, rate,
           before: Math.round(d * 100) / 100,
           after:  houkouTotal,
+        });
+      });
+    });
+
+    // ⑥配管材料・⑦支持具・雑材費: ⑤その他と同様の自己完結型減衰計算
+    ['⑥配管材料', '⑦支持具・雑材費'].forEach(targetCat => {
+      state.sections.forEach(sec => {
+        sec.items.forEach(item => {
+          if (item.calcCategory !== targetCat) return;
+          const rawD = (Number(item.qty) || 1) * (Number(item.houdan) || 0);
+          const d = rawD > 0 ? rawD : (Number(item.houkouDirect) || 0);
+          if (d <= 0) return;
+          let rate = 1.0;
+          if (item.gensuiEnabled && item.gensuiA > 0 && item.gensuiB > 0) {
+            rate = Math.min(1.0, Math.floor(item.gensuiA * Math.pow(d / item.gensuiB, -0.3) * 100 + 0.5) / 100);
+          }
+          const houkouTotal = Math.floor(d * rate * 100 + 0.5) / 100;
+          item.houkouGoukei = houkouTotal;
+          totalReducedHoukou += houkouTotal;
+          summaryRows.push({
+            category: item.name || targetCat,
+            d, rate,
+            before: Math.round(d * 100) / 100,
+            after:  houkouTotal,
+          });
         });
       });
     });
@@ -500,6 +543,22 @@ const app = (() => {
         group = [];
       } else if (item.calcCategory === '⑤その他') {
         // ⑤その他: houdan>0なら常にhoudan×qtyから再計算（gensuiEnabled変更に追従）
+        const rawD = (Number(item.qty) || 1) * (Number(item.houdan) || 0);
+        const d = rawD > 0 ? rawD : (Number(item.houkouDirect) || 0);
+        if (d > 0) {
+          let rate = 1.0;
+          if (item.gensuiEnabled && item.gensuiA > 0 && item.gensuiB > 0) {
+            rate = Math.min(1.0, Math.floor(item.gensuiA * Math.pow(d / item.gensuiB, -0.3) * 100 + 0.5) / 100);
+          }
+          const houkouTotal = Math.floor(d * rate * 100 + 0.5) / 100;
+          item.unitPrice    = Math.round(RODO_TANKA * houkouTotal / 1000) * 1000;
+          item.genka        = Math.round(RODO_GENKA  * houkouTotal / 1000) * 1000;
+          item.amount       = item.unitPrice;
+          item.houkouGoukei = houkouTotal;
+          item.houkouDirect = houkouTotal;
+        }
+      } else if (item.calcCategory === '⑥配管材料' || item.calcCategory === '⑦支持具・雑材費') {
+        // ⑥⑦: ⑤その他と同様の自己完結型計算
         const rawD = (Number(item.qty) || 1) * (Number(item.houdan) || 0);
         const d = rawD > 0 ? rawD : (Number(item.houkouDirect) || 0);
         if (d > 0) {
@@ -627,7 +686,8 @@ const app = (() => {
     paymentTerm:    'お打ち合わせ願います',
     validDays:      '見積期限は60日限りです。期限後のご用命の節は一応ご照会願います。',
     remarks:        '',
-    discount:       0,
+    discount:        0,
+    discountEnabled: true,
     deliveryPrice:  0,
     laborCost:      null,   // null = 自動計算
     anzenCost:      0,      // 安全衛生経費（手動入力）
@@ -681,6 +741,15 @@ const app = (() => {
 
     // イベント: 値引き額・労務費・法定福利費率 変更 → 即時再計算
     document.getElementById('discountAmount').addEventListener('input', updateOutput);
+    document.getElementById('chkDiscountEnabled').addEventListener('change', function () {
+      state.discountEnabled = this.checked;
+      const amountEl = document.getElementById('discountAmount');
+      if (amountEl) {
+        amountEl.disabled = !this.checked;
+        if (!this.checked) { amountEl.value = ''; state.discount = 0; }
+      }
+      updateOutput();
+    });
     document.getElementById('laborCost').addEventListener('input', updateOutput);
     document.getElementById('anzenCost').addEventListener('input', updateOutput);
     document.getElementById('legalWelfareRate').addEventListener('input', updateOutput);
@@ -847,7 +916,9 @@ const app = (() => {
           console.log('【サブフォームID復元】 JSON:', state.subformRowIds.length, '件', state.subformRowIds);
         }
         // 切り上げモード復元
-        state.roundingEnabled = parsed.roundingEnabled || false;
+        state.roundingEnabled  = parsed.roundingEnabled  || false;
+        // 値引き額チェックボックス復元（作業時のみ保存される）
+        if (parsed.discountEnabled === false) state.discountEnabled = false;
         // FRPモード復元
         if (parsed.frpMode) {
           state.frpMode    = true;
@@ -942,6 +1013,17 @@ const app = (() => {
     const isSagyo = (state.quoteCategory || '').includes('作業');
     const naiyakuGrp = document.getElementById('naiyakuPrintGroup');
     if (naiyakuGrp) naiyakuGrp.style.display = (isKouji || isSagyo) ? '' : 'none';
+    // 物販: 値引き額行を非表示
+    const rowDiscountEl = document.getElementById('rowDiscount');
+    if (rowDiscountEl) rowDiscountEl.style.display = isBuhan ? 'none' : '';
+    // 作業のとき値引き額チェックボックスを表示
+    const chkDiscEl  = document.getElementById('chkDiscountEnabled');
+    const discAmtEl  = document.getElementById('discountAmount');
+    if (chkDiscEl) {
+      chkDiscEl.style.display = isSagyo ? '' : 'none';
+      if (!isSagyo) { chkDiscEl.checked = true; state.discountEnabled = true; }
+      if (discAmtEl) discAmtEl.disabled = isSagyo && !chkDiscEl.checked;
+    }
     // 物販・作業: 工事カテゴリ・現場所課を非表示
     const hideMeisai = isBuhan || isSagyo;
     const rowKoujiCat = document.getElementById('rowKoujiCategory');
@@ -959,14 +1041,25 @@ const app = (() => {
     if (kikaShitaEl) kikaShitaEl.value = state.kikaShita || '80';
     const edabanEl = document.getElementById('edaban');
     if (edabanEl) edabanEl.value = state.edaban || '1';
-    const btnAutoEl = document.getElementById('btnAutoNumber');
+    const btnAutoEl  = document.getElementById('btnAutoNumber');
+    const btnResetEl = document.getElementById('btnResetSeqNo');
+    const btnClearEl = document.getElementById('btnClearSeqNo');
     if (btnAutoEl) {
       const locked = !!state.seqNo;
       btnAutoEl.disabled = locked;
       btnAutoEl.textContent = locked ? '採番済み' : '🔢 採番する';
+      if (btnResetEl) btnResetEl.style.display = locked ? '' : 'none';
+      if (btnClearEl) btnClearEl.style.display = locked ? '' : 'none';
     }
     updateQuoteNoBadge();
-    setValue('discountAmount',  state.discount || '');
+    // 値引き額チェックボックス反映（作業時）
+    const chkDiscEl2 = document.getElementById('chkDiscountEnabled');
+    const discAmtEl2 = document.getElementById('discountAmount');
+    if (chkDiscEl2) {
+      chkDiscEl2.checked = state.discountEnabled !== false;
+      if (discAmtEl2) discAmtEl2.disabled = !chkDiscEl2.checked;
+    }
+    setValue('discountAmount',  state.discountEnabled !== false ? (state.discount || '') : '');
     setValue('laborCost',       state.laborCost || '');
     setValue('anzenCost',       state.anzenCost || '');
     setValue('legalWelfareRate',state.legalWelfareRate);
@@ -1001,6 +1094,7 @@ const app = (() => {
 
     applyExclusionsToForm();
     updateQuoteNoBadge();
+    initColVisibility();
     renderSections();
     updateOutput();
     // FRPモードUI適用
@@ -2064,6 +2158,50 @@ const app = (() => {
     }
   }
 
+  function incrementEdaban() {
+    if (!state.seqNo) return;
+    let newSeqNo = '';
+    if (state.seqNo.includes('-')) {
+      const parts = state.seqNo.split('-');
+      if (parts.length >= 6) {
+        const edaban = (parseInt(parts[5]) || 1) + 1;
+        parts[5] = String(edaban);
+        newSeqNo = parts.join('-');
+        state.edaban = String(edaban);
+      } else if (parts.length === 2) {
+        const suffix = parts[1];
+        const base   = suffix.substring(0, 6);
+        const edaban = (parseInt(suffix.substring(6)) || 1) + 1;
+        newSeqNo = `${parts[0]}-${base}${edaban}`;
+        state.edaban = String(edaban);
+      }
+    }
+    if (!newSeqNo) return;
+    state.seqNo = newSeqNo;
+    const edabanEl  = document.getElementById('edaban');
+    const btnEl     = document.getElementById('btnResetSeqNo');
+    if (edabanEl) edabanEl.value = state.edaban;
+    if (btnEl) btnEl.disabled = true;
+    updateQuoteNoBadge();
+  }
+
+  function resetSeqNo() {
+    if (!confirm('採番をクリアします。よろしいですか？')) return;
+    state.seqNo  = '';
+    state.edaban = '1';
+    const btnAutoEl  = document.getElementById('btnAutoNumber');
+    const btnResetEl = document.getElementById('btnResetSeqNo');
+    const btnClearEl = document.getElementById('btnClearSeqNo');
+    const displayEl  = document.getElementById('quoteNoDisplay');
+    const edabanEl   = document.getElementById('edaban');
+    if (btnAutoEl)  { btnAutoEl.disabled = false; btnAutoEl.textContent = '🔢 採番する'; }
+    if (btnResetEl) { btnResetEl.style.display = 'none'; btnResetEl.disabled = false; }
+    if (btnClearEl) btnClearEl.style.display = 'none';
+    if (displayEl)  displayEl.textContent = '（未採番）';
+    if (edabanEl)   edabanEl.value = '1';
+    updateQuoteNoBadge();
+  }
+
   // ── セクション操作 ────────────────────────────────────────────
 
   function addSection() {
@@ -2127,6 +2265,8 @@ const app = (() => {
       includeInLabor: false,  // 労務費に含めるか（null=auto: ④工事費なら true）
       dairiRate: null,       // null = グローバル main_rate を使用
       dairiUnitPrice: null,  // null = 自動計算（unitPrice × rate）、数値 = 手動上書き
+      finalDairiUnit: null,  // null = 自動（代理店単価と同じ）、数値 = 手動上書き
+      buhanDiscount: null,   // 値引き（物販のみ、行合計）
       calcCategory: '',
       kouTanka:    0,   // 工単価（マスタから、減衰再計算用）
       houdan: 0,        // 歩単（マスタから）
@@ -2302,7 +2442,8 @@ const app = (() => {
       // 再計算結果を DOM に反映
       const block2 = e.target.closest('.section-block');
       sec.items.forEach(koItem => {
-        if (koItem.calcCategory !== '④工事費' && koItem.calcCategory !== '⑤その他') return;
+        if (koItem.calcCategory !== '④工事費' && koItem.calcCategory !== '⑤その他'
+            && koItem.calcCategory !== '⑥配管材料' && koItem.calcCategory !== '⑦支持具・雑材費') return;
         const koRow = block2?.querySelector(`[data-item-id="${koItem.id}"]`);
         if (!koRow) return;
         const koPriceEl   = koRow.querySelector('.item-price');
@@ -2339,13 +2480,15 @@ const app = (() => {
     if (calcCatEl) {
       item.calcCategory = calcCatEl.value || '';
       if (e.target === calcCatEl) {
-        item.includeInLabor = (item.calcCategory === '④工事費' || item.calcCategory === '⑤その他');
+        item.includeInLabor = (item.calcCategory === '④工事費' || item.calcCategory === '⑤その他'
+          || item.calcCategory === '⑥配管材料' || item.calcCategory === '⑦支持具・雑材費');
         const laborCheckEl2 = row.querySelector('.item-labor-check');
         if (laborCheckEl2) laborCheckEl2.checked = item.includeInLabor;
         // gensuiEnabledチェックボックスの表示切り替え
         const gensuiEnabledEl2 = row.querySelector('.item-gensui-enabled');
         if (gensuiEnabledEl2) {
-          gensuiEnabledEl2.style.display = (item.calcCategory === '④工事費' || item.calcCategory === '⑤その他') ? '' : 'none';
+          gensuiEnabledEl2.style.display = (item.calcCategory === '④工事費' || item.calcCategory === '⑤その他'
+            || item.calcCategory === '⑥配管材料' || item.calcCategory === '⑦支持具・雑材費') ? '' : 'none';
         }
       }
     }
@@ -2378,13 +2521,44 @@ const app = (() => {
       }
     }
 
-    // 代理店価格スパン更新
+    // 最終代理店単価（手動入力時は item.finalDairiUnit にセット）
+    const finalDairiInputEl  = row.querySelector('.item-final-dairi');
+    const finalDairiLockEl   = row.querySelector('.btn-final-dairi-lock');
+    if (finalDairiInputEl && e.target === finalDairiInputEl) {
+      const raw = finalDairiInputEl.value.replace(/,/g, '').trim();
+      if (raw === '') {
+        item.finalDairiUnit = null;
+        finalDairiInputEl.classList.remove('is-manual');
+        if (finalDairiLockEl) finalDairiLockEl.style.display = 'none';
+      } else {
+        item.finalDairiUnit = Number(raw) || 0;
+        finalDairiInputEl.classList.add('is-manual');
+        if (finalDairiLockEl) finalDairiLockEl.style.display = '';
+      }
+    }
+
+    // 代理店価格スパン更新（最終代理店単価 × 数量）
     const dairiEl = row.querySelector('.item-dairi');
     if (dairiEl) {
       const qty     = Number(item.qty) || 1;
-      const dUnit   = effectiveDairiUnit(item);
+      const dUnit   = effectiveFinalDairiUnit(item);
       const dairiAmt = dUnit != null ? dUnit * qty : null;
       dairiEl.textContent = dairiAmt != null ? dairiAmt.toLocaleString('ja-JP') : '';
+    }
+
+    // 値引き（物販のみ）
+    const buhanDiscEl = row.querySelector('.item-buhan-discount');
+    if (buhanDiscEl && e.target === buhanDiscEl) {
+      const raw = buhanDiscEl.value.replace(/,/g, '').trim();
+      item.buhanDiscount = raw === '' ? null : (Number(raw) || 0);
+    }
+    // 販売価格スパン更新（代理店価格 - 値引き）
+    const hanbaikaEl = row.querySelector('.item-hanbaika');
+    if (hanbaikaEl) {
+      const fUnit = effectiveFinalDairiUnit(item);
+      const dairiAmt = fUnit != null ? fUnit * (Number(item.qty) || 1) : null;
+      const disc = item.buhanDiscount != null ? item.buhanDiscount : 0;
+      hanbaikaEl.textContent = dairiAmt != null ? (dairiAmt - disc).toLocaleString('ja-JP') : '';
     }
 
     // 原価（手動入力可）→ state に反映
@@ -2417,7 +2591,8 @@ const app = (() => {
       // 歩工 span を更新
       if (houkouEl) houkouEl.textContent = goukei ? goukei.toFixed(2) : '';
 
-      if (item.calcCategory === '④工事費' || item.calcCategory === '⑤その他') {
+      if (item.calcCategory === '④工事費' || item.calcCategory === '⑤その他'
+          || item.calcCategory === '⑥配管材料' || item.calcCategory === '⑦支持具・雑材費') {
         // ④工事費行の場合、手入力値を基底歩工（houdan）として保存→gensuiEnabled再計算に使う
         if (item.calcCategory === '④工事費') item.houdan = goukei;
         // ④工事費・⑤その他行を直接編集：歩工合計 → 単価・金額を再計算
@@ -2439,7 +2614,8 @@ const app = (() => {
         recalcKoujihiInSection(sec);
         const block2 = e.target.closest('.section-block');
         sec.items.forEach(koItem => {
-          if (koItem.calcCategory !== '④工事費' && koItem.calcCategory !== '⑤その他') return;
+          if (koItem.calcCategory !== '④工事費' && koItem.calcCategory !== '⑤その他'
+              && koItem.calcCategory !== '⑥配管材料' && koItem.calcCategory !== '⑦支持具・雑材費') return;
           const koRow = block2?.querySelector(`[data-item-id="${koItem.id}"]`);
           if (!koRow) return;
           const koPriceEl   = koRow.querySelector('.item-price');
@@ -2513,7 +2689,8 @@ const app = (() => {
       recalcKoujihiInSection(sec);
       const block2 = e.target.closest('.section-block');
       sec.items.forEach(koItem => {
-        if (koItem.calcCategory !== '④工事費' && koItem.calcCategory !== '⑤その他') return;
+        if (koItem.calcCategory !== '④工事費' && koItem.calcCategory !== '⑤その他'
+            && koItem.calcCategory !== '⑥配管材料' && koItem.calcCategory !== '⑦支持具・雑材費') return;
         const koRow = block2?.querySelector(`[data-item-id="${koItem.id}"]`);
         if (!koRow) return;
         const koPriceEl   = koRow.querySelector('.item-price');
@@ -2747,13 +2924,37 @@ const app = (() => {
         dairiUnitEl.classList.toggle('is-auto-rounded', isAutoRounded && displayUnit != null);
         if (dairiUnitLock) dairiUnitLock.style.display = isManual ? '' : 'none';
       }
-      // 代理店価格の反映（代理店単価 × 数量）
+      // 代理店価格の反映（最終代理店単価 × 数量）
       const dairiEl = row.querySelector('.item-dairi');
       if (dairiEl) {
         const qty = Number(item.qty) || 1;
-        const dUnit = effectiveDairiUnit(item);
+        const dUnit = effectiveFinalDairiUnit(item);
         const dairiAmt = dUnit != null ? dUnit * qty : null;
         dairiEl.textContent = dairiAmt != null ? dairiAmt.toLocaleString('ja-JP') : '';
+      }
+
+      // 最終代理店単価の反映
+      const finalDairiInputEl2 = row.querySelector('.item-final-dairi');
+      const finalDairiLockEl2  = row.querySelector('.btn-final-dairi-lock');
+      if (finalDairiInputEl2 && finalDairiInputEl2 !== document.activeElement) {
+        const isManualF = item.finalDairiUnit != null;
+        const displayF  = effectiveFinalDairiUnit(item);
+        finalDairiInputEl2.value = displayF != null ? Number(displayF).toLocaleString('ja-JP') : '';
+        finalDairiInputEl2.classList.toggle('is-manual', isManualF);
+        if (finalDairiLockEl2) finalDairiLockEl2.style.display = isManualF ? '' : 'none';
+      }
+
+      // 値引き・販売価格の反映（物販のみ）
+      const buhanDiscEl2 = row.querySelector('.item-buhan-discount');
+      const hanbaikaEl2  = row.querySelector('.item-hanbaika');
+      if (buhanDiscEl2 && buhanDiscEl2 !== document.activeElement) {
+        buhanDiscEl2.value = item.buhanDiscount != null ? Number(item.buhanDiscount).toLocaleString('ja-JP') : '';
+      }
+      if (hanbaikaEl2) {
+        const fUnit2 = effectiveFinalDairiUnit(item);
+        const dairiAmt2 = fUnit2 != null ? fUnit2 * (Number(item.qty) || 1) : null;
+        const disc2 = item.buhanDiscount != null ? item.buhanDiscount : 0;
+        hanbaikaEl2.textContent = dairiAmt2 != null ? (dairiAmt2 - disc2).toLocaleString('ja-JP') : '';
       }
 
       // 原価・原価合計の反映
@@ -2764,11 +2965,12 @@ const app = (() => {
       if (genkaEl    && genkaEl    !== document.activeElement) genkaEl.value = genka ? genka : '';
       if (genkaAmtEl) genkaAmtEl.textContent = genkaAmt ? genkaAmt.toLocaleString('ja-JP') : '';
 
-      // 減衰計算チェックボックス（④工事費行のみ表示）
+      // 減衰計算チェックボックス（④工事費・⑤その他・⑥⑦行のみ表示）
       const gensuiEnabledEl = row.querySelector('.item-gensui-enabled');
       if (gensuiEnabledEl) {
         gensuiEnabledEl.checked = item.gensuiEnabled || false;
-        gensuiEnabledEl.style.display = (item.calcCategory === '④工事費' || item.calcCategory === '⑤その他') ? '' : 'none';
+        gensuiEnabledEl.style.display = (item.calcCategory === '④工事費' || item.calcCategory === '⑤その他'
+          || item.calcCategory === '⑥配管材料' || item.calcCategory === '⑦支持具・雑材費') ? '' : 'none';
       }
 
       // 減衰区分・工事カテゴリ・減衰A・減衰B の反映
@@ -3457,17 +3659,22 @@ const app = (() => {
 
     // 代理店価格小計（掛率が設定されている行がある場合のみ表示）
     const globalRate = state.mainRate;
-    const hasDairiRate = globalRate != null || sec.items.some(i => i.dairiRate != null || i.dairiUnitPrice != null);
+    const hasDairiRate = globalRate != null || sec.items.some(i => i.dairiRate != null || i.dairiUnitPrice != null || i.finalDairiUnit != null);
     const dairiWrap = block.querySelector('.dairi-subtotal-wrap');
     const dairiVal  = block.querySelector('.dairi-subtotal-val');
     if (dairiWrap && dairiVal) {
       if (hasDairiRate) {
+        const isBuhanSub = (state.quoteCategory || '').includes('物販');
         const dairiSubtotal = sec.items.reduce((sum, i) => {
           const qty   = Number(i.qty) || 1;
-          const dUnit = effectiveDairiUnit(i);
-          return sum + (dUnit != null ? dUnit * qty : 0);
+          const dUnit = effectiveFinalDairiUnit(i);
+          if (dUnit == null) return sum;
+          const disc = isBuhanSub ? (i.buhanDiscount != null ? i.buhanDiscount : 0) : 0;
+          return sum + dUnit * qty - disc;
         }, 0);
         dairiVal.textContent = '¥' + dairiSubtotal.toLocaleString('ja-JP');
+        const labelEl = dairiWrap.querySelector('.dairi-subtotal-label');
+        if (labelEl) labelEl.textContent = isBuhanSub ? '販売価格' : '代理店';
         dairiWrap.style.display = '';
       } else {
         dairiWrap.style.display = 'none';
@@ -3543,6 +3750,8 @@ const app = (() => {
     // 減衰計算: 各行の houkouGoukei を更新し、全グループの減衰後歩工合計を取得
     const totalReducedHoukou = calcGensui();
 
+    const isBuhanCalc = (state.quoteCategory || '').includes('物販');
+
     // DOM に歩工合計を反映
     const container = document.getElementById('sectionsContainer');
     state.sections.forEach(sec => {
@@ -3567,8 +3776,9 @@ const app = (() => {
           }
         }
 
-        // ④工事費行の単価・金額を DOM に反映（減衰計算オン/オフ切替後など）
-        if (item.calcCategory === '④工事費') {
+        // ④工事費・⑤その他・⑥⑦行の単価・金額を DOM に反映（減衰計算オン/オフ切替後など）
+        if (item.calcCategory === '④工事費' || item.calcCategory === '⑤その他'
+            || item.calcCategory === '⑥配管材料' || item.calcCategory === '⑦支持具・雑材費') {
           const priceEl  = row.querySelector('.item-price');
           const amountEl = row.querySelector('.item-amount');
           if (priceEl  && priceEl  !== document.activeElement) priceEl.value  = item.unitPrice ? item.unitPrice.toLocaleString('ja-JP') : '';
@@ -3582,17 +3792,21 @@ const app = (() => {
       const secQtyVal   = Math.max(1, Number(sec.secQty) || 1);
       const subtotalEl  = block.querySelector('.subtotal-val');
       if (subtotalEl) subtotalEl.textContent = '¥' + secSubtotal.toLocaleString('ja-JP');
-      const hasDairiRate2 = state.mainRate != null || sec.items.some(i => i.dairiRate != null || i.dairiUnitPrice != null);
+      const hasDairiRate2 = state.mainRate != null || sec.items.some(i => i.dairiRate != null || i.dairiUnitPrice != null || i.finalDairiUnit != null);
       const dairiWrap2 = block.querySelector('.dairi-subtotal-wrap');
       const dairiVal2  = block.querySelector('.dairi-subtotal-val');
       if (dairiWrap2 && dairiVal2) {
         if (hasDairiRate2) {
           const dairiSub2 = sec.items.reduce((sum, i) => {
             const qty   = Number(i.qty) || 1;
-            const dUnit = effectiveDairiUnit(i);
-            return sum + (dUnit != null ? dUnit * qty : 0);
+            const dUnit = effectiveFinalDairiUnit(i);
+            if (dUnit == null) return sum;
+            const disc = isBuhanCalc ? (i.buhanDiscount != null ? i.buhanDiscount : 0) : 0;
+            return sum + dUnit * qty - disc;
           }, 0);
           dairiVal2.textContent = '¥' + (dairiSub2 * secQtyVal).toLocaleString('ja-JP');
+          const labelEl2 = dairiWrap2.querySelector('.dairi-subtotal-label');
+          if (labelEl2) labelEl2.textContent = isBuhanCalc ? '販売価格' : '代理店';
           dairiWrap2.style.display = '';
         } else {
           dairiWrap2.style.display = 'none';
@@ -3621,13 +3835,13 @@ const app = (() => {
 
     // 代理店価格合計（main_rate または行ごとの掛率/手動単価が設定されている場合のみ）
     const mainRate = state.mainRate;
-    const hasDairiAny = mainRate != null || sections.some(s => s.items.some(i => i.dairiRate != null || i.dairiUnitPrice != null));
+    const hasDairiAny = mainRate != null || sections.some(s => s.items.some(i => i.dairiRate != null || i.dairiUnitPrice != null || i.finalDairiUnit != null));
     const dairiTotal = hasDairiAny
       ? sections.reduce((sum, s) => {
           const secQty = Math.max(1, Number(s.secQty) || 1);
           const dairiSubtotal = s.items.reduce((ss, i) => {
             const qty   = Number(i.qty) || 1;
-            const dUnit = effectiveDairiUnit(i);
+            const dUnit = effectiveFinalDairiUnit(i);
             return ss + (dUnit != null ? dUnit * qty : 0);
           }, 0);
           return sum + dairiSubtotal * secQty;
@@ -3635,9 +3849,16 @@ const app = (() => {
       : null;
     state.dairiTotal = dairiTotal;
 
-    // 値引き額（手入力）→ 貴社お渡し価格 = 代理店価格合計（or 明細合計） - 値引き額
-    const discount      = Number(getValue('discountAmount')) || 0;
-    const deliveryPrice = Math.max(0, (dairiTotal != null ? dairiTotal : grandTotal) - discount);
+    // 値引き額（物販は明細値引き合計、作業はチェックボックス制御、その他は手入力）
+    const buhanDiscTotal = isBuhanCalc
+      ? sections.reduce((sum, s) => {
+          const secQty = Math.max(1, Number(s.secQty) || 1);
+          return sum + s.items.reduce((ss, i) => ss + (i.buhanDiscount != null ? i.buhanDiscount : 0), 0) * secQty;
+        }, 0)
+      : 0;
+    state.buhanDiscTotal = buhanDiscTotal;
+    const discount      = isBuhanCalc ? 0 : (state.discountEnabled !== false ? (Number(getValue('discountAmount')) || 0) : 0);
+    const deliveryPrice = Math.max(0, (dairiTotal != null ? dairiTotal : grandTotal) - discount - buhanDiscTotal);
 
     // state に反映（saveToCRM/buildPdfData で使用）
     state.discount      = discount;
@@ -3654,6 +3875,29 @@ const app = (() => {
       return sum + sGenka * secQty;
     }, 0);
 
+    // フッター集計バー（全見積区分で常時表示）
+    const footerBar = document.getElementById('itemsFooterBar');
+    if (footerBar) {
+      setText('footerTotal', '¥' + grandTotal.toLocaleString('ja-JP'));
+      const footerDairiWrap = document.getElementById('footerDairiWrap');
+      if (footerDairiWrap) {
+        if (dairiTotal != null) {
+          const isBuhanFooter = isBuhanCalc && buhanDiscTotal > 0;
+          setText('footerDairi', '¥' + (isBuhanFooter ? deliveryPrice : dairiTotal).toLocaleString('ja-JP'));
+          const footerLabelEl = document.getElementById('footerDairiLabel');
+          if (footerLabelEl) footerLabelEl.textContent = isBuhanFooter ? '販売価格' : '代理店';
+          footerDairiWrap.style.display = '';
+        } else {
+          footerDairiWrap.style.display = 'none';
+        }
+      }
+      const araRiBase  = deliveryPrice > 0 ? deliveryPrice : grandTotal;
+      const araRiF     = araRiBase - genkaTotal;
+      const araRiRateF = araRiBase > 0 ? araRiF / araRiBase * 100 : null;
+      setText('footerAraRi',     '¥' + araRiF.toLocaleString('ja-JP'));
+      setText('footerAraRiRate', araRiRateF != null ? araRiRateF.toFixed(1) + '%' : '―');
+    }
+
     // ①基本情報の表示を更新
     const araRi     = deliveryPrice - genkaTotal;
     const araRiRate = deliveryPrice > 0 ? (araRi / deliveryPrice * 100) : null;
@@ -3666,6 +3910,12 @@ const app = (() => {
     const rowDairi = document.getElementById('rowDairiTotal');
     if (rowDairi) rowDairi.style.display = dairiTotal != null ? '' : 'none';
     setText('basicDairiTotal', dairiTotal != null ? dairiTotal.toLocaleString('ja-JP') : '0');
+    // 物販: 値引き（明細計）行
+    const rowBuhanDiscEl = document.getElementById('rowBuhanDiscount');
+    if (rowBuhanDiscEl) {
+      rowBuhanDiscEl.style.display = (isBuhanCalc && buhanDiscTotal > 0) ? '' : 'none';
+      setText('basicBuhanDiscount', buhanDiscTotal.toLocaleString('ja-JP'));
+    }
     setText('basicDeliveryPrice', deliveryPrice.toLocaleString('ja-JP'));
     // PDF価格モード選択の表示切替
     const pdfModeGrp = document.getElementById('pdfPriceModeGroup');
@@ -3830,7 +4080,9 @@ const app = (() => {
       sections:        state.sections,
       exclusions:      state.exclusions.length > 0 ? state.exclusions : undefined,
       remarks:         state.remarks || undefined,
-      discount:        state.discount || undefined,
+      discount:        state.discountEnabled !== false ? (state.discount || undefined) : undefined,
+      discountEnabled: state.discountEnabled !== false,
+      buhanDiscTotal:  state.buhanDiscTotal || 0,
       quoteCategory:   state.quoteCategory || '',
       printDetail:     (() => {
         const isKouji = (state.quoteCategory || '').includes('工事');
@@ -3879,6 +4131,22 @@ const app = (() => {
 
     try {
       readFormToState();
+
+      // 同一見積番号の重複チェック
+      if (state.seqNo && zohoReady) {
+        const dupRes = await ZOHO.CRM.API.searchRecord({
+          Entity: 'Quotes',
+          Type:   'criteria',
+          Query:  `(field55:equals:${state.seqNo})`,
+        });
+        const dupRecords = (dupRes?.data || []).filter(r => r.id !== state.quoteId);
+        if (dupRecords.length > 0) {
+          showToast(`見積番号「${state.seqNo}」はすでに他の見積で使用されています。枝番＋１または採番クリアで番号を変更してください。`, 'err');
+          statusEl.textContent = '⚠️ 見積番号が重複しています';
+          btn.disabled = false;
+          return;
+        }
+      }
       console.log('保存開始 quoteId:', state.quoteId, 'sections:', state.sections.length);
 
       collectExclusions();
@@ -3896,7 +4164,8 @@ const app = (() => {
         frpMode:        state.frpMode  || undefined,
         frpAB:          state.frpMode ? state.frpAB : undefined,
         frpItems:       state.frpMode && state.frpItems.length ? state.frpItems : undefined,
-        roundingEnabled: state.roundingEnabled || undefined,
+        roundingEnabled:  state.roundingEnabled  || undefined,
+        discountEnabled:  state.discountEnabled === false ? false : undefined,
       });
 
       // field60/61/62 用に金額を再計算
@@ -4019,9 +4288,10 @@ const app = (() => {
         seqNo:         state.seqNo,
         revision:      state.revision,
         exclusions:    state.exclusions,
-        remarks:       state.remarks   || undefined,
-        discount:      state.discount  || undefined,
-        subformRowIds: newIds.length   ? newIds : undefined,
+        remarks:         state.remarks   || undefined,
+        discount:        state.discountEnabled !== false ? (state.discount || undefined) : undefined,
+        discountEnabled: state.discountEnabled === false ? false : undefined,
+        subformRowIds:   newIds.length  ? newIds : undefined,
       });
       await ZOHO.CRM.API.updateRecord({
         Entity:  'Quotes',
@@ -4066,8 +4336,10 @@ const app = (() => {
     '②': '②支持具・雑部材',
     '③': '③配線部材',
     '④': '④工事費',
+    '⑥': '⑥配管材料',
+    '⑦': '⑦支持具・雑材費',
   };
-  const SUMMARY_ORDER = ['①', '②', '③', '④'];
+  const SUMMARY_ORDER = ['①', '②', '③', '④', '⑥', '⑦'];
 
   function renderSummaryTable() {
     const container = document.getElementById('summaryTableContainer');
@@ -4262,6 +4534,10 @@ const app = (() => {
     return state.roundingEnabled ? roundUp(auto) : auto;
   }
 
+  function effectiveFinalDairiUnit(item) {
+    return item.finalDairiUnit != null ? item.finalDairiUnit : effectiveDairiUnit(item);
+  }
+
   function toggleRounding() {
     state.roundingEnabled = !state.roundingEnabled;
     const btn = document.getElementById('btnToggleRounding');
@@ -4311,13 +4587,40 @@ const app = (() => {
     btn.style.display = 'none';
     const dairiEl = row.querySelector('.item-dairi');
     if (dairiEl) {
-      const effectiveRate = item.dairiRate ?? state.mainRate;
       const qty = Number(item.qty) || 1;
-      const dairiAmt = (effectiveRate != null && item.unitPrice != null)
-        ? Math.round(item.unitPrice * effectiveRate) * qty : null;
-      dairiEl.textContent = dairiAmt != null ? dairiAmt.toLocaleString('ja-JP') : '';
+      const fUnit = effectiveFinalDairiUnit(item);
+      dairiEl.textContent = fUnit != null ? (fUnit * qty).toLocaleString('ja-JP') : '';
+    }
+    // 最終代理店単価が自動の場合、表示も更新
+    const finalInputEl = row.querySelector('.item-final-dairi');
+    if (finalInputEl && item.finalDairiUnit == null) {
+      const fUnit2 = effectiveFinalDairiUnit(item);
+      finalInputEl.value = fUnit2 != null ? Number(fUnit2).toLocaleString('ja-JP') : '';
     }
     if (block) { updateSectionSubtotal(block); }
+  }
+
+  function clearFinalDairiUnit(btn) {
+    const row   = btn.closest('tr');
+    const block = row?.closest('.section-block');
+    const sec   = state.sections.find(s => s.id === Number(block?.dataset.sectionId));
+    const item  = sec?.items.find(i => i.id === Number(row?.dataset.itemId));
+    if (!item) return;
+    item.finalDairiUnit = null;
+    const finalInputEl = row.querySelector('.item-final-dairi');
+    if (finalInputEl) {
+      const auto = effectiveDairiUnit(item);
+      finalInputEl.value = auto != null ? Number(auto).toLocaleString('ja-JP') : '';
+      finalInputEl.classList.remove('is-manual');
+    }
+    btn.style.display = 'none';
+    const dairiEl = row.querySelector('.item-dairi');
+    if (dairiEl) {
+      const qty = Number(item.qty) || 1;
+      const fUnit = effectiveFinalDairiUnit(item);
+      dairiEl.textContent = fUnit != null ? (fUnit * qty).toLocaleString('ja-JP') : '';
+    }
+    if (block) { updateSectionSubtotal(block); updateOutput(); }
   }
 
   // ── 公開API ───────────────────────────────────────────────────
@@ -4351,6 +4654,8 @@ const app = (() => {
     execMaterialAdd,
     // 採番
     autoNumber,
+    incrementEdaban,
+    resetSeqNo,
     // 営業所
     onBranchChange,
     // 標準項
@@ -4391,6 +4696,7 @@ const app = (() => {
     removeFrpItem,
     // 代理店単価ロック解除
     clearDairiUnitPrice,
+    clearFinalDairiUnit,
     // 切り上げ表示
     toggleRounding,
   };

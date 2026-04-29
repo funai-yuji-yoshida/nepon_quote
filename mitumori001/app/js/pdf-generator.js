@@ -141,7 +141,8 @@ const QuotationPDF = (() => {
       });
       grandTotal = sectionTotals.reduce((sum, s) => sum + s.effectiveTotal, 0);
     }
-    const discount        = Number(data.discount) || 0;
+    const discountEnabled = data.discountEnabled !== false;
+    const discount        = discountEnabled ? (Number(data.discount) || 0) : 0;
     const quoteCategory   = data.quoteCategory || '';
     const deliveryPrice   = Number(data.deliveryPrice) || grandTotal;
     const legalRate     = (Number(data.legalWelfareRate) || 14.6) / 100;
@@ -204,8 +205,9 @@ const QuotationPDF = (() => {
         // ====================================================
         ...buildCoverPage({
           quoteNoStr, dateStr, branch,
-          data, sectionTotals, grandTotal, discount, quoteCategory,
+          data, sectionTotals, grandTotal, discount, discountEnabled, quoteCategory,
           deliveryPrice, materialCost, laborCost, legalWelfare, legalRate, anzenCost,
+          buhanDiscTotal: data.buhanDiscTotal || 0,
           mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode,
           showUchiwake,
           frpMode, frpItems, frpAB, frpPriceTotal, frpShikiriTotal,
@@ -233,7 +235,7 @@ const QuotationPDF = (() => {
   // ── 1ページ目（表紙）────────────────────────────────────────
 
   function buildCoverPage({ quoteNoStr, dateStr, branch, data, sectionTotals,
-    grandTotal, discount, quoteCategory, deliveryPrice, materialCost, laborCost, legalWelfare, legalRate, anzenCost,
+    grandTotal, discount, discountEnabled, quoteCategory, deliveryPrice, materialCost, laborCost, legalWelfare, legalRate, anzenCost, buhanDiscTotal = 0,
     mainRate, pdfPriceMode, showUchiwake,
     frpMode, frpItems, frpAB, frpPriceTotal, frpShikiriTotal }) {
     const useDairi = pdfPriceMode === 'dairi' && mainRate != null;
@@ -395,7 +397,7 @@ const QuotationPDF = (() => {
         }, 0) * (s.secQty || 1), 0)) : grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
     ]);
 
-    if (!isTeika) {
+    if (!isTeika && discountEnabled && !isBuppan) {
     // 値引き額（0の場合も表示）
     tableRows.push([
       { text: '', border: [true, false, false, false] },
@@ -411,7 +413,24 @@ const QuotationPDF = (() => {
       {}, {}, {},
       { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
     ]);
-    } // end !isTeika
+    } // end !isTeika && !isBuppan
+
+    if (!isTeika && isBuppan && buhanDiscTotal > 0) {
+      // 物販: 値引き（明細計）
+      tableRows.push([
+        { text: '', border: [true, false, false, false] },
+        { text: '値引き（明細計）', alignment: 'center', fontSize: itemFs, colSpan: 4, border: [false, false, false, false] },
+        {}, {}, {},
+        { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+      ]);
+      // 物販: 販売価格合計
+      tableRows.push([
+        { text: '', border: [true, false, false, false] },
+        { text: '販売価格合計', alignment: 'center', fontSize: itemFs, colSpan: 4, border: [false, false, false, false] },
+        {}, {}, {},
+        { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
+      ]);
+    }
 
     if (!isTeika && showUchiwake) {
       // 内訳ヘッダー
@@ -1143,8 +1162,10 @@ const QuotationPDF = (() => {
     '②': '②支持具・雑部材',
     '③': '③配線部材',
     '④': '④工事費',
+    '⑥': '⑥配管材料',
+    '⑦': '⑦支持具・雑材費',
   };
-  const CALC_CATEGORY_ORDER = ['①', '②', '③', '④'];
+  const CALC_CATEGORY_ORDER = ['①', '②', '③', '④', '⑥', '⑦'];
 
   function buildSummaryDocDefinition(data) {
     const font      = fontLoaded ? 'NotoSansJP' : 'Roboto';

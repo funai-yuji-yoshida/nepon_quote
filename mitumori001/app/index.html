@@ -70,6 +70,8 @@
           <label>見積番号</label>
           <span id="quoteNoDisplay" class="quote-no-generated">（未採番）</span>
           <button class="btn-auto" id="btnAutoNumber">🔢 採番する</button>
+          <button class="btn-reset-seq" id="btnResetSeqNo" style="display:none" onclick="app.incrementEdaban()">枝番＋１</button>
+          <button class="btn-reset-seq btn-clear-seq" id="btnClearSeqNo" style="display:none" onclick="app.resetSeqNo()">採番クリア</button>
         </div>
         <div class="form-row">
           <label>枝番</label>
@@ -160,8 +162,16 @@
                 <span id="basicDairiTotal" class="display-price" style="color:#1a4d8f">0</span>
               </div>
             </div>
-            <div class="form-row">
+            <div class="form-row" id="rowBuhanDiscount" style="display:none">
+              <label>　値引き（明細計）</label>
+              <div class="price-group">
+                <span class="currency-sign" style="color:#c0392b">▲</span>
+                <span id="basicBuhanDiscount" class="display-price" style="color:#c0392b">0</span>
+              </div>
+            </div>
+            <div class="form-row" id="rowDiscount">
               <label id="discountLabel">値引き額</label>
+              <input type="checkbox" id="chkDiscountEnabled" title="値引き額を印刷する" style="display:none" checked>
               <div class="price-group">
                 <span class="currency-sign">¥</span>
                 <input type="number" id="discountAmount" placeholder="0" min="0" class="input-price">
@@ -470,6 +480,18 @@
         </table>
       </div>
 
+      <div id="itemsFooterBar" class="items-footer-bar">
+        <span class="footer-item footer-total"><span class="footer-label">合計</span> <strong id="footerTotal">¥0</strong></span>
+        <span id="footerDairiWrap" style="display:none">
+          <span class="footer-sep">／</span>
+          <span class="footer-item"><span id="footerDairiLabel" class="footer-label">代理店</span> <strong id="footerDairi">¥0</strong></span>
+        </span>
+        <span class="footer-sep">｜</span>
+        <span class="footer-item"><span class="footer-label">粗利</span> <strong id="footerAraRi">¥0</strong></span>
+        <span class="footer-sep">｜</span>
+        <span class="footer-item"><span class="footer-label">粗利率</span> <strong id="footerAraRiRate">―</strong></span>
+      </div>
+
       <div class="tab-footer">
         <button class="btn-back" onclick="app.goToTab('basic')">← 基本情報</button>
         <button class="btn-next" onclick="app.goToTab('output')">次へ: PDF出力 →</button>
@@ -638,7 +660,10 @@
             <th class="col-labor-check" title="労務費に含める">労務</th>
             <th class="col-dairi-rate">掛率</th>
             <th class="col-dairi-unit">代理店単価</th>
+            <th class="col-final-dairi">最終代理店単価</th>
             <th class="col-dairi">代理店価格</th>
+            <th class="col-buhan-discount">値引き</th>
+            <th class="col-hanbaika">販売価格</th>
             <th class="col-genka">原価</th>
             <th class="col-genka-amount">原価合計</th>
             <th class="col-gensui-kubun">減衰区分</th>
@@ -666,7 +691,7 @@
         </div>
         <div class="section-subtotal">
           小計: <strong class="subtotal-val">¥0</strong>
-          <span class="dairi-subtotal-wrap" style="display:none">　／　代理店: <strong class="dairi-subtotal-val" style="color:#1a4d8f">¥0</strong></span>
+          <span class="dairi-subtotal-wrap" style="display:none">　／　<span class="dairi-subtotal-label">代理店</span>: <strong class="dairi-subtotal-val" style="color:#1a4d8f">¥0</strong></span>
           <span class="sec-qty-total-wrap" style="display:none">　＝ 合計 <span class="sec-qty-num">1</span>式: <strong class="sec-qty-total-val">¥0</strong></span>
         </div>
       </div>
@@ -678,7 +703,7 @@
     <tr class="item-row" draggable="true" data-item-id="" data-calc-category="">
       <td class="col-drag"><span class="drag-handle" title="ドラッグして移動">⠿</span></td>
       <td class="col-name">
-        <input type="text" class="item-name" lang="ja" placeholder="品名">
+        <input type="text" class="item-name" lang="ja" inputmode="text" placeholder="品名">
       </td>
       <td class="col-calc-cat">
         <select class="item-calc-cat">
@@ -688,10 +713,12 @@
           <option value="③配線部材">③配線部材</option>
           <option value="④工事費">④工事費</option>
           <option value="⑤その他">⑤その他</option>
+          <option value="⑥配管材料">⑥配管材料</option>
+          <option value="⑦支持具・雑材費">⑦支持具・雑材費</option>
         </select>
       </td>
       <td class="col-spec"><input type="text" class="item-spec" placeholder="型番・規格"></td>
-      <td class="col-qty"><input type="number" class="item-qty" value="1" min="0" step="any"></td>
+      <td class="col-qty"><input type="text" class="item-qty" value="1"></td>
       <td class="col-unit">
         <select class="item-unit">
           <option value="セット">セット</option>
@@ -727,10 +754,18 @@
           <button class="btn-dairi-unit-lock" onclick="app.clearDairiUnitPrice(this)" title="手動入力をクリアして自動計算に戻す" style="display:none">🔒</button>
         </div>
       </td>
+      <td class="col-final-dairi">
+        <div class="final-dairi-wrap">
+          <input type="text" inputmode="numeric" class="item-final-dairi" placeholder="">
+          <button class="btn-final-dairi-lock" onclick="app.clearFinalDairiUnit(this)" title="手動入力をクリアして自動計算に戻す" style="display:none">🔒</button>
+        </div>
+      </td>
       <td class="col-dairi"><span class="item-dairi"></span></td>
+      <td class="col-buhan-discount"><input type="text" inputmode="numeric" class="item-buhan-discount" placeholder=""></td>
+      <td class="col-hanbaika"><span class="item-hanbaika"></span></td>
       <td class="col-genka"><input type="text" inputmode="numeric" class="item-genka" placeholder=""></td>
       <td class="col-genka-amount"><span class="item-genka-amount"></span></td>
-      <td class="col-gensui-kubun"><input type="checkbox" class="item-gensui-enabled" title="減衰計算" style="display:none"><select class="item-gensui-kubun"><option value="">―</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></td>
+      <td class="col-gensui-kubun"><input type="checkbox" class="item-gensui-enabled" title="減衰計算" style="display:none"><select class="item-gensui-kubun"><option value="">―</option><option value="1">1．機器</option><option value="2">2．屋外</option><option value="3">3．室内</option><option value="4">4．機械室</option><option value="5">5．エロフィン</option></select></td>
       <td class="col-koji-category"><span class="item-koji-category"></span></td>
       <td class="col-gensui-a"><input type="text" inputmode="decimal" class="item-gensui-a" placeholder=""></td>
       <td class="col-gensui-b"><input type="text" inputmode="decimal" class="item-gensui-b" placeholder=""></td>

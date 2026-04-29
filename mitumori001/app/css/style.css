@@ -308,6 +308,19 @@ button {
 
 .btn-auto:hover { background: #dce8f5; }
 
+.btn-reset-seq {
+  background: #f0f4fa;
+  color: #1a4d8f;
+  border: 1px solid #1a4d8f;
+  padding: 4px 8px;
+  font-size: 11px;
+  margin-left: 4px;
+}
+.btn-reset-seq:hover { background: #dce8f5; }
+.btn-reset-seq:disabled { background: #e8e8e8; color: #aaa; border-color: #ccc; cursor: not-allowed; }
+.btn-clear-seq { background: #fff0f0; color: #c0392b; border-color: #c0392b; }
+.btn-clear-seq:hover { background: #fde0e0; }
+
 .btn-primary {
   background: #1a4d8f;
   color: #fff;
@@ -762,6 +775,7 @@ button {
 }
 
 .col-name      { width: 17%; }
+.item-name     { ime-mode: active; }
 .col-calc-cat  { width: 10%; }
 .col-spec      { width: 16%; }
 .col-qty    { width: 6%; }
@@ -1563,6 +1577,39 @@ input.item-gensui-b::-webkit-inner-spin-button {
 /* 代理店単価列 */
 .col-dairi-unit { width: 90px; min-width: 90px; text-align: right; }
 .dairi-unit-wrap { display: flex; align-items: center; gap: 2px; justify-content: flex-end; }
+.final-dairi-wrap { display: flex; align-items: center; gap: 2px; justify-content: flex-end; }
+.col-buhan-discount, .col-hanbaika { white-space: nowrap; text-align: right; }
+.item-buhan-discount {
+  width: 68px; text-align: right; font-size: 11px;
+  border: 1px solid #ccc !important; border-radius: 3px; padding: 1px 4px;
+}
+.item-hanbaika { display: block; text-align: right; font-size: 11px; color: #c0392b; font-weight: bold; }
+.item-final-dairi {
+  width: 68px;
+  text-align: right;
+  font-size: 11px;
+  color: #1a4d8f;
+  border: 1px solid #a8c4e8 !important;
+  background: #f0f6ff !important;
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+.item-final-dairi.is-manual {
+  background: #fff8e8 !important;
+  border-color: #e6a817 !important;
+  color: #b87800;
+}
+.btn-final-dairi-lock {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+.btn-final-dairi-lock:hover { opacity: 1; }
 .item-dairi-unit {
   width: 68px;
   text-align: right;
@@ -1916,3 +1963,22 @@ input.item-gensui-b::-webkit-inner-spin-button {
   margin-left: 16px;
 }
 .tpl-load-mode label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+
+/* 見積明細フッター集計バー（作業のみ表示） */
+.items-footer-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding: 8px 12px;
+  background: #f0f4fa;
+  border-top: 2px solid #1a4d8f;
+  font-size: 12px;
+  color: #333;
+}
+.items-footer-bar .footer-item { display: flex; align-items: center; gap: 4px; }
+#footerDairiWrap { display: inline-flex; align-items: center; white-space: nowrap; }
+.items-footer-bar .footer-label { color: #555; }
+.items-footer-bar .footer-item strong { color: #1a4d8f; font-size: 13px; }
+.items-footer-bar .footer-total strong { color: #c0392b; font-size: 14px; }
+.items-footer-bar .footer-sep { color: #999; font-size: 13px; font-weight: bold; padding: 0 2px; }
