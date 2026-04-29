@@ -4363,6 +4363,7 @@ const app = (() => {
     let html = '';
 
     state.sections.forEach(sec => {
+      const secQty = Math.max(1, Number(sec.secQty) || 1);
       const catTotals      = {};
       const catDairiTotals = {};
       const normalItems    = [];
@@ -4377,12 +4378,14 @@ const app = (() => {
         }
       });
 
-      const secTotal = (sec.items || []).reduce((s, i) => s + (Number(i.amount) || 0), 0);
-      const secDairi = rate != null
+      const secSubtotal = (sec.items || []).reduce((s, i) => s + (Number(i.amount) || 0), 0);
+      const secSubDairi = rate != null
         ? (sec.items || []).reduce((s, i) => s + (dairiAmt(i) ?? 0), 0)
         : null;
+      const secTotal      = secSubtotal * secQty;
+      const secDairiTotal = secSubDairi != null ? secSubDairi * secQty : null;
       grandTotal += secTotal;
-      if (secDairi != null) grandDairi += secDairi;
+      if (secDairiTotal != null) grandDairi += secDairiTotal;
 
       html += `<div class="summary-section-block">
         <div class="summary-section-header">No.${sec.no}　${escHtml(sec.name || '')}</div>
@@ -4423,13 +4426,32 @@ const app = (() => {
       });
 
       const dairiColspan = rate != null ? '' : '―';
-      html += `</tbody>
-          <tfoot><tr class="summary-subtotal">
+      let tfootHtml = '';
+      if (secQty > 1) {
+        tfootHtml = `
+          <tr class="summary-subtotal-per">
+            <td colspan="4" class="center">小　計</td>
+            <td class="num">${fmtN(secSubtotal)}</td>
+            <td class="num dairi-col"></td>
+            <td class="num dairi-col">${secSubDairi != null ? fmtN(secSubDairi) : dairiColspan}</td>
+          </tr>
+          <tr class="summary-subtotal">
+            <td colspan="4" class="center">×${secQty}式　合計</td>
+            <td class="num">${fmtN(secTotal)}</td>
+            <td class="num dairi-col"></td>
+            <td class="num dairi-col">${secDairiTotal != null ? fmtN(secDairiTotal) : dairiColspan}</td>
+          </tr>`;
+      } else {
+        tfootHtml = `
+          <tr class="summary-subtotal">
             <td colspan="4" class="center">小　計</td>
             <td class="num">${fmtN(secTotal)}</td>
             <td class="num dairi-col"></td>
-            <td class="num dairi-col">${secDairi != null ? fmtN(secDairi) : dairiColspan}</td>
-          </tr></tfoot>
+            <td class="num dairi-col">${secDairiTotal != null ? fmtN(secDairiTotal) : dairiColspan}</td>
+          </tr>`;
+      }
+      html += `</tbody>
+          <tfoot>${tfootHtml}</tfoot>
         </table>
       </div>`;
     });

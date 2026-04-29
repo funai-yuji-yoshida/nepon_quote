@@ -1263,6 +1263,7 @@ const QuotationPDF = (() => {
 
       // セクション小計
       // 列構成: [No.] [─小計─(colSpan:4)] [{}{}{}] [金額] ([代理店単価] [代理店価格])
+      const secQtyPdf     = Math.max(1, Number(sec.secQty) || 1);
       const subtotal      = (sec.items || []).reduce((s, i) => s + (Number(i.amount) || 0), 0);
       const subtotalDairi = showDairi ? (sec.items || []).reduce((s, i) => s + dairiItemAmt(i), 0) : 0;
       const F = '#f5f5f5';
@@ -1277,12 +1278,32 @@ const QuotationPDF = (() => {
         subtotalRow.push({ text: fmt(subtotalDairi), alignment: 'right', bold: true, border: [true, true, true, true], fillColor: F });
       }
       tableRows.push(subtotalRow);
+      if (secQtyPdf > 1) {
+        const G = '#e8edf5';
+        const secTotalRow = [
+          { text: '', border: [true, false, true, true], fillColor: G },
+          { text: `×${secQtyPdf}式　合計`, alignment: 'center', bold: true, colSpan: 4, border: [true, false, true, true], fillColor: G },
+          {}, {}, {},
+          { text: fmt(subtotal * secQtyPdf), alignment: 'right', bold: true, border: [true, false, true, true], fillColor: G },
+        ];
+        if (showDairi) {
+          secTotalRow.push({ text: '', border: [true, false, true, true], fillColor: G });
+          secTotalRow.push({ text: fmt(subtotalDairi * secQtyPdf), alignment: 'right', bold: true, border: [true, false, true, true], fillColor: G });
+        }
+        tableRows.push(secTotalRow);
+      }
     });
 
     // 全体合計
     // 列構成: [No.] [合計(colSpan:4)] [{}{}{}] [金額] ([代理店単価] [代理店価格])
-    const grandTotal      = sections.reduce((s, sec) => s + (sec.items || []).reduce((ss, i) => ss + (Number(i.amount) || 0), 0), 0);
-    const grandDairiTotal = showDairi ? sections.reduce((s, sec) => s + (sec.items || []).reduce((ss, i) => ss + dairiItemAmt(i), 0), 0) : 0;
+    const grandTotal      = sections.reduce((s, sec) => {
+      const sQty = Math.max(1, Number(sec.secQty) || 1);
+      return s + (sec.items || []).reduce((ss, i) => ss + (Number(i.amount) || 0), 0) * sQty;
+    }, 0);
+    const grandDairiTotal = showDairi ? sections.reduce((s, sec) => {
+      const sQty = Math.max(1, Number(sec.secQty) || 1);
+      return s + (sec.items || []).reduce((ss, i) => ss + dairiItemAmt(i), 0) * sQty;
+    }, 0) : 0;
     const grandRow = [
       { text: '', border: [true, true, false, false] },
       { text: '合　　計', alignment: 'center', bold: true, colSpan: 4, border: [false, true, false, false] },
