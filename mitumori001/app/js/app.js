@@ -2399,10 +2399,31 @@ const app = (() => {
     updateOutput();
   }
 
+  // 全角数字・小数点・マイナスを半角に変換（変換があれば true を返す）
+  function normalizeNumericInput(el) {
+    const val = el.value;
+    const converted = val.replace(/[０-９．，－]/g, ch => {
+      const c = ch.charCodeAt(0);
+      if (c >= 0xFF10 && c <= 0xFF19) return String.fromCharCode(c - 0xFEE0);
+      if (c === 0xFF0E) return '.';
+      if (c === 0xFF0C) return ',';
+      if (c === 0xFF0D) return '-';
+      return ch;
+    });
+    if (converted !== val) { el.value = converted; return true; }
+    return false;
+  }
+  let _fullWidthToastTimer = null;
+  function warnFullWidth() {
+    clearTimeout(_fullWidthToastTimer);
+    _fullWidthToastTimer = setTimeout(() => showToast('全角数字を半角に変換しました', 'warn'), 150);
+  }
+
   /** 数量・単価変更 → 金額自動計算 */
   function onItemInput(e) {
     // IME composition 中（日本語変換中）はDOM更新をスキップ
     if (e.isComposing) return;
+    if (normalizeNumericInput(e.target)) warnFullWidth();
     const row = e.target.closest('.item-row');
     if (!row) return;
 
@@ -2842,6 +2863,7 @@ const app = (() => {
     const secQtyInput = block.querySelector('.section-qty-input');
     if (secQtyInput) {
       secQtyInput.addEventListener('input', () => {
+        if (normalizeNumericInput(secQtyInput)) warnFullWidth();
         const s = state.sections.find(s => s.id === sec.id);
         if (s) {
           s.secQty = Math.max(1, Number(secQtyInput.value) || 1);
