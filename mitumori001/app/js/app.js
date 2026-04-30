@@ -2373,6 +2373,39 @@ const app = (() => {
     }
   }
 
+  function scrollToMovedRow(block, itemId) {
+    requestAnimationFrame(() => {
+      const row = block.querySelector(`[data-item-id="${itemId}"]`);
+      if (!row) return;
+      // Walk up DOM to find the actual scrollable ancestor
+      let container = null;
+      let cur = row.parentElement;
+      while (cur && cur !== document.documentElement) {
+        const ov = window.getComputedStyle(cur).overflowY;
+        if ((ov === 'auto' || ov === 'scroll') && cur.scrollHeight > cur.clientHeight) {
+          container = cur;
+          break;
+        }
+        cur = cur.parentElement;
+      }
+      if (!container) return;
+      const toolbar = container.querySelector('.items-toolbar');
+      const toolbarH = toolbar ? toolbar.offsetHeight : 0;
+      const rowRect = row.getBoundingClientRect();
+      const cRect   = container.getBoundingClientRect();
+      // Convert viewport-relative rect to scroll-coordinate position
+      const rowTopAbs    = rowRect.top    - cRect.top + container.scrollTop;
+      const rowBottomAbs = rowRect.bottom - cRect.top + container.scrollTop;
+      const visibleTop    = container.scrollTop + toolbarH;
+      const visibleBottom = container.scrollTop + container.clientHeight;
+      if (rowTopAbs < visibleTop + 8) {
+        container.scrollTop = Math.max(0, rowTopAbs - toolbarH - 8);
+      } else if (rowBottomAbs > visibleBottom - 8) {
+        container.scrollTop = rowBottomAbs - container.clientHeight + 8;
+      }
+    });
+  }
+
   function moveItemUp(btn) {
     const block  = btn.closest('.section-block');
     const secId  = Number(block.dataset.sectionId);
@@ -2384,6 +2417,7 @@ const app = (() => {
     [sec.items[idx - 1], sec.items[idx]] = [sec.items[idx], sec.items[idx - 1]];
     renderSection(sec, block);
     updateOutput();
+    scrollToMovedRow(block, itemId);
   }
 
   function moveItemDown(btn) {
@@ -2397,6 +2431,7 @@ const app = (() => {
     [sec.items[idx], sec.items[idx + 1]] = [sec.items[idx + 1], sec.items[idx]];
     renderSection(sec, block);
     updateOutput();
+    scrollToMovedRow(block, itemId);
   }
 
   // 全角数字・小数点・マイナスを半角に変換（変換があれば true を返す）
@@ -3062,12 +3097,74 @@ const app = (() => {
 
   let dragSrcRow = null;
 
+  // ── オートスクロール ──────────────────────────────────────────
+  let _asRaf = null;
+  let _asClientY = 0;
+  let _asContainer = null;
+  const AS_ZONE = 50;   // エッジからこの距離以内でスクロール開始 (px)
+  const AS_MAX  = 12;   // 1フレームあたりの最大スクロール量 (px)
+
+  function _findScrollContainer(el) {
+    while (el && el !== document.documentElement) {
+      const ov = window.getComputedStyle(el).overflowY;
+      if ((ov === 'auto' || ov === 'scroll') && el.scrollHeight > el.clientHeight) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  function _autoScrollStep() {
+    if (!_asContainer) return;
+    const rect = _asContainer.getBoundingClientRect();  // 毎フレーム再取得
+    let speed = 0;
+    if (_asClientY >= rect.top && _asClientY < rect.top + AS_ZONE) {
+      speed = -Math.ceil((1 - (_asClientY - rect.top) / AS_ZONE) * AS_MAX);
+    } else if (_asClientY > rect.bottom - AS_ZONE && _asClientY <= rect.bottom) {
+      speed = Math.ceil((1 - (rect.bottom - _asClientY) / AS_ZONE) * AS_MAX);
+    }
+    if (speed !== 0) _asContainer.scrollTop += speed;
+    _asRaf = requestAnimationFrame(_autoScrollStep);
+  }
+
+  function _onAsMove(e) {
+    if (e.clientY) _asClientY = e.clientY;  // clientY=0 は無視（drag イベントの誤値対策）
+  }
+
+  function _stopAutoScroll() {
+    if (_asRaf) { cancelAnimationFrame(_asRaf); _asRaf = null; }
+    _asContainer = null;
+    document.removeEventListener('dragover', _onAsMove);
+    document.removeEventListener('mousemove', _onAsMove);
+    document.removeEventListener('mouseup',   _stopAutoScroll);
+  }
+
+  function _startAutoScroll(el) {
+    // 前のループが残っていれば必ずキャンセル
+    if (_asRaf) { cancelAnimationFrame(_asRaf); _asRaf = null; }
+    document.removeEventListener('dragover', _onAsMove);
+    document.removeEventListener('mousemove', _onAsMove);
+    document.removeEventListener('mouseup',   _stopAutoScroll);
+
+    _asContainer = _findScrollContainer(el);
+    if (!_asContainer) return;
+
+    // dragover（HTML5 drag）と mousemove 両方でカーソル位置を追跡
+    document.addEventListener('dragover', _onAsMove);
+    document.addEventListener('mousemove', _onAsMove);
+    // mouseup でドラッグ強制終了時も確実に停止
+    document.addEventListener('mouseup',   _stopAutoScroll);
+
+    _asRaf = requestAnimationFrame(_autoScrollStep);
+  }
+  // ─────────────────────────────────────────────────────────────
+
   function attachDragEvents(row) {
     row.addEventListener('dragstart', e => {
       dragSrcRow = row;
       row.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', row.dataset.itemId);
+      _startAutoScroll(row);
     });
     row.addEventListener('dragend', () => {
       row.classList.remove('dragging');
@@ -3075,6 +3172,7 @@ const app = (() => {
         r.classList.remove('drag-over-top', 'drag-over-bottom');
       });
       dragSrcRow = null;
+      _stopAutoScroll();
     });
     row.addEventListener('dragover', e => {
       if (!dragSrcRow || dragSrcRow === row) return;

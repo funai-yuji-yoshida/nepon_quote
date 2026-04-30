@@ -1425,9 +1425,8 @@ input.item-gensui-b::-webkit-inner-spin-button {
 .item-labor-check { cursor: pointer; width: 16px; height: 16px; }
 .col-item-actions { white-space: nowrap; vertical-align: middle; }
 .item-action-btns { display: flex; gap: 2px; align-items: center; }
-.item-spec-btns   { display: flex; gap: 2px; align-items: center; margin-top: 2px; }
-.item-spec-btns .btn-spec-add,
-.item-spec-btns .btn-spec-template {
+.item-action-btns .btn-spec-add,
+.item-action-btns .btn-spec-template {
   font-size: 10px; padding: 1px 5px;
 }
 .btn-move {
