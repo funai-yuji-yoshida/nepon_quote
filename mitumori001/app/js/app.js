@@ -4042,7 +4042,7 @@ const app = (() => {
     collectExclusions();
     return {
       seqNo:           state.seqNo,
-      quoteNoStr:      state.seqNo || '（未採番）',
+      quoteNoStr:      state.seqNo || '',
       revision:        state.revision,
       date:            state.submitDate || state.date,
       customerName:    state.customerName,
