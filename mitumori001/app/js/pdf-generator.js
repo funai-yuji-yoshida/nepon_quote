@@ -126,7 +126,7 @@ const QuotationPDF = (() => {
     }, 0);
 
     const dateStr    = toJpDate(data.date || new Date());
-    const quoteNoStr = data.quoteNoStr || (data.seqNo ? `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}` : '（未採番）');
+    const quoteNoStr = data.quoteNoStr || (data.seqNo ? `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}` : '');
 
     // セクション小計の計算
     let sectionTotals, grandTotal;
@@ -1170,7 +1170,7 @@ const QuotationPDF = (() => {
   function buildSummaryDocDefinition(data) {
     const font      = fontLoaded ? 'NotoSansJP' : 'Roboto';
     const dateStr   = toJpDate(data.date || new Date());
-    const quoteNoStr = data.quoteNoStr || (data.seqNo ? `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}` : '（未採番）');
+    const quoteNoStr = data.quoteNoStr || (data.seqNo ? `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}` : '');
     const sections  = data.sections || [];
     const showDairi = data.summaryShowDairi && data.mainRate != null;
     const rate      = data.mainRate;
