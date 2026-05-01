@@ -879,6 +879,16 @@ const app = (() => {
         }
       }
     }
+    // 物販・作業には工事カテゴリ採番が不要 → seqNo を自動クリア
+    if (state.seqNo && !(state.quoteCategory || '').includes('工事')) {
+      state.seqNo        = '';
+      state.koujiCategory  = '';
+      state.createDeptCode = '';
+      state.siteDeptCode   = '';
+      state.kikaShita      = '80';
+      state.seqNumber      = 0;
+      state.edaban         = '1';
+    }
     // seqNoがない場合、Quotes.field15（所課）の名前でDEPT_LISTを逆引きしてcreateDepCodeをセット
     if (!state.createDeptCode && state.shoka) {
       const deptEntry = DEPT_LIST.find(d => d.name === state.shoka);
@@ -1042,12 +1052,14 @@ const app = (() => {
     const edabanEl = document.getElementById('edaban');
     if (edabanEl) edabanEl.value = state.edaban || '1';
     const btnAutoEl  = document.getElementById('btnAutoNumber');
+    const btnIncrEl  = document.getElementById('btnIncrSeqNo');
     const btnResetEl = document.getElementById('btnResetSeqNo');
     const btnClearEl = document.getElementById('btnClearSeqNo');
     if (btnAutoEl) {
       const locked = !!state.seqNo;
       btnAutoEl.disabled = locked;
       btnAutoEl.textContent = locked ? '採番済み' : '🔢 採番する';
+      if (btnIncrEl)  btnIncrEl.style.display  = locked ? '' : 'none';
       if (btnResetEl) btnResetEl.style.display = locked ? '' : 'none';
       if (btnClearEl) btnClearEl.style.display = locked ? '' : 'none';
     }
@@ -2158,6 +2170,37 @@ const app = (() => {
     }
   }
 
+  function incrementSeqNo() {
+    if (!state.seqNo) return;
+    let newSeqNo = '';
+    if (state.seqNo.includes('-')) {
+      const parts = state.seqNo.split('-');
+      if (parts.length >= 6) {
+        // 旧形式: CD-32-32-80-0001-1
+        const seq = (parseInt(parts[4]) || 0) + 1;
+        parts[4] = String(seq).padStart(4, '0');
+        parts[5] = '1';
+        newSeqNo = parts.join('-');
+        state.seqNumber = seq;
+        state.edaban    = '1';
+      } else if (parts.length === 2) {
+        // 新形式: CQ7700-8000021
+        const suffix = parts[1];
+        const kikaShita = suffix.substring(0, 2);
+        const seq       = (parseInt(suffix.substring(2, 6)) || 0) + 1;
+        const edaban    = '1';
+        newSeqNo = `${parts[0]}-${kikaShita}${String(seq).padStart(4, '0')}${edaban}`;
+        state.seqNumber = seq;
+        state.edaban    = edaban;
+      }
+    }
+    if (!newSeqNo) return;
+    state.seqNo = newSeqNo;
+    const edabanEl = document.getElementById('edaban');
+    if (edabanEl) edabanEl.value = state.edaban;
+    updateQuoteNoBadge();
+  }
+
   function incrementEdaban() {
     if (!state.seqNo) return;
     let newSeqNo = '';
@@ -2178,10 +2221,8 @@ const app = (() => {
     }
     if (!newSeqNo) return;
     state.seqNo = newSeqNo;
-    const edabanEl  = document.getElementById('edaban');
-    const btnEl     = document.getElementById('btnResetSeqNo');
+    const edabanEl = document.getElementById('edaban');
     if (edabanEl) edabanEl.value = state.edaban;
-    if (btnEl) btnEl.disabled = true;
     updateQuoteNoBadge();
   }
 
@@ -2190,11 +2231,13 @@ const app = (() => {
     state.seqNo  = '';
     state.edaban = '1';
     const btnAutoEl  = document.getElementById('btnAutoNumber');
+    const btnIncrEl  = document.getElementById('btnIncrSeqNo');
     const btnResetEl = document.getElementById('btnResetSeqNo');
     const btnClearEl = document.getElementById('btnClearSeqNo');
     const displayEl  = document.getElementById('quoteNoDisplay');
     const edabanEl   = document.getElementById('edaban');
     if (btnAutoEl)  { btnAutoEl.disabled = false; btnAutoEl.textContent = '🔢 採番する'; }
+    if (btnIncrEl)  btnIncrEl.style.display  = 'none';
     if (btnResetEl) { btnResetEl.style.display = 'none'; btnResetEl.disabled = false; }
     if (btnClearEl) btnClearEl.style.display = 'none';
     if (displayEl)  displayEl.textContent = '（未採番）';
@@ -4796,6 +4839,7 @@ const app = (() => {
     execMaterialAdd,
     // 採番
     autoNumber,
+    incrementSeqNo,
     incrementEdaban,
     resetSeqNo,
     // 営業所
