@@ -1336,6 +1336,7 @@ const app = (() => {
           name:   p.Product_Name  || '',
           code:   p.Product_Code  || '',
           model:  p.field2        || '',
+          unit:   p.field4        || '',        // 単位（field4）
           price:  Number(p.Unit_Price) || 0,
           cost:   Number(p.field1)     || 0,   // 標準原価（field1）
           houdan: parseFloat(p.field12) || 0,  // 歩単（field12）
@@ -1709,7 +1710,7 @@ const app = (() => {
       item.productId = product.id;
       item.name      = product.name;
       item.spec      = product.code;
-      item.unit      = '式';
+      item.unit      = product.unit || '式';
       item.unitPrice = product.price;
       item.amount    = product.price;
       item.genka     = product.cost   || 0; // 標準原価（field1）
@@ -2990,7 +2991,16 @@ const app = (() => {
         row.querySelector('.item-name').value   = item.name;
         row.querySelector('.item-spec').value   = item.spec;
         row.querySelector('.item-qty').value    = item.qty;
-        row.querySelector('.item-unit').value   = item.unit;
+        // selectに存在しない単位値はオプションを動的追加してから選択
+        const unitSel = row.querySelector('.item-unit');
+        if (unitSel && item.unit) {
+          if (![...unitSel.options].some(o => o.value === item.unit)) {
+            const opt = document.createElement('option');
+            opt.value = opt.textContent = item.unit;
+            unitSel.appendChild(opt);
+          }
+          unitSel.value = item.unit;
+        }
         row.querySelector('.item-price').value  = item.unitPrice != null ? Number(item.unitPrice).toLocaleString('ja-JP') : '';
         row.querySelector('.item-amount').value = item.amount ? Number(item.amount).toLocaleString('ja-JP') : '';
       }
