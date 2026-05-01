@@ -847,6 +847,13 @@ button {
 .item-qty, .item-price, .item-amount {
   text-align: right;
 }
+.unit-combo { display: flex; align-items: center; gap: 1px; }
+.unit-combo .item-unit { flex: 1; min-width: 0; text-align: center; }
+.btn-unit-pick { flex-shrink: 0; padding: 0 3px; font-size: 9px; line-height: 1; background: #e8eaf0; border: 1px solid #ccc; border-radius: 2px; cursor: pointer; color: #555; }
+.btn-unit-pick:hover { background: #d0d4e0; }
+.unit-picker-dd { position: fixed; display: none; z-index: 9999; background: #fff; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.18); max-height: 220px; overflow-y: auto; min-width: 70px; }
+.unit-picker-item { padding: 5px 14px; cursor: pointer; white-space: nowrap; font-size: 13px; }
+.unit-picker-item:hover { background: #e8f0fe; }
 
 /* 折りたたみ */
 .section-toggle {
@@ -1368,6 +1375,17 @@ input.item-gensui-b::-webkit-inner-spin-button {
   font-size: 12px;
   font-weight: bold;
   padding: 6px 12px;
+  user-select: none;
+}
+.gensui-toggle-btn {
+  display: inline-block;
+  transition: transform 0.2s;
+}
+.gensui-summary.is-collapsed .gensui-toggle-btn {
+  transform: rotate(-90deg);
+}
+.gensui-summary.is-collapsed .gensui-table {
+  display: none;
 }
 .gensui-table {
   width: 100%;

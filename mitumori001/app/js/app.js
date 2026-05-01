@@ -608,6 +608,47 @@ const app = (() => {
     nameInput._ddItems = items;
   }
 
+  // ── 単位ピッカー（シングルトン floating dropdown） ───────────
+  const _unitPicker = (() => {
+    const UNITS = ['式','個','本','m','㎡','㎥','台','基','セット','組','ユニット','ダース','巻','缶','リットル','袋','kg','トン','a','ha','面'];
+    const dd = document.createElement('div');
+    dd.className = 'unit-picker-dd';
+    document.body.appendChild(dd);
+    let _input = null;
+
+    dd.addEventListener('mousedown', e => {
+      const item = e.target.closest('.unit-picker-item');
+      if (item && _input) {
+        _input.value = item.dataset.unit;
+        _input.dispatchEvent(new Event('input', { bubbles: true }));
+        hide();
+      }
+    });
+    document.addEventListener('click', e => {
+      if (!dd.contains(e.target) && !e.target.closest('.btn-unit-pick')) hide();
+    });
+
+    function hide() { dd.style.display = 'none'; _input = null; }
+
+    return {
+      toggle(btn) {
+        const input = btn.previousElementSibling;
+        if (dd.style.display !== 'none' && _input === input) { hide(); return; }
+        _input = input;
+        dd.innerHTML = UNITS.map(u =>
+          `<div class="unit-picker-item" data-unit="${u}">${u}</div>`
+        ).join('');
+        const rect = btn.getBoundingClientRect();
+        dd.style.left = rect.left + 'px';
+        dd.style.top  = (rect.bottom + 2) + 'px';
+        dd.style.display = 'block';
+      },
+    };
+  })();
+
+  function toggleUnitDropdown(btn) { _unitPicker.toggle(btn); }
+  // ──────────────────────────────────────────────────────────────
+
   // グローバルシングルトンドロップダウン（overflow:hidden を escape するため body に配置）
   const _nameDd = (() => {
     const dd = document.createElement('div');
@@ -2991,16 +3032,7 @@ const app = (() => {
         row.querySelector('.item-name').value   = item.name;
         row.querySelector('.item-spec').value   = item.spec;
         row.querySelector('.item-qty').value    = item.qty;
-        // selectに存在しない単位値はオプションを動的追加してから選択
-        const unitSel = row.querySelector('.item-unit');
-        if (unitSel && item.unit) {
-          if (![...unitSel.options].some(o => o.value === item.unit)) {
-            const opt = document.createElement('option');
-            opt.value = opt.textContent = item.unit;
-            unitSel.appendChild(opt);
-          }
-          unitSel.value = item.unit;
-        }
+        row.querySelector('.item-unit').value   = item.unit || '';
         row.querySelector('.item-price').value  = item.unitPrice != null ? Number(item.unitPrice).toLocaleString('ja-JP') : '';
         row.querySelector('.item-amount').value = item.amount ? Number(item.amount).toLocaleString('ja-JP') : '';
       }
@@ -4885,6 +4917,12 @@ const app = (() => {
     filterTemplates,
     selectTemplate,
     execTemplateLoad,
+    // 単位ピッカー
+    toggleUnitDropdown,
+    // 減衰計算サマリー折りたたみ
+    toggleGensuiSummary: () => {
+      document.getElementById('gensuiSummary')?.classList.toggle('is-collapsed');
+    },
     // CRM保存
     saveToCRM,
     // FRPモード

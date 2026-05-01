@@ -466,7 +466,9 @@
 
       <!-- 減衰計算サマリー -->
       <div id="gensuiSummary" class="gensui-summary" style="display:none">
-        <div class="gensui-summary-header">減衰計算サマリー</div>
+        <div class="gensui-summary-header" onclick="app.toggleGensuiSummary()" style="cursor:pointer">
+          <span class="gensui-toggle-btn">▼</span> 減衰計算サマリー
+        </div>
         <table class="gensui-table">
           <thead>
             <tr>
@@ -721,29 +723,10 @@
       <td class="col-spec"><input type="text" class="item-spec" placeholder="型番・規格"></td>
       <td class="col-qty"><input type="text" class="item-qty" value="1"></td>
       <td class="col-unit">
-        <select class="item-unit">
-          <option value="セット">セット</option>
-          <option value="組">組</option>
-          <option value="ユニット">ユニット</option>
-          <option value="ダース">ダース</option>
-          <option value="基">基</option>
-          <option value="台">台</option>
-          <option value="個">個</option>
-          <option value="本">本</option>
-          <option value="巻">巻</option>
-          <option value="缶">缶</option>
-          <option value="m">m</option>
-          <option value="㎡">㎡</option>
-          <option value="㎥">㎥</option>
-          <option value="リットル">リットル</option>
-          <option value="袋">袋</option>
-          <option value="kg">kg</option>
-          <option value="トン">トン</option>
-          <option value="a">a</option>
-          <option value="ha">ha</option>
-          <option value="式">式</option>
-          <option value="面">面</option>
-        </select>
+        <div class="unit-combo">
+          <input type="text" class="item-unit" placeholder="式">
+          <button type="button" class="btn-unit-pick" tabindex="-1" onclick="app.toggleUnitDropdown(this)">▼</button>
+        </div>
       </td>
       <td class="col-price"><input type="text" inputmode="numeric" class="item-price" placeholder="（空欄可）"></td>
       <td class="col-amount"><input type="text" inputmode="numeric" class="item-amount" placeholder="0"></td>
