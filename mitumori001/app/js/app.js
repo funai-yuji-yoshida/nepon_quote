@@ -4340,11 +4340,8 @@ const app = (() => {
       showUchiwake:     (() => {
         const cat = state.quoteCategory || '';
         if (cat.includes('物販')) return false;
-        if (cat.includes('作業')) {
-          const cb = document.getElementById('printNaiyaku');
-          return cb ? cb.checked : true;
-        }
-        return true; // 工事は常に表示
+        const cb = document.getElementById('printNaiyaku');
+        return cb ? cb.checked : true;
       })(),
       printMode:        mode,
       frpMode:   state.frpMode  || false,
