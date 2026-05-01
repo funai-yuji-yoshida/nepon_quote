@@ -4298,7 +4298,7 @@ const app = (() => {
       const apiData = {
         id:      state.quoteId,
         JSON:    jsonStr,
-        field55: state.seqNo      ? String(state.seqNo)      : undefined,
+        field55: state.seqNo      ? String(state.seqNo)      : '',
         field56: state.revision   ? Number(state.revision)   : undefined,
         field6:  state.deliveryTerm,
         field51: state.deliveryMethod,
