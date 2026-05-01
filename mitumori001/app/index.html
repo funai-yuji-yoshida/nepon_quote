@@ -560,22 +560,21 @@
             </label>
           </div>
 
-          <div class="print-detail-option">
-            <label class="print-detail-label">
-              <input type="checkbox" id="printSummaryMode">
-              見積まとめを追加印刷する（明細の後に①②③④集計ページを追加）
-            </label>
-          </div>
-
           <div id="pdfPriceModeGroup" class="pdf-price-mode-group" style="display:none">
             <span class="pdf-price-mode-label">印刷価格:</span>
             <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="teika"> 定価</label>
             <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi" checked> 代理店価格</label>
           </div>
 
-          <button class="btn-generate" id="btnGeneratePDF" onclick="app.generatePDF()" disabled>
-            📄 PDF生成・ダウンロード
-          </button>
+          <div class="pdf-btn-group">
+            <button class="btn-generate" id="btnSimplePDF" onclick="app.generatePDF('simple')" disabled>
+              📄 簡略印刷
+            </button>
+            <button class="btn-generate btn-generate-detail" id="btnDetailPDF" onclick="app.generatePDF('detail')" disabled>
+              📋 詳細印刷
+            </button>
+          </div>
+          <p class="pdf-btn-hint">簡略：①～④集計のみ　詳細：全明細行</p>
 
           <div id="pdfStatus" class="pdf-status-msg"></div>
 

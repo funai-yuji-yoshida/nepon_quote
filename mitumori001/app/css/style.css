@@ -1063,6 +1063,12 @@ button {
 
 .btn-generate:hover:not(:disabled) { background: #a93226; }
 .btn-generate:disabled { background: #ccc; cursor: not-allowed; }
+.btn-generate-detail { background: #2471a3; }
+.btn-generate-detail:hover:not(:disabled) { background: #1a5276; }
+
+.pdf-btn-group { display: flex; gap: 8px; }
+.pdf-btn-group .btn-generate { flex: 1; }
+.pdf-btn-hint { font-size: 11px; color: #888; margin: 4px 0 0; text-align: center; }
 
 .pdf-status-msg {
   font-size: 12px;

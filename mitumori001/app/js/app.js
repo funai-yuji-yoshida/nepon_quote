@@ -860,12 +860,14 @@ const app = (() => {
     if (ok) {
       el.textContent = '✅ フォント読み込み完了 - PDF生成可能です';
       el.className = 'font-status ok';
-      document.getElementById('btnGeneratePDF').disabled = false;
+      const s = document.getElementById('btnSimplePDF'); if (s) s.disabled = false;
+      const d = document.getElementById('btnDetailPDF'); if (d) d.disabled = false;
     } else {
       el.innerHTML = '⚠️ フォント読み込み失敗 - <a href="https://fonts.google.com/noto/specimen/Noto+Sans+JP" target="_blank">NotoSansJP-Regular.ttf</a> を widget/fonts/ に配置してください';
       el.className = 'font-status err';
       // フォントなしでも生成を許可（英数字は表示される）
-      document.getElementById('btnGeneratePDF').disabled = false;
+      const s = document.getElementById('btnSimplePDF'); if (s) s.disabled = false;
+      const d = document.getElementById('btnDetailPDF'); if (d) d.disabled = false;
     }
   }
 
@@ -2303,8 +2305,21 @@ const app = (() => {
     renderSections();
     updateOutput();
     document.getElementById('noSectionsMsg').style.display = 'none';
+    // ② 追加した大項目のNoをcommonTargetSectionに選択
+    const sel = document.getElementById('commonTargetSection');
+    if (sel) sel.value = String(section.id);
+    // ① 新セクションが見えるようにスクロール
     const newBlock = document.querySelector(`[data-section-id="${section.id}"]`);
-    if (newBlock) newBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (newBlock) {
+      const sc = _findScrollContainer(newBlock);
+      if (sc) {
+        const toolbar  = document.querySelector('.items-toolbar');
+        const toolbarH = toolbar ? toolbar.offsetHeight : 0;
+        const blockTop = newBlock.getBoundingClientRect().top;
+        const scTop    = sc.getBoundingClientRect().top;
+        sc.scrollTop  += blockTop - scTop - toolbarH - 8;
+      }
+    }
   }
 
   function removeSection(btn) {
@@ -3166,8 +3181,9 @@ const app = (() => {
     if (!s) return;
     const count    = s.items.filter(i => i.name || i.unitPrice).length;
     const subtotal = s.items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
-    const nameStr = s.name ? `${s.name}　` : '';
-    info.textContent = `${nameStr}${count}行　小計: ¥${subtotal.toLocaleString('ja-JP')}`;
+    const nameStr  = s.name ? `${s.name}　` : '';
+    const qtyStr   = (Number(s.secQty) || 1) !== 1 ? `${s.secQty}式　` : '';
+    info.textContent = `${nameStr}${qtyStr}${count}行　小計: ¥${subtotal.toLocaleString('ja-JP')}`;
   }
 
   function createItemRowDOM(item) {
@@ -4203,24 +4219,28 @@ const app = (() => {
 
   // ── PDF 生成 ─────────────────────────────────────────────────
 
-  async function generatePDF() {
+  async function generatePDF(mode = 'detail') {
     readFormToState();
 
     if (!state.seqNo) {
       if (!confirm('見積番号が未設定です。このまま生成しますか？')) return;
     }
 
-    const btn = document.getElementById('btnGeneratePDF');
-    btn.disabled = true;
-    btn.textContent = '⏳ 生成中...';
+    const btnSimple = document.getElementById('btnSimplePDF');
+    const btnDetail = document.getElementById('btnDetailPDF');
+    const btn = mode === 'simple' ? btnSimple : btnDetail;
+    if (btnSimple) btnSimple.disabled = true;
+    if (btnDetail) btnDetail.disabled = true;
+    if (btn) btn.textContent = '⏳ 生成中...';
     const statusEl = document.getElementById('pdfStatus');
     statusEl.textContent = '';
 
     try {
-      const data = buildPdfData();
+      const data = buildPdfData(mode);
       const blob = await QuotationPDF.getBlob(data);
-      const quoteNo = data.quoteNoStr || data.seqNo || '未採番';
-      const fname   = `御見積書_${quoteNo}_${data.customerName || ''}.pdf`;
+      const quoteNo  = data.quoteNoStr || data.seqNo || '未採番';
+      const suffix   = mode === 'simple' ? '簡略' : '詳細';
+      const fname    = `御見積書_${suffix}_${quoteNo}_${data.customerName || ''}.pdf`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -4237,13 +4257,13 @@ const app = (() => {
       alert('PDF生成失敗: ' + e.message);
       showToast('PDF生成に失敗しました', 'err');
     } finally {
-      btn.disabled = false;
-      btn.textContent = '📄 PDF生成・ダウンロード';
+      if (btnSimple) { btnSimple.disabled = false; btnSimple.textContent = '📄 簡略印刷'; }
+      if (btnDetail) { btnDetail.disabled = false; btnDetail.textContent = '📋 詳細印刷'; }
     }
   }
 
   /** PDF 生成用データオブジェクトを組み立てる */
-  function buildPdfData() {
+  function buildPdfData(mode = 'detail') {
     collectExclusions();
     return {
       seqNo:           state.seqNo,
@@ -4311,10 +4331,7 @@ const app = (() => {
         }
         return true; // 工事は常に表示
       })(),
-      printSummaryMode: (() => {
-        const cb = document.getElementById('printSummaryMode');
-        return cb ? cb.checked : false;
-      })(),
+      printMode:        mode,
       frpMode:   state.frpMode  || false,
       frpAB:     state.frpAB    || 'A',
       frpItems:  state.frpMode ? (state.frpItems || []) : undefined,

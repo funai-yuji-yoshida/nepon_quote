@@ -220,13 +220,10 @@ const QuotationPDF = (() => {
           { text: '', pageBreak: 'after' },
           ...(frpMode
             ? buildFrpDetailPages({ quoteNoStr, frpItems, frpAB, frpPriceTotal, frpShikiriTotal })
-            : buildDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode })
+            : data.printMode === 'simple'
+              ? buildSummaryDetailPages({ sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode })
+              : buildDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode })
           ),
-          // 見積まとめモード: 明細ページの後にまとめページを追加
-          ...(data.printSummaryMode && !frpMode ? [
-            { text: '', pageBreak: 'after' },
-            ...buildSummaryDetailPages({ sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode }),
-          ] : []),
         ] : []),
       ],
     };
