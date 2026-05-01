@@ -395,21 +395,25 @@ const QuotationPDF = (() => {
     ]);
 
     if (!isTeika && discountEnabled && !isBuppan) {
-    // 値引き額（0の場合も表示）
-    tableRows.push([
-      { text: '', border: [true, false, false, false] },
-      { text: discountLabel, alignment: 'center', fontSize: itemFs, colSpan: 4, border: [false, false, false, false] },
-      {}, {}, {},
-      { text: discount > 0 ? '▲ ' + fmt(discount) : fmt(0), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
-    ]);
+    // 値引き額：値引きがある場合のみ表示
+    if (discount > 0) {
+      tableRows.push([
+        { text: '', border: [true, false, false, false] },
+        { text: discountLabel, alignment: 'center', fontSize: itemFs, colSpan: 4, border: [false, false, false, false] },
+        {}, {}, {},
+        { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+      ]);
+    }
 
-    // お渡し価格
-    tableRows.push([
-      { text: '', border: [true, false, false, false] },
-      { text: '貴社お渡し価格', alignment: 'center', fontSize: itemFs, colSpan: 4, border: [false, false, false, false] },
-      {}, {}, {},
-      { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
-    ]);
+    // お渡し価格：代理店価格が設定されている場合のみ表示
+    if (useDairi) {
+      tableRows.push([
+        { text: '', border: [true, false, false, false] },
+        { text: '貴社お渡し価格', alignment: 'center', fontSize: itemFs, colSpan: 4, border: [false, false, false, false] },
+        {}, {}, {},
+        { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
+      ]);
+    }
     } // end !isTeika && !isBuppan
 
     if (!isTeika && isBuppan && buhanDiscTotal > 0) {
@@ -883,7 +887,7 @@ const QuotationPDF = (() => {
         if (!amount) return;
         rows.push([
           { text: '' },
-          { text: CALC_CATEGORY_LABELS[prefix] },
+          { text: CALC_CATEGORY_LABELS[prefix].slice(1) },
           { text: '1', alignment: 'right' },
           { text: '式', alignment: 'center' },
           { text: '', alignment: 'right' },
@@ -1245,7 +1249,7 @@ const QuotationPDF = (() => {
         if (!amount) return;
         const row = [
           { text: '' },
-          { text: CALC_CATEGORY_LABELS[prefix] },
+          { text: CALC_CATEGORY_LABELS[prefix].slice(1) },
           { text: '1', alignment: 'right' },
           { text: '式', alignment: 'center' },
           { text: '', alignment: 'right' },

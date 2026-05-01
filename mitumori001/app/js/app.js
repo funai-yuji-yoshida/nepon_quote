@@ -3181,9 +3181,24 @@ const app = (() => {
     if (!s) return;
     const count    = s.items.filter(i => i.name || i.unitPrice).length;
     const subtotal = s.items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    const secQty   = Number(s.secQty) || 1;
     const nameStr  = s.name ? `${s.name}　` : '';
-    const qtyStr   = (Number(s.secQty) || 1) !== 1 ? `${s.secQty}式　` : '';
-    info.textContent = `${nameStr}${qtyStr}${count}行　小計: ¥${subtotal.toLocaleString('ja-JP')}`;
+    const qtyStr   = secQty !== 1 ? `${secQty}式　` : '';
+    const totalStr = secQty !== 1
+      ? `　合計: ¥${(subtotal * secQty).toLocaleString('ja-JP')}`
+      : '';
+    let dairiStr = '';
+    if (state.mainRate != null) {
+      const dairiSub = s.items.reduce((sum, i) => {
+        const u = effectiveDairiUnit(i);
+        return sum + (u != null ? u * (Number(i.qty) || 1) : 0);
+      }, 0);
+      const dairiTotal = dairiSub * secQty;
+      dairiStr = secQty !== 1
+        ? `　代理店小計: ¥${dairiSub.toLocaleString('ja-JP')}　代理店合計: ¥${dairiTotal.toLocaleString('ja-JP')}`
+        : `　代理店: ¥${dairiSub.toLocaleString('ja-JP')}`;
+    }
+    info.textContent = `${nameStr}${qtyStr}${count}行　小計: ¥${subtotal.toLocaleString('ja-JP')}${totalStr}${dairiStr}`;
   }
 
   function createItemRowDOM(item) {
