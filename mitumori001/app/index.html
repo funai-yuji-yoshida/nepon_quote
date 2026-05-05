@@ -546,6 +546,13 @@
             <span class="status-icon">⏳</span> フォント読み込み中...
           </div>
 
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printCoverPage">
+              見積鏡を独立ページで印刷する
+            </label>
+          </div>
+
           <div id="printDetailOption" class="print-detail-option" style="display:none">
             <label class="print-detail-label">
               <input type="checkbox" id="printDetailPages" checked>
@@ -652,6 +659,7 @@
         <thead>
           <tr>
             <th class="col-drag"></th>
+            <th class="col-row-num">No.</th>
             <th class="col-name">品名</th>
             <th class="col-calc-cat">カテゴリ</th>
             <th class="col-spec">型番・規格</th>
@@ -686,6 +694,7 @@
 
       <div class="section-footer">
         <button class="btn-add-item" onclick="app.addItem(this)">＋ 行を追加</button>
+        <button class="btn-add-machine-spec" onclick="app.showMachineSpecModal(this)">🔧 機器仕様を追加</button>
         <div class="section-rate-wrap">
           <label class="section-rate-label">一括掛率</label>
           <input type="text" inputmode="decimal" class="section-rate-input" placeholder="例: 0.8">
@@ -704,6 +713,7 @@
   <template id="itemRowTemplate">
     <tr class="item-row" draggable="true" data-item-id="" data-calc-category="">
       <td class="col-drag"><span class="drag-handle" title="ドラッグして移動">⠿</span></td>
+      <td class="col-row-num"><span class="item-row-num"></span></td>
       <td class="col-name">
         <input type="text" class="item-name" lang="ja" inputmode="text" placeholder="品名">
       </td>
@@ -822,6 +832,39 @@
       <div class="modal-footer">
         <button class="btn-secondary" onclick="document.getElementById('tplLoadModal').style.display='none'">キャンセル</button>
         <button class="btn-primary" id="btnTplLoad" onclick="app.execTemplateLoad()" disabled>📂 読み込み</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 機器仕様検索モーダル -->
+  <div id="machineSpecModal" class="machine-spec-modal" style="display:none" onclick="if(event.target===this)app.closeMachineSpecModal()">
+    <div class="machine-spec-modal-inner">
+      <div class="machine-spec-modal-header">
+        <h3>機器仕様を追加</h3>
+        <button class="machine-spec-close" onclick="app.closeMachineSpecModal()">✕</button>
+      </div>
+      <div id="machineSpecProductChips" class="machine-spec-product-chips" style="display:none"></div>
+      <div class="machine-spec-search-wrap">
+        <input type="text" id="machineSpecSearch" class="machine-spec-search-input"
+               placeholder="型式で検索（例: GNS-822）" oninput="app.searchMachineSpecs()" autocomplete="off">
+        <div id="machineSpecResults" class="machine-spec-results"></div>
+      </div>
+      <div id="machineSpecPreview" class="machine-spec-preview" style="display:none">
+        <div class="machine-spec-selected-label">選択中: <strong id="machineSpecModelLabel"></strong></div>
+        <div class="machine-spec-form-row">
+          <label>品名<input type="text" id="machineSpecName" class="machine-spec-input" placeholder="例: ガス焚融雪ユニット 屋外据付型"></label>
+          <label>数量<input type="number" id="machineSpecQty" class="machine-spec-input-sm" value="1" min="0.01" step="0.01"></label>
+          <label>単位<input type="text" id="machineSpecUnit" class="machine-spec-input-xs" value="台"></label>
+          <label>単価<input type="number" id="machineSpecPrice" class="machine-spec-input-sm" placeholder="0"></label>
+        </div>
+        <div class="machine-spec-specs-preview">
+          <div class="machine-spec-specs-title">＜標準仕様＞</div>
+          <div id="machineSpecSpecsList" class="machine-spec-specs-list"></div>
+        </div>
+        <div class="machine-spec-modal-footer">
+          <button class="btn-secondary" onclick="app.closeMachineSpecModal()">キャンセル</button>
+          <button class="btn-primary" onclick="app.addMachineSpecItem()">この機器を追加</button>
+        </div>
       </div>
     </div>
   </div>

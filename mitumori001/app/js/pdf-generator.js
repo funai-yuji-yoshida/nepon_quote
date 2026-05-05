@@ -134,11 +134,18 @@ const QuotationPDF = (() => {
       sectionTotals = [];
       grandTotal    = frpShikiriTotal;
     } else {
-      sectionTotals = sections.map(s => {
-        const subtotal = (s.items || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-        const secQty   = Math.max(1, Number(s.secQty) || 1);
-        return { ...s, subtotal, secQty, effectiveTotal: subtotal * secQty };
-      });
+      sectionTotals = sections
+        .map(s => {
+          const subtotal = (s.items || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+          const secQty   = Math.max(1, Number(s.secQty) || 1);
+          return { ...s, subtotal, secQty, effectiveTotal: subtotal * secQty };
+        })
+        .filter(s => {
+          // 大項目名が入力されているセクションは必ず印刷
+          if ((s.name || '').trim()) return true;
+          // 大項目名が空でも、明細行に内容があれば印刷
+          return (s.items || []).some(i => (i.name || '').trim() || (i.unitPrice != null) || (i.amount > 0));
+        });
       grandTotal = sectionTotals.reduce((sum, s) => sum + s.effectiveTotal, 0);
     }
     const discountEnabled = data.discountEnabled !== false;
@@ -201,7 +208,9 @@ const QuotationPDF = (() => {
 
       content: [
         // ====================================================
-        // 1ページ目: 御見積書（表紙）
+        // 御見積書ヘッダー（常に出力）
+        // printCover=true のとき独立ページ → 改ページ後に明細
+        // printCover=false のとき明細と同一ページから続ける
         // ====================================================
         ...buildCoverPage({
           quoteNoStr, dateStr, branch,
@@ -214,9 +223,12 @@ const QuotationPDF = (() => {
         }),
 
         // ====================================================
-        // 2ページ目以降: 見積明細書（printDetail=falseの場合はスキップ）
+        // 明細書
+        // printCover=true（独立モード）のみ追加。
+        // printCover=false（統合モード）では buildCoverPage 内のテーブルが
+        // そのまま明細として機能するため追加不要。
         // ====================================================
-        ...(data.printDetail !== false ? [
+        ...(data.printCover && data.printDetail !== false ? [
           { text: '', pageBreak: 'after' },
           ...(frpMode
             ? buildFrpDetailPages({ quoteNoStr, frpItems, frpAB, frpPriceTotal, frpShikiriTotal })
@@ -296,11 +308,19 @@ const QuotationPDF = (() => {
             mirrorEntries.push({ type: 'sectionHeader', s });
           }
           // 単価0円のアイテムも名前があれば表示する
-          (s.items || []).filter(i => i.name && i.name.trim()).forEach(item => {
-            mirrorEntries.push({ type: 'item', item });
+          (s.items || []).forEach((item, idx) => {
+            if (!item.name || !item.name.trim()) return;
+            mirrorEntries.push({ type: 'item', item, idx });
             (item.specLines || []).filter(l => l.trim()).forEach(line => {
               mirrorEntries.push({ type: 'specLine', text: line });
             });
+            if (item.machineSpec) {
+              mirrorEntries.push({ type: 'machineSpecModel', model: item.machineSpec.model });
+              mirrorEntries.push({ type: 'machineSpecHeader' });
+              (item.machineSpec.specs || []).forEach(spec => {
+                mirrorEntries.push({ type: 'machineSpecLine', spec });
+              });
+            }
           });
         }
       });
@@ -371,10 +391,40 @@ const QuotationPDF = (() => {
         ];
         if (useDairi) row.push({ text: '', fontSize: specFs });
         tableRows.push(row);
+      } else if (entry.type === 'machineSpecModel') {
+        const specFs = Math.max(5.5, itemFs - 0.5);
+        const row = [
+          { text: '', fontSize: specFs },
+          { text: `　型式　${entry.model}`, fontSize: specFs },
+          { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
+          { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
+        ];
+        if (useDairi) row.push({ text: '', fontSize: specFs });
+        tableRows.push(row);
+      } else if (entry.type === 'machineSpecHeader') {
+        const specFs = Math.max(5.5, itemFs - 0.5);
+        const row = [
+          { text: '', fontSize: specFs },
+          { text: '　＜標準仕様＞', fontSize: specFs, bold: true },
+          { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
+          { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
+        ];
+        if (useDairi) row.push({ text: '', fontSize: specFs });
+        tableRows.push(row);
+      } else if (entry.type === 'machineSpecLine') {
+        const specFs = Math.max(5.0, itemFs - 1.0);
+        const row = [
+          { text: '', fontSize: specFs },
+          { text: `　　${entry.spec.label}：${entry.spec.value}`, fontSize: specFs, color: '#444' },
+          { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
+          { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
+        ];
+        if (useDairi) row.push({ text: '', fontSize: specFs });
+        tableRows.push(row);
       } else {
         const item = entry.item;
         const row = [
-          { text: '', fontSize: itemFs },
+          { text: String((entry.idx ?? 0) + 1), alignment: 'center', fontSize: itemFs },
           { text: item.name || '', fontSize: itemFs },
           { text: String(item.qty || 1), alignment: 'center', fontSize: itemFs },
           { text: item.unit || '式', alignment: 'center', fontSize: itemFs },
@@ -533,6 +583,16 @@ const QuotationPDF = (() => {
         vLineWidth: () => 0.5,
       },
     };
+
+    // 最終行の下枠線を表示（cell.borderのbottomフラグを上書き）
+    const lastRow = tableRows[tableRows.length - 1];
+    if (lastRow) {
+      lastRow.forEach(cell => {
+        if (cell && typeof cell === 'object' && Array.isArray(cell.border)) {
+          cell.border[3] = true;
+        }
+      });
+    }
 
     // 行数に応じたヘッダー部フォントサイズ
     const compact = mirrorRowCount > 18;
@@ -886,21 +946,22 @@ const QuotationPDF = (() => {
       const catTotals    = {};
       const catDairiTotals = {};
       const normalItems  = [];
-      (section.items || []).forEach(item => {
+      (section.items || []).forEach((item, idx) => {
         const prefix = (item.calcCategory || '').trim().charAt(0);
         if (CALC_CATEGORY_LABELS[prefix]) {
           catTotals[prefix]      = (catTotals[prefix]      || 0) + (Number(item.amount) || 0);
           catDairiTotals[prefix] = (catDairiTotals[prefix] || 0) + dairiItemAmt(item);
         } else {
-          normalItems.push(item);
+          normalItems.push({ item, idx });
         }
       });
 
       // カテゴリなし → 個別行
-      normalItems.forEach(item => {
+      normalItems.forEach(({ item, idx }) => {
+        const noCell = { text: String(idx + 1), alignment: 'center', fontSize: 8 };
         if (useDairi) {
           rows.push([
-            { text: '' },
+            noCell,
             { text: item.name || '' },
             { text: item.qty != null && item.qty !== '' ? String(item.qty) : '', alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
@@ -910,13 +971,21 @@ const QuotationPDF = (() => {
           ]);
         } else {
           rows.push([
-            { text: '' },
+            noCell,
             { text: item.name || '' },
             { text: item.qty != null && item.qty !== '' ? String(item.qty) : '', alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
             { text: item.unitPrice ? fmt(item.unitPrice) : '', alignment: 'right' },
             { text: fmt(item.amount), alignment: 'right' },
           ]);
+        }
+        // 機器仕様行
+        if (item.machineSpec) {
+          rows.push([{ text: '' }, { text: `　型式　${item.machineSpec.model}`, fontSize: 8 }, ...emp(COLS - 2)]);
+          rows.push([{ text: '' }, { text: '　＜標準仕様＞', fontSize: 8, bold: true }, ...emp(COLS - 2)]);
+          (item.machineSpec.specs || []).forEach(spec => {
+            rows.push([{ text: '' }, { text: `　　${spec.label}：${spec.value}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]);
+          });
         }
       });
 
@@ -1070,11 +1139,12 @@ const QuotationPDF = (() => {
       ]);
 
       // 明細行（個別）
-      (section.items || []).forEach(item => {
+      (section.items || []).forEach((item, itemIdx) => {
         const qtyStr = item.qty != null && item.qty !== '' ? String(item.qty) : '';
+        const noCell = { text: String(itemIdx + 1), alignment: 'center', fontSize: 8 };
         if (useDairi) {
           rows.push([
-            { text: '' },
+            noCell,
             { text: item.name || '' },
             { text: qtyStr, alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
@@ -1084,7 +1154,7 @@ const QuotationPDF = (() => {
           ]);
         } else {
           rows.push([
-            { text: '' },
+            noCell,
             { text: item.name || '' },
             { text: qtyStr, alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
@@ -1100,6 +1170,14 @@ const QuotationPDF = (() => {
             ...emp(COLS - 2),
           ]);
         });
+        // 機器仕様行
+        if (item.machineSpec) {
+          rows.push([{ text: '' }, { text: `　型式　${item.machineSpec.model}`, fontSize: 8 }, ...emp(COLS - 2)]);
+          rows.push([{ text: '' }, { text: '　＜標準仕様＞', fontSize: 8, bold: true }, ...emp(COLS - 2)]);
+          (item.machineSpec.specs || []).forEach(spec => {
+            rows.push([{ text: '' }, { text: `　　${spec.label}：${spec.value}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]);
+          });
+        }
       });
 
       // 空白行（最低2行）

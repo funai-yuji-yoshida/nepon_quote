@@ -808,6 +808,15 @@ button {
   text-align: center;
   padding: 0 2px !important;
 }
+.col-row-num {
+  width: 22px;
+  text-align: center;
+  padding: 0 2px !important;
+  color: #999;
+  font-size: 11px;
+  user-select: none;
+}
+.item-row-num { pointer-events: none; }
 .drag-handle {
   cursor: grab;
   color: #bbb;
@@ -2006,3 +2015,133 @@ input.item-gensui-b::-webkit-inner-spin-button {
 .items-footer-bar .footer-item strong { color: #1a4d8f; font-size: 13px; }
 .items-footer-bar .footer-total strong { color: #c0392b; font-size: 14px; }
 .items-footer-bar .footer-sep { color: #999; font-size: 13px; font-weight: bold; padding: 0 2px; }
+
+/* 機器仕様追加ボタン（物販・作業のみ表示） */
+.btn-add-machine-spec {
+  display: none;
+  background: #6c757d;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: 6px;
+}
+.btn-add-machine-spec:hover { background: #5a6268; }
+.show-machine-spec-btn .btn-add-machine-spec { display: inline-block; }
+
+/* 機器仕様モーダル */
+.machine-spec-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 9000;
+  align-items: center;
+  justify-content: center;
+}
+.machine-spec-modal-inner {
+  background: #fff;
+  border-radius: 8px;
+  width: 520px;
+  max-width: 96vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 20px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.2);
+}
+.machine-spec-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.machine-spec-modal-header h3 { font-size: 15px; color: #1a4d8f; }
+.machine-spec-close { background: none; border: none; font-size: 18px; cursor: pointer; color: #666; }
+.machine-spec-product-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: #f0f5ff;
+  border-radius: 6px;
+  border: 1px solid #c5d8f5;
+}
+.machine-spec-product-chips-label {
+  width: 100%;
+  font-size: 11px;
+  color: #555;
+  margin-bottom: 2px;
+}
+.machine-spec-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #fff;
+  border: 1px solid #1a4d8f;
+  border-radius: 14px;
+  color: #1a4d8f;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.machine-spec-chip:hover { background: #1a4d8f; color: #fff; }
+.machine-spec-chip.active { background: #1a4d8f; color: #fff; }
+.machine-spec-search-input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.machine-spec-results { max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; }
+.machine-spec-result-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.machine-spec-result-item:hover { background: #e8f0fa; }
+.machine-spec-result-model { font-weight: bold; color: #1a4d8f; }
+.machine-spec-result-cat { color: #888; font-size: 11px; }
+.machine-spec-no-result { padding: 10px; color: #999; font-size: 12px; text-align: center; }
+.machine-spec-preview { margin-top: 12px; }
+.machine-spec-selected-label { font-size: 12px; color: #555; margin-bottom: 10px; }
+.machine-spec-selected-label strong { color: #1a4d8f; }
+.machine-spec-form-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.machine-spec-form-row label {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  color: #555;
+  gap: 3px;
+}
+.machine-spec-input { width: 200px; padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
+.machine-spec-input-sm { width: 80px; padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
+.machine-spec-input-xs { width: 50px; padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
+.machine-spec-specs-preview {
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+.machine-spec-specs-title { font-size: 12px; font-weight: bold; color: #333; margin-bottom: 6px; }
+.machine-spec-spec-line { font-size: 11px; color: #444; padding: 2px 0; }
+.machine-spec-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}

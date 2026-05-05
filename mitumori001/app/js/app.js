@@ -765,6 +765,11 @@ const app = (() => {
     roundingEnabled: false, // 切り上げ表示モード
   };
 
+  let _machineSpecSectionId     = null;
+  let _machineSpecModel         = null;
+  let _machineSpecSearchResults = [];
+  let _machineSpecTimer         = null;
+
   let zohoReady = false;
 
   // ── 初期化 ────────────────────────────────────────────────────
@@ -1753,6 +1758,7 @@ const app = (() => {
       item.productId = product.id;
       item.name      = product.name;
       item.spec      = product.code;
+      item.model     = product.model || '';  // 製品型式（field2）機器仕様参照用
       item.unit      = product.unit || '式';
       item.unitPrice = product.price;
       item.amount    = product.price;
@@ -1900,6 +1906,182 @@ const app = (() => {
 
     renderSections();
     updateOutput();
+  }
+
+  // ── 機器仕様追加 ────────────────────────────────────────────────
+
+  function _parseSpecText(text) {
+    if (!text) return [];
+    return String(text).split('\n').map(l => l.trim()).filter(l => l).map(l => {
+      const idx = l.indexOf('：');
+      if (idx > -1) return { label: l.slice(0, idx).trim(), value: l.slice(idx + 1).trim() };
+      return { label: l, value: '' };
+    });
+  }
+
+  function showMachineSpecModal(btn) {
+    const block = btn.closest('.section-block');
+    _machineSpecSectionId = Number(block.dataset.sectionId);
+    _machineSpecModel = null;
+    _machineSpecSearchResults = [];
+    const modal = document.getElementById('machineSpecModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    const inp = document.getElementById('machineSpecSearch');
+    inp.value = '';
+    document.getElementById('machineSpecResults').innerHTML = '';
+    document.getElementById('machineSpecPreview').style.display = 'none';
+
+    // セクション内の商品アイテム（型式あり）を全件取得してチップ表示
+    const sec = state.sections.find(s => s.id === _machineSpecSectionId);
+    const productItems = (sec ? sec.items : []).filter(it => it.productId && it.model);
+    const chipsEl = document.getElementById('machineSpecProductChips');
+
+    if (productItems.length === 0) {
+      chipsEl.style.display = 'none';
+      inp.focus();
+    } else if (productItems.length === 1) {
+      // 1件のみ → チップ非表示で即検索
+      chipsEl.style.display = 'none';
+      inp.value = productItems[0].model;
+      document.getElementById('machineSpecResults').innerHTML =
+        '<div class="machine-spec-no-result">検索中...</div>';
+      _execMachineSpecSearch(productItems[0].model, true);
+    } else {
+      // 複数 → チップ一覧を表示して選択させる
+      // data-model 属性にモデル名を格納し onclick では this のみ渡す（引用符エスケープ問題を回避）
+      chipsEl.style.display = 'flex';
+      chipsEl.innerHTML =
+        `<span class="machine-spec-product-chips-label">セクション内の商品（クリックで検索）</span>` +
+        productItems.map(it =>
+          `<button class="machine-spec-chip" data-model="${escHtml(it.model)}" onclick="app._selectMachineSpecChip(this)">${escHtml(it.model)}</button>`
+        ).join('');
+      inp.focus();
+    }
+  }
+
+  function _selectMachineSpecChip(chipEl) {
+    const model = chipEl.dataset.model || '';
+    document.querySelectorAll('.machine-spec-chip').forEach(c => c.classList.remove('active'));
+    chipEl.classList.add('active');
+    const inp = document.getElementById('machineSpecSearch');
+    inp.value = model;
+    document.getElementById('machineSpecResults').innerHTML =
+      '<div class="machine-spec-no-result">検索中...</div>';
+    document.getElementById('machineSpecPreview').style.display = 'none';
+    _execMachineSpecSearch(model, true);
+  }
+
+  function closeMachineSpecModal() {
+    const modal = document.getElementById('machineSpecModal');
+    if (modal) modal.style.display = 'none';
+    clearTimeout(_machineSpecTimer);
+  }
+
+  function searchMachineSpecs() {
+    const q  = (document.getElementById('machineSpecSearch').value || '').trim();
+    const el = document.getElementById('machineSpecResults');
+    clearTimeout(_machineSpecTimer);
+    if (q.length < 2) { el.innerHTML = ''; return; }
+    el.innerHTML = '<div class="machine-spec-no-result">検索中...</div>';
+    _machineSpecTimer = setTimeout(() => _execMachineSpecSearch(q), 400);
+  }
+
+  async function _execMachineSpecSearch(q, exact) {
+    const el = document.getElementById('machineSpecResults');
+    try {
+      let products = [];
+      if (zohoReady) {
+        // exact=true のとき field2 完全一致検索（型式自動補完時）
+        // exact=false のとき word 部分一致検索（手動入力時）
+        const searchParam = exact
+          ? { Entity: 'Products', Type: 'criteria', Query: `(field2:equals:${q})`, page: 1, per_page: 25 }
+          : { Entity: 'Products', Type: 'word',     Query: q,                      page: 1, per_page: 25 };
+        const res = await ZOHO.CRM.API.searchRecord(searchParam);
+        products = (res?.data || [])
+          .filter(p => p.field13)  // 機器仕様フィールドがある商品のみ
+          .map(p => ({
+            id:    p.id,
+            name:  p.Product_Name || '',
+            model: p.field2 || '',
+            unit:  p.field4 || '台',
+            price: Number(p.Unit_Price) || 0,
+            specs: _parseSpecText(p.field13),
+          }));
+      }
+      _machineSpecSearchResults = products;
+      if (products.length === 0) {
+        el.innerHTML = '<div class="machine-spec-no-result">該当なし（機器仕様が登録されていない商品は表示されません）</div>';
+        return;
+      }
+      el.innerHTML = products.map((p, i) =>
+        `<div class="machine-spec-result-item" onclick="app.selectMachineSpecModel(${i})">
+          <span class="machine-spec-result-model">${escHtml(p.model || p.name)}</span>
+          <span class="machine-spec-result-cat">${escHtml(p.name)}</span>
+        </div>`
+      ).join('');
+    } catch(e) {
+      console.error('機器仕様検索エラー:', e);
+      el.innerHTML = '<div class="machine-spec-no-result">検索エラー</div>';
+    }
+  }
+
+  function selectMachineSpecModel(idx) {
+    const product = _machineSpecSearchResults[idx];
+    if (!product) return;
+    _machineSpecModel = product.model || product.name;
+    document.getElementById('machineSpecModelLabel').textContent = _machineSpecModel;
+    document.getElementById('machineSpecName').value = product.name;
+    document.getElementById('machineSpecUnit').value = product.unit || '台';
+    document.getElementById('machineSpecPrice').value = product.price > 0 ? product.price : '';
+    document.getElementById('machineSpecSpecsList').innerHTML =
+      product.specs.map(s => `<div class="machine-spec-spec-line">・${escHtml(s.label)}：${escHtml(s.value)}</div>`).join('');
+    document.getElementById('machineSpecResults').innerHTML = '';
+    document.getElementById('machineSpecSearch').value = _machineSpecModel;
+    document.getElementById('machineSpecPreview').style.display = 'block';
+  }
+
+  function addMachineSpecItem() {
+    if (!_machineSpecModel || !_machineSpecSectionId) return;
+    const sec = state.sections.find(s => s.id === _machineSpecSectionId);
+    if (!sec) return;
+    const selectedProduct = _machineSpecSearchResults.find(
+      p => (p.model || p.name) === _machineSpecModel
+    ) || {};
+    const specs = selectedProduct.specs || [];
+
+    // セクション内に同じ型式の商品行があれば、その行に machineSpec を付与（新行不要）
+    const existingItem = sec.items.find(it => it.productId && it.model === _machineSpecModel);
+    if (existingItem) {
+      existingItem.machineSpec = { model: _machineSpecModel, specs };
+      const block = document.querySelector(`.section-block[data-section-id="${_machineSpecSectionId}"]`);
+      if (block) { renderSection(sec, block); updateSectionSubtotal(block); }
+      updateOutput();
+      closeMachineSpecModal();
+      showToast(`${_machineSpecModel} の仕様を設定しました`);
+      return;
+    }
+
+    // 既存行が無い場合（手動検索で別商品を選択）は新行を追加
+    const name     = (document.getElementById('machineSpecName').value || '').trim() || _machineSpecModel;
+    const qty      = parseFloat(document.getElementById('machineSpecQty').value) || 1;
+    const unit     = (document.getElementById('machineSpecUnit').value || '').trim();
+    const priceRaw = parseFloat(document.getElementById('machineSpecPrice').value);
+    const item = createItem();
+    item.name  = name;
+    item.qty   = qty;
+    item.unit  = unit;
+    if (!isNaN(priceRaw) && priceRaw > 0) {
+      item.unitPrice = priceRaw;
+      item.amount    = Math.round(priceRaw * qty);
+    }
+    item.machineSpec = { model: _machineSpecModel, specs };
+    sec.items.push(item);
+    const block = document.querySelector(`.section-block[data-section-id="${_machineSpecSectionId}"]`);
+    if (block) { renderSection(sec, block); updateSectionSubtotal(block); }
+    updateOutput();
+    closeMachineSpecModal();
+    showToast(`${_machineSpecModel} を追加しました`);
   }
 
   // ── FRP見積モード ──────────────────────────────────────────────
@@ -2360,7 +2542,7 @@ const app = (() => {
 
   function createItem() {
     return {
-      id: state.nextItemId++, productId: null,
+      id: state.nextItemId++, productId: null, model: '',
       name: '', spec: '', qty: 1, unit: '式', unitPrice: null, amount: 0,
       includeInLabor: false,  // 労務費に含めるか（null=auto: ④工事費なら true）
       dairiRate: null,       // null = グローバル main_rate を使用
@@ -2379,6 +2561,7 @@ const app = (() => {
       gensuiEnabled: false, // 減衰計算オン/オフ（④工事費行ごとに制御）
       kojiCategory: '',    // 工事カテゴリー名（field18）
       specLines: [],    // 仕様行（テキストのみ）
+      machineSpec: null, // {model, specs:[{label,value}]}
     };
   }
 
@@ -2882,6 +3065,11 @@ const app = (() => {
     const container = document.getElementById('sectionsContainer');
     const noMsg     = document.getElementById('noSectionsMsg');
 
+    // 物販・作業のみ機器仕様ボタンを表示
+    const cat = state.quoteCategory || '';
+    const showMachineBtn = cat.includes('物販') || cat.includes('作業');
+    container.classList.toggle('show-machine-spec-btn', showMachineBtn);
+
     updateTargetSectionSelect();
 
     if (state.sections.length === 0) {
@@ -3160,9 +3348,13 @@ const app = (() => {
 
     // 順序修正＋仕様行を各アイテム行の直後に挿入
     const fragment = document.createDocumentFragment();
-    sec.items.forEach(item => {
+    sec.items.forEach((item, rowIdx) => {
       const itemRow = tbody.querySelector(`.item-row[data-item-id="${item.id}"]`);
-      if (itemRow) fragment.appendChild(itemRow);
+      if (itemRow) {
+        const numEl = itemRow.querySelector('.item-row-num');
+        if (numEl) numEl.textContent = rowIdx + 1;
+        fragment.appendChild(itemRow);
+      }
       // 仕様行
       (item.specLines || []).forEach((line, idx) => {
         fragment.appendChild(createSpecLineRowDOM(item.id, idx, line));
@@ -3337,7 +3529,7 @@ const app = (() => {
     tr.dataset.lineIdx = lineIdx;
     const safeText = (text || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
     tr.innerHTML = `
-      <td class="spec-line-td" colspan="12">
+      <td class="spec-line-td" colspan="13">
         <input type="text" class="spec-line-input" placeholder="仕様テキストを入力..."
                value="${safeText}" oninput="app.onSpecLineInput(this)">
       </td>
@@ -3352,7 +3544,7 @@ const app = (() => {
     tr.className = 'spec-add-row';
     tr.dataset.itemId = itemId;
     tr.innerHTML = `
-      <td colspan="13" class="spec-add-td">
+      <td colspan="14" class="spec-add-td">
         <button class="btn-spec-add" onclick="app.addSpecLine(this)">＋ 仕様追加</button>
         <button class="btn-spec-template" onclick="app.showSpecTemplateMenu(this)">📋 テンプレート</button>
       </td>`;
@@ -4324,6 +4516,10 @@ const app = (() => {
       discountEnabled: state.discountEnabled !== false,
       buhanDiscTotal:  state.buhanDiscTotal || 0,
       quoteCategory:   state.quoteCategory || '',
+      printCover:      (() => {
+        const cb = document.getElementById('printCoverPage');
+        return cb ? cb.checked : true;
+      })(),
       printDetail:     (() => {
         const isKouji = (state.quoteCategory || '').includes('工事');
         if (isKouji || state.frpMode) return true; // 工事・FRPは常に明細印刷
@@ -4900,6 +5096,13 @@ const app = (() => {
     moveItemUp,
     moveItemDown,
     applyBulkRate,
+    // 機器仕様
+    showMachineSpecModal,
+    closeMachineSpecModal,
+    searchMachineSpecs,
+    selectMachineSpecModel,
+    addMachineSpecItem,
+    _selectMachineSpecChip,
     applyGlobalRate,
     // 商品検索
     searchProducts,
