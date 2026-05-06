@@ -346,7 +346,7 @@
               <div class="cat-panel-wrap">
                 <div class="cat-panel" id="catPanel-product">
                   <div class="product-search-group">
-                    <input type="text" id="productSearch" placeholder="商品名・型番で検索..." class="input-search" oninput="app.searchProducts(this.value)">
+                    <input type="text" id="productSearch" placeholder="商品名・型式で検索..." class="input-search" oninput="app.searchProducts(this.value)">
                     <div id="productDropdown" class="product-dropdown" style="display:none"></div>
                   </div>
                 </div>
@@ -857,13 +857,13 @@
           <label>単位<input type="text" id="machineSpecUnit" class="machine-spec-input-xs" value="台"></label>
           <label>単価<input type="number" id="machineSpecPrice" class="machine-spec-input-sm" placeholder="0"></label>
         </div>
-        <div class="machine-spec-specs-preview">
-          <div class="machine-spec-specs-title">＜標準仕様＞</div>
-          <div id="machineSpecSpecsList" class="machine-spec-specs-list"></div>
-        </div>
         <div class="machine-spec-modal-footer">
           <button class="btn-secondary" onclick="app.closeMachineSpecModal()">キャンセル</button>
           <button class="btn-primary" onclick="app.addMachineSpecItem()">この機器を追加</button>
+        </div>
+        <div class="machine-spec-specs-preview">
+          <div class="machine-spec-specs-title">＜標準仕様＞</div>
+          <div id="machineSpecSpecsList" class="machine-spec-specs-list"></div>
         </div>
       </div>
     </div>

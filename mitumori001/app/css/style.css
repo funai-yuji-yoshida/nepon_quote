@@ -633,6 +633,7 @@ button {
 }
 .p-badge.product  { background: #e3edf8; color: #1a4d8f; }
 .p-badge.koujihi  { background: #e8f5e9; color: #2e7d32; }
+.p-badge.spec     { background: #fff3cd; color: #856404; }
 
 /* セクションブロック */
 .sections-container {

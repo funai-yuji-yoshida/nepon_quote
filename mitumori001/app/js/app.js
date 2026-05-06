@@ -769,13 +769,30 @@ const app = (() => {
   let _machineSpecModel         = null;
   let _machineSpecSearchResults = [];
   let _machineSpecTimer         = null;
+  let _localSpecKeys            = new Set(); // machine-specs.json の型式キー（半角）
 
   let zohoReady = false;
 
   // ── 初期化 ────────────────────────────────────────────────────
 
+  // 全角→半角（型式の突合用）
+  function _toHW(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/[Ａ-Ｚ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+      .replace(/[ａ-ｚ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+      .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+      .replace(/[－−]/g, '-')
+      .trim();
+  }
+
   function init() {
     initColVisibility();
+    // machine-specs.json を非同期で読み込み（商品検索の仕様アイコン用）
+    fetch('data/machine-specs.json')
+      .then(r => r.json())
+      .then(data => { _localSpecKeys = new Set(Object.keys(data)); })
+      .catch(() => {});
 
     // 今日の日付をセット
     const today = new Date();
@@ -1372,8 +1389,13 @@ const app = (() => {
     try {
       let products = [];
       if (zohoReady) {
-        const q = query.trim();
-        if (!q) { dd.style.display = 'none'; return; }
+        const raw = query.trim();
+        if (!raw) { dd.style.display = 'none'; return; }
+        // 半角→全角変換（CRMは全角で登録されているため、どちらで入力しても検索できるようにする）
+        const q = raw
+          .replace(/[A-Za-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 0xFEE0))
+          .replace(/[0-9]/g,     c => String.fromCharCode(c.charCodeAt(0) + 0xFEE0))
+          .replace(/-/g, '－');
         // word 検索: モジュールの全テキストフィールド（Product_Name・Product_Code・field2 等）を横断検索
         const res = await ZOHO.CRM.API.searchRecord({
           Entity: 'Products', Type: 'word',
@@ -1388,6 +1410,7 @@ const app = (() => {
           price:  Number(p.Unit_Price) || 0,
           cost:   Number(p.field1)     || 0,   // 標準原価（field1）
           houdan: parseFloat(p.field12) || 0,  // 歩単（field12）
+          hasSpec: !!(p.field13 && String(p.field13).trim()), // CRM 機器仕様（field13）に値あり
           source: 'product',
         }));
       }
@@ -1396,7 +1419,9 @@ const app = (() => {
       dd.innerHTML = products.map((item, idx) => `
         <div class="product-item" data-idx="${idx}">
           <div style="flex:1;min-width:0">
-            <div class="p-name"><span class="p-badge product">商品</span>${escHtml(item.name)}</div>
+            <div class="p-name">
+              <span class="p-badge product">商品</span>${item.hasSpec ? '<span class="p-badge spec">仕様</span>' : ''}${escHtml(item.name)}
+            </div>
             <div class="p-code">${escHtml([item.model, item.code].filter(Boolean).join(' / '))}</div>
           </div>
           <div class="p-price">¥${item.price.toLocaleString('ja-JP')}</div>

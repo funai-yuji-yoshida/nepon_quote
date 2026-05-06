@@ -1,0 +1,5760 @@
+{
+  "SBM100WNU": {
+    "sheet": "SBM",
+    "category": "SBM",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "116kW（100,000kcal/h）"
+      },
+      {
+        "label": "缶水量",
+        "value": "80L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.98MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.6㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "11.2㎥N/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.11kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "φ150"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "180kg"
+      }
+    ]
+  },
+  "SBM100WMU": {
+    "sheet": "SBM",
+    "category": "SBM",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "116kW（100,000kcal/h）"
+      },
+      {
+        "label": "缶水量",
+        "value": "80L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.98MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.6㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "12A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "12.8㎥N/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.11kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "φ150"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "180kg"
+      }
+    ]
+  },
+  "SBM100WLU": {
+    "sheet": "SBM",
+    "category": "SBM",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "116kW（100,000kcal/h）"
+      },
+      {
+        "label": "缶水量",
+        "value": "80L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.98MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.6㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "5.1㎥N/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.11kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "φ150"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "180kg"
+      }
+    ]
+  },
+  "SBM150WNT": {
+    "sheet": "SBM",
+    "category": "SBM",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW（150,000kcal/h）"
+      },
+      {
+        "label": "缶水量",
+        "value": "180L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.98MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.9㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "16.8㎥N/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "φ200"
+      },
+      {
+        "label": "電源",
+        "value": "AC200V 三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "310kg"
+      }
+    ]
+  },
+  "SBM150WMT": {
+    "sheet": "SBM",
+    "category": "SBM",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW（150,000kcal/h）"
+      },
+      {
+        "label": "缶水量",
+        "value": "180L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.98MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.9㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "12A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "19.1㎥N/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "φ200"
+      },
+      {
+        "label": "電源",
+        "value": "AC200V 三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "310kg"
+      }
+    ]
+  },
+  "SBM150WLT": {
+    "sheet": "SBM",
+    "category": "SBM",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW（150,000kcal/h）"
+      },
+      {
+        "label": "缶水量",
+        "value": "180L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.98MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.9㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "7.7㎥N/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "φ200"
+      },
+      {
+        "label": "電源",
+        "value": "AC200V 三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "310kg"
+      }
+    ]
+  },
+  "SBM150HNT": {
+    "sheet": "SBM",
+    "category": "SBM",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW（150,000kcal/h）"
+      },
+      {
+        "label": "缶水量",
+        "value": "180L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.98MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.9㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "16.8㎥N/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "φ200"
+      },
+      {
+        "label": "電源",
+        "value": "AC200V 三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "310kg"
+      }
+    ]
+  },
+  "SBM150HMT": {
+    "sheet": "SBM",
+    "category": "SBM",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW（150,000kcal/h）"
+      },
+      {
+        "label": "缶水量",
+        "value": "180L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.98MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.9㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "12A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "19.1㎥N/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "φ200"
+      },
+      {
+        "label": "電源",
+        "value": "AC200V 三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "310kg"
+      }
+    ]
+  },
+  "SBM150HLT": {
+    "sheet": "SBM",
+    "category": "SBM",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW（150,000kcal/h）"
+      },
+      {
+        "label": "缶水量",
+        "value": "180L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.98MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.9㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "7.7㎥N/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "φ200"
+      },
+      {
+        "label": "電源",
+        "value": "AC200V 三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "310kg"
+      }
+    ]
+  },
+  "SBM150UNT": {
+    "sheet": "SBM",
+    "category": "SBM",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW（150,000kcal/h）"
+      },
+      {
+        "label": "缶水量",
+        "value": "180L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.98MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.9㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "14.8㎥N/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "電源",
+        "value": "AC200V 三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "445kg"
+      }
+    ]
+  },
+  "SBM150UMT": {
+    "sheet": "SBM",
+    "category": "SBM",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW（150,000kcal/h）"
+      },
+      {
+        "label": "缶水量",
+        "value": "180L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.98MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.9㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "12A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "16.8㎥N/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "電源",
+        "value": "AC200V 三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "445kg"
+      }
+    ]
+  },
+  "SBM150ULT": {
+    "sheet": "SBM",
+    "category": "SBM",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW（150,000kcal/h）"
+      },
+      {
+        "label": "缶水量",
+        "value": "180L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.98MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.9㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "13.6kg/h〔6.8㎥N/h〕"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "電源",
+        "value": "AC200V 三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "445kg"
+      }
+    ]
+  },
+  "GN-353L": {
+    "sheet": "ヒートクイック",
+    "category": "ガス焚き",
+    "specs": [
+      {
+        "label": "出力",
+        "value": "41kW(給湯)/39.5kW(暖房)"
+      },
+      {
+        "label": "使用燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "1.8㎥N/h"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "14L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "98kPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "63W"
+      },
+      {
+        "label": "製品質量",
+        "value": "約40kg"
+      }
+    ]
+  },
+  "GN-353N": {
+    "sheet": "ヒートクイック",
+    "category": "ガス焚き",
+    "specs": [
+      {
+        "label": "出力",
+        "value": "41kW給湯)/39.5kW"
+      },
+      {
+        "label": "使用燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "3.9㎥N/h"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "14L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "98kPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "58W"
+      },
+      {
+        "label": "製品質量",
+        "value": "約40kg"
+      }
+    ]
+  },
+  "GD-433L": {
+    "sheet": "ヒートクイック",
+    "category": "ガス焚き",
+    "specs": [
+      {
+        "label": "出力",
+        "value": "50kW(給湯)/48.5kW(暖房)"
+      },
+      {
+        "label": "使用燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "2.2㎥N/h"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "14L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "98kPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "140W"
+      },
+      {
+        "label": "製品質量",
+        "value": "約40kg"
+      }
+    ]
+  },
+  "GD-433N": {
+    "sheet": "ヒートクイック",
+    "category": "ガス焚き",
+    "specs": [
+      {
+        "label": "出力",
+        "value": "50kW(給湯)/48.5kW(暖房)"
+      },
+      {
+        "label": "使用燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "4.8㎥N/h"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "14L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "98kPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "115W"
+      },
+      {
+        "label": "製品質量",
+        "value": "約40kg"
+      }
+    ]
+  },
+  "GD-433M": {
+    "sheet": "ヒートクイック",
+    "category": "ガス焚き",
+    "specs": [
+      {
+        "label": "出力",
+        "value": "45.5kW(給湯)/44kW(暖房)"
+      },
+      {
+        "label": "使用燃料",
+        "value": "12A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "55.5kW"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "14L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "98kPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "115W"
+      },
+      {
+        "label": "製品質量",
+        "value": "約40kg"
+      }
+    ]
+  },
+  "GNS-412NR5": {
+    "sheet": "ヒートクイック",
+    "category": "ガス焚き",
+    "specs": [
+      {
+        "label": "出力",
+        "value": "47.7kW"
+      },
+      {
+        "label": "使用燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "58kW"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "14L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "460W"
+      },
+      {
+        "label": "製品質量",
+        "value": "146kg"
+      },
+      {
+        "label": "膨張タンク量",
+        "value": "16L"
+      },
+      {
+        "label": "吸収量",
+        "value": "7L"
+      },
+      {
+        "label": "内蔵循環ポンプ",
+        "value": "100L/min ｜ 70L/min"
+      },
+      {
+        "label": "同上揚程",
+        "value": "8.5m ｜ 9.5m"
+      }
+    ]
+  },
+  "GNS-412MR5": {
+    "sheet": "ヒートクイック",
+    "category": "ガス焚き",
+    "specs": [
+      {
+        "label": "出力",
+        "value": "42.9kW"
+      },
+      {
+        "label": "使用燃料",
+        "value": "12A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "52.2kW"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "14L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "460W"
+      },
+      {
+        "label": "製品質量",
+        "value": "146kg"
+      },
+      {
+        "label": "膨張タンク量",
+        "value": "16L"
+      },
+      {
+        "label": "吸収量",
+        "value": "7L"
+      },
+      {
+        "label": "内蔵循環ポンプ",
+        "value": "100L/min ｜ 70L/min"
+      },
+      {
+        "label": "同上揚程",
+        "value": "8.5m ｜ 9.5m"
+      }
+    ]
+  },
+  "GNS-412LR5": {
+    "sheet": "ヒートクイック",
+    "category": "ガス焚き",
+    "specs": [
+      {
+        "label": "出力",
+        "value": "47.7kW"
+      },
+      {
+        "label": "使用燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "58kW"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "14L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "460W"
+      },
+      {
+        "label": "製品質量",
+        "value": "146kg"
+      },
+      {
+        "label": "膨張タンク量",
+        "value": "16L"
+      },
+      {
+        "label": "吸収量",
+        "value": "7L"
+      },
+      {
+        "label": "内蔵循環ポンプ",
+        "value": "100L/min ｜ 70L/min"
+      },
+      {
+        "label": "同上揚程",
+        "value": "8.5m ｜ 9.5m"
+      }
+    ]
+  },
+  "GNS-822NR5": {
+    "sheet": "ヒートクイック",
+    "category": "ガス焚き",
+    "specs": [
+      {
+        "label": "出力",
+        "value": "95.3kW"
+      },
+      {
+        "label": "使用燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "116kW"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "28L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "720W"
+      },
+      {
+        "label": "製品質量",
+        "value": "236kg"
+      },
+      {
+        "label": "膨張タンク量",
+        "value": "26L"
+      },
+      {
+        "label": "吸収量",
+        "value": "10L"
+      },
+      {
+        "label": "内蔵循環ポンプ",
+        "value": "130L/min ｜ 104L/min"
+      },
+      {
+        "label": "同上揚程",
+        "value": "10m ｜ 12m"
+      }
+    ]
+  },
+  "GNS-822MR5": {
+    "sheet": "ヒートクイック",
+    "category": "ガス焚き",
+    "specs": [
+      {
+        "label": "出力",
+        "value": "85.5kW"
+      },
+      {
+        "label": "使用燃料",
+        "value": "12A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "104kW"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "28L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "720W"
+      },
+      {
+        "label": "製品質量",
+        "value": "236kg"
+      },
+      {
+        "label": "膨張タンク量",
+        "value": "26L"
+      },
+      {
+        "label": "吸収量",
+        "value": "10L"
+      },
+      {
+        "label": "内蔵循環ポンプ",
+        "value": "130L/min ｜ 104L/min"
+      },
+      {
+        "label": "同上揚程",
+        "value": "10m ｜ 12m"
+      }
+    ]
+  },
+  "GNS-822LR5": {
+    "sheet": "ヒートクイック",
+    "category": "ガス焚き",
+    "specs": [
+      {
+        "label": "出力",
+        "value": "95.3kW"
+      },
+      {
+        "label": "使用燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "116kW"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "28L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "720W"
+      },
+      {
+        "label": "製品質量",
+        "value": "236kg"
+      },
+      {
+        "label": "膨張タンク量",
+        "value": "26L"
+      },
+      {
+        "label": "吸収量",
+        "value": "10L"
+      },
+      {
+        "label": "内蔵循環ポンプ",
+        "value": "130L/min ｜ 104L/min"
+      },
+      {
+        "label": "同上揚程",
+        "value": "10m ｜ 12m"
+      }
+    ]
+  },
+  "GNS-1232NR5": {
+    "sheet": "ヒートクイック",
+    "category": "ガス焚き",
+    "specs": [
+      {
+        "label": "出力",
+        "value": "143kW"
+      },
+      {
+        "label": "使用燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "174kW"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "42L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "890W"
+      },
+      {
+        "label": "製品質量",
+        "value": "310kg"
+      },
+      {
+        "label": "膨張タンク量",
+        "value": "40L"
+      },
+      {
+        "label": "吸収量",
+        "value": "15L"
+      },
+      {
+        "label": "内蔵循環ポンプ",
+        "value": "195L/min ｜ 170L/min"
+      },
+      {
+        "label": "同上揚程",
+        "value": "8m ｜ 10m"
+      }
+    ]
+  },
+  "GNS-1232MR5": {
+    "sheet": "ヒートクイック",
+    "category": "ガス焚き",
+    "specs": [
+      {
+        "label": "出力",
+        "value": "129kW"
+      },
+      {
+        "label": "使用燃料",
+        "value": "12A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "157kW"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "42L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "890W"
+      },
+      {
+        "label": "製品質量",
+        "value": "310kg"
+      },
+      {
+        "label": "膨張タンク量",
+        "value": "40L"
+      },
+      {
+        "label": "吸収量",
+        "value": "15L"
+      },
+      {
+        "label": "内蔵循環ポンプ",
+        "value": "195L/min ｜ 170L/min"
+      },
+      {
+        "label": "同上揚程",
+        "value": "8m ｜ 10m"
+      }
+    ]
+  },
+  "GNS-1232LR5": {
+    "sheet": "ヒートクイック",
+    "category": "ガス焚き",
+    "specs": [
+      {
+        "label": "出力",
+        "value": "143kW"
+      },
+      {
+        "label": "使用燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "174kW"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "42L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "890W"
+      },
+      {
+        "label": "製品質量",
+        "value": "310kg"
+      },
+      {
+        "label": "膨張タンク量",
+        "value": "40L"
+      },
+      {
+        "label": "吸収量",
+        "value": "15L"
+      },
+      {
+        "label": "内蔵循環ポンプ",
+        "value": "195L/min ｜ 170L/min"
+      },
+      {
+        "label": "同上揚程",
+        "value": "8m ｜ 10m"
+      }
+    ]
+  },
+  "ON-314": {
+    "sheet": "ヒートクイック",
+    "category": "灯油焚き",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "37.1kW"
+      },
+      {
+        "label": "使用燃料",
+        "value": "灯油（JIS1号灯油）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "4.3L/h"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "50L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.2㎡"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "91W"
+      },
+      {
+        "label": "質量",
+        "value": "約52kg"
+      }
+    ]
+  },
+  "ON-314F": {
+    "sheet": "ヒートクイック",
+    "category": "灯油焚き",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "37.1kW"
+      },
+      {
+        "label": "使用燃料",
+        "value": "灯油（JIS1号灯油）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "4.3L/h"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "50L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.2㎡"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "94W"
+      },
+      {
+        "label": "質量",
+        "value": "約52kg"
+      }
+    ]
+  },
+  "OD-434": {
+    "sheet": "ヒートクイック",
+    "category": "灯油焚き",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "50.7kW"
+      },
+      {
+        "label": "使用燃料",
+        "value": "灯油（JIS1号灯油）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "5.8L/h"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "60L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.5㎡"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "97W"
+      },
+      {
+        "label": "質量",
+        "value": "約59kg"
+      }
+    ]
+  },
+  "OD-434F": {
+    "sheet": "ヒートクイック",
+    "category": "灯油焚き",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "50.7kW"
+      },
+      {
+        "label": "使用燃料",
+        "value": "灯油（JIS1号灯油）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "5.8L/h"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "60L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.5㎡"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "94W"
+      },
+      {
+        "label": "質量",
+        "value": "約59kg"
+      }
+    ]
+  },
+  "ONS-625R5": {
+    "sheet": "ヒートクイック",
+    "category": "灯油焚き",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "72kW（62,000kcal/h）"
+      },
+      {
+        "label": "使用燃料",
+        "value": "灯油（JIS1号灯油）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "8.4L/h"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "28L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "720W"
+      },
+      {
+        "label": "質量",
+        "value": "230kg"
+      },
+      {
+        "label": "膨張タンク量",
+        "value": "26L"
+      },
+      {
+        "label": "吸収量",
+        "value": "10L"
+      },
+      {
+        "label": "内蔵循環ポンプ",
+        "value": "130L/min ｜ 104L/min"
+      }
+    ]
+  },
+  "ONS-935R5": {
+    "sheet": "ヒートクイック",
+    "category": "灯油焚き",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "108kW"
+      },
+      {
+        "label": "使用燃料",
+        "value": "灯油（JIS1号灯油）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "12.6L/h"
+      },
+      {
+        "label": "缶体貯湯量",
+        "value": "42L"
+      },
+      {
+        "label": "最高使用圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "電源",
+        "value": "AC100V 50Hz"
+      },
+      {
+        "label": "規格消費電力",
+        "value": "890W"
+      },
+      {
+        "label": "質量",
+        "value": "305kg"
+      },
+      {
+        "label": "膨張タンク量",
+        "value": "40L"
+      },
+      {
+        "label": "吸収量",
+        "value": "15L"
+      },
+      {
+        "label": "内蔵循環ポンプ",
+        "value": "195L/min ｜ 170L/min"
+      }
+    ]
+  },
+  "AWH-501A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "58.2kW(50,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "116L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "205kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "321kg"
+      },
+      {
+        "label": "灯油",
+        "value": "7.0㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "6.6㎥M/h"
+      }
+    ]
+  },
+  "AWH-601A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "69.8kW(60,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "116L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "205kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "321kg"
+      },
+      {
+        "label": "灯油",
+        "value": "8.6㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "8.0㎥M/h"
+      }
+    ]
+  },
+  "AWH-701A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "81.4kW(70,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "116L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "205kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "321kg"
+      },
+      {
+        "label": "灯油",
+        "value": "10.1㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "9.5㎥M/h"
+      }
+    ]
+  },
+  "AWH-801A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "93kW(80,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "152L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "265kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "417kg"
+      },
+      {
+        "label": "灯油",
+        "value": "11.4㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "10.7㎥M/h"
+      }
+    ]
+  },
+  "AWH-901A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "105kW(90,000kcal"
+      },
+      {
+        "label": "缶水量",
+        "value": "152L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "265kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "417kg"
+      },
+      {
+        "label": "灯油",
+        "value": "13.0㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "12.2㎥M/h"
+      }
+    ]
+  },
+  "AWH-1001A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "116kW(100,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "152L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "270kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "422kg"
+      },
+      {
+        "label": "灯油",
+        "value": "14.6㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "13.7㎥M/h"
+      }
+    ]
+  },
+  "AWH-1201A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "140kW(120,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "256L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "350kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "606kg"
+      },
+      {
+        "label": "灯油",
+        "value": "17.3㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "16.3㎥M/h"
+      }
+    ]
+  },
+  "AWH-1501A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW(150,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "256L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "350kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "606kg"
+      },
+      {
+        "label": "灯油",
+        "value": "21.9㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "20.6㎥M/h"
+      }
+    ]
+  },
+  "AWH-1801A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "209kW(180,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "250L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.96㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.4kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "298φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "375kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "625kg"
+      },
+      {
+        "label": "灯油",
+        "value": "26.0㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "24.4㎥M/h"
+      }
+    ]
+  },
+  "AWH-2001A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "233kW(200,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "250L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.96㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.4kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "298φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "375kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "625kg"
+      },
+      {
+        "label": "灯油",
+        "value": "29.2㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "27.5㎥M/h"
+      }
+    ]
+  },
+  "AWH-501SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "58.2kW(50,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "116L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "205kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "321kg"
+      },
+      {
+        "label": "灯油",
+        "value": "7.0㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "6.6㎥M/h"
+      }
+    ]
+  },
+  "AWH-601SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "69.8kW(60,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "116L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "205kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "321kg"
+      },
+      {
+        "label": "灯油",
+        "value": "8.6㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "8.0㎥M/h"
+      }
+    ]
+  },
+  "AWH-701SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "81.4kW(70,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "116L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "205kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "321kg"
+      },
+      {
+        "label": "灯油",
+        "value": "10.1㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "9.5㎥M/h"
+      }
+    ]
+  },
+  "AWH-801SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "93kW(80,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "152L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "265kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "417kg"
+      },
+      {
+        "label": "灯油",
+        "value": "11.4㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "10.7㎥M/h"
+      }
+    ]
+  },
+  "AWH-901SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "105kW(90,000kcal"
+      },
+      {
+        "label": "缶水量",
+        "value": "152L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "265kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "417kg"
+      },
+      {
+        "label": "灯油",
+        "value": "13.0㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "12.2㎥M/h"
+      }
+    ]
+  },
+  "AWH-1001SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "116kW(100,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "152L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "270kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "422kg"
+      },
+      {
+        "label": "灯油",
+        "value": "14.6㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "13.7㎥M/h"
+      }
+    ]
+  },
+  "AWH-1201SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "140kW(120,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "256L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "350kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "606kg"
+      },
+      {
+        "label": "灯油",
+        "value": "17.3㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "16.3㎥M/h"
+      }
+    ]
+  },
+  "AWH-1501SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW(150,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "256L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "350kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "606kg"
+      },
+      {
+        "label": "灯油",
+        "value": "21.9㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "20.6㎥M/h"
+      }
+    ]
+  },
+  "AWS-501A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "58.2kW(50,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "345kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "945kg"
+      },
+      {
+        "label": "灯油",
+        "value": "7.0㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "6.6㎥M/h"
+      }
+    ]
+  },
+  "AWS-601A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "69.8kW(60,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "345kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "945kg"
+      },
+      {
+        "label": "灯油",
+        "value": "8.6㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "8.0㎥M/h"
+      }
+    ]
+  },
+  "AWS-701A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "81.4kW(70,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "345kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "945kg"
+      },
+      {
+        "label": "灯油",
+        "value": "10.1㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "9.5㎥M/h"
+      }
+    ]
+  },
+  "AWS-801A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "93kW(80,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "950L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "455kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1405kg"
+      },
+      {
+        "label": "灯油",
+        "value": "11.4㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "10.7㎥M/h"
+      }
+    ]
+  },
+  "AWS-901A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "105kW(90,000kcal"
+      },
+      {
+        "label": "缶水量",
+        "value": "950L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "455kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1405kg"
+      },
+      {
+        "label": "灯油",
+        "value": "13.0㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "12.2㎥M/h"
+      }
+    ]
+  },
+  "AWS-1001A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "116kW(100,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "950L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "460kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1410kg"
+      },
+      {
+        "label": "灯油",
+        "value": "14.6㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "13.7㎥M/h"
+      }
+    ]
+  },
+  "AWS-1201A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "140kW(120,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "1300L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "565kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1865kg"
+      },
+      {
+        "label": "灯油",
+        "value": "17.3㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "16.3㎥M/h"
+      }
+    ]
+  },
+  "AWS-1501A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW(150,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "1300L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "565kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1865kg"
+      },
+      {
+        "label": "灯油",
+        "value": "21.9㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "20.6㎥M/h"
+      }
+    ]
+  },
+  "AWS-1801A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "209kW(180,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "1600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.96㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.4kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "298φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "630kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "2230kg"
+      },
+      {
+        "label": "灯油",
+        "value": "26.0㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "24.4㎥M/h"
+      }
+    ]
+  },
+  "AWS-2001A": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "233kW(200,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "1600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.96㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.4kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "298φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "630kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "2230kg"
+      },
+      {
+        "label": "灯油",
+        "value": "29.2㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "27.5㎥M/h"
+      }
+    ]
+  },
+  "AWS-501SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "58.2kW(50,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "345kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "945kg"
+      },
+      {
+        "label": "灯油",
+        "value": "7.0㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "6.6㎥M/h"
+      }
+    ]
+  },
+  "AWS-601SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "69.8kW(60,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "345kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "945kg"
+      },
+      {
+        "label": "灯油",
+        "value": "8.6㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "8.0㎥M/h"
+      }
+    ]
+  },
+  "AWS-701SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "81.4kW(70,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "345kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "945kg"
+      },
+      {
+        "label": "灯油",
+        "value": "10.1㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "9.5㎥M/h"
+      }
+    ]
+  },
+  "AWS-801SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "93kW(80,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "950L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "455kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1405kg"
+      },
+      {
+        "label": "灯油",
+        "value": "11.4㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "10.7㎥M/h"
+      }
+    ]
+  },
+  "AWS-901SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "105kW(90,000kcal"
+      },
+      {
+        "label": "缶水量",
+        "value": "950L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.15kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "455kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1405kg"
+      },
+      {
+        "label": "灯油",
+        "value": "13.0㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "12.2㎥M/h"
+      }
+    ]
+  },
+  "AWS-1001SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "116kW(100,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "950L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "460kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1410kg"
+      },
+      {
+        "label": "灯油",
+        "value": "14.6㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "13.7㎥M/h"
+      }
+    ]
+  },
+  "AWS-1201SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "140kW(120,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "1300L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "565kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1865kg"
+      },
+      {
+        "label": "灯油",
+        "value": "17.3㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "16.3㎥M/h"
+      }
+    ]
+  },
+  "AWS-1501SA": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW(150,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "1300L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "565kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1865kg"
+      },
+      {
+        "label": "灯油",
+        "value": "21.9㎥M/h"
+      },
+      {
+        "label": "A重油",
+        "value": "20.6㎥M/h"
+      }
+    ]
+  },
+  "AWH-501GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "58.2kW(50,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "116L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "5.9㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.085kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "214kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "330kg"
+      }
+    ]
+  },
+  "AWH-601GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "69.8kW(60,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "116L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "7.2㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "220kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "336kg"
+      }
+    ]
+  },
+  "AWH-701GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "81.4kW(70,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "116L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "8.5㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "221kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "337kg"
+      }
+    ]
+  },
+  "AWH-801GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "93kW(80,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "152L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "9.6㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "279kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "431kg"
+      }
+    ]
+  },
+  "AWH-901GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "105kW(90,000kcal"
+      },
+      {
+        "label": "缶水量",
+        "value": "152L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "11.0㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "279kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "431kg"
+      }
+    ]
+  },
+  "AWH-1001GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "116kW(100,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "152L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "12.3㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "279kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "431kg"
+      }
+    ]
+  },
+  "AWH-1201GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "140kW(120,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "256L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "14.6㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "358kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "614kg"
+      }
+    ]
+  },
+  "AWH-1501GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW(150,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "256L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "18.5㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "361kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "617kg"
+      }
+    ]
+  },
+  "AWH-1801GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "209kW(180,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "250L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.96㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "21.9㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.4kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "298φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "389kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "639kg"
+      }
+    ]
+  },
+  "AWH-2001GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "233kW(200,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "250L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.96㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "24.6㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.4kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "298φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "389kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "639kg"
+      }
+    ]
+  },
+  "AWH-501GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "58.2kW(50,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "116L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "2.7㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.085kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "214kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "330kg"
+      }
+    ]
+  },
+  "AWH-601GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "69.8kW(60,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "116L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "3.3㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "220kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "336kg"
+      }
+    ]
+  },
+  "AWH-701GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "81.4kW(70,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "116L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "3.9㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "221kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "337kg"
+      }
+    ]
+  },
+  "AWH-801GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "93kW(80,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "152L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "4.4㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "279kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "431kg"
+      }
+    ]
+  },
+  "AWH-901GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "105kW(90,000kcal"
+      },
+      {
+        "label": "缶水量",
+        "value": "152L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "5.0㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "279kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "431kg"
+      }
+    ]
+  },
+  "AWH-1001GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "116kW(100,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "152L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "5.6㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "279kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "431kg"
+      }
+    ]
+  },
+  "AWH-1201GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "140kW(120,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "256L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "6.7㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "358kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "614kg"
+      }
+    ]
+  },
+  "AWH-1501GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW(150,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "256L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "8.5㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "361kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "617kg"
+      }
+    ]
+  },
+  "AWH-1801GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "209kW(180,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "250L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.96㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "10.6㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.4kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "298φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "389kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "639kg"
+      }
+    ]
+  },
+  "AWH-2001GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "233kW(200,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "250L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.96㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "11.3㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.4kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "298φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "389kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "639kg"
+      }
+    ]
+  },
+  "AWS-501GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "58.2kW(50,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "5.9㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.085kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "352kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "952kg"
+      }
+    ]
+  },
+  "AWS-601GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "69.8kW(60,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "7.2㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "358kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "958kg"
+      }
+    ]
+  },
+  "AWS-701GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "81.4kW(70,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "8.5㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "359kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "959kg"
+      }
+    ]
+  },
+  "AWS-801GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "93kW(80,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "950L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "9.6㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "468kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1418kg"
+      }
+    ]
+  },
+  "AWS-901GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "105kW(90,000kcal"
+      },
+      {
+        "label": "缶水量",
+        "value": "950L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "11.0㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "468kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1418kg"
+      }
+    ]
+  },
+  "AWS-1001GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "116kW(100,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "950L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "12.3㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "468kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1418kg"
+      }
+    ]
+  },
+  "AWS-1201GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "140kW(120,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "1300L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "14.6㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "576kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1876kg"
+      }
+    ]
+  },
+  "AWS-1501GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW(150,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "1300L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "18.5㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "579kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1879kg"
+      }
+    ]
+  },
+  "AWS-1801GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "209kW(180,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "1600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.96㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "21.9㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.4kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "298φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "647kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "2247kg"
+      }
+    ]
+  },
+  "AWS-2001GBN": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "233kW(200,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "1600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.96㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "13A（都市ガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "24.6㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.4kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "298φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "647kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "2247kg"
+      }
+    ]
+  },
+  "AWS-501GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "58.2kW(50,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "2.7㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.085kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "352kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "952kg"
+      }
+    ]
+  },
+  "AWS-601GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "69.8kW(60,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "3.3㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "358kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "958kg"
+      }
+    ]
+  },
+  "AWS-701GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "81.4kW(70,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "1.75㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "3.9㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "173φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "359kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "959kg"
+      }
+    ]
+  },
+  "AWS-801GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "93kW(80,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "950L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "4.4㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "468kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1418kg"
+      }
+    ]
+  },
+  "AWS-901GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "105kW(90,000kcal"
+      },
+      {
+        "label": "缶水量",
+        "value": "950L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "5.0㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "468kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1418kg"
+      }
+    ]
+  },
+  "AWS-1001GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "116kW(100,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "950L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "2.55㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "5.6㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "223φ"
+      },
+      {
+        "label": "電源",
+        "value": "100V単相"
+      },
+      {
+        "label": "運送質量",
+        "value": "468kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1418kg"
+      }
+    ]
+  },
+  "AWS-1201GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "140kW(120,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "1300L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "6.7㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.2kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "576kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1876kg"
+      }
+    ]
+  },
+  "AWS-1501GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "174kW(150,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "1300L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.72㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "8.5㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.25kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "248φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "579kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "1879kg"
+      }
+    ]
+  },
+  "AWS-1801GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "209kW(180,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "1600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.96㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "10.6㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.4kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "298φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "647kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "2247kg"
+      }
+    ]
+  },
+  "AWS-2001GBL": {
+    "sheet": "オートカン",
+    "category": "オートカン",
+    "specs": [
+      {
+        "label": "定格出力",
+        "value": "233kW(200,000kcal/h)"
+      },
+      {
+        "label": "缶水量",
+        "value": "1600L"
+      },
+      {
+        "label": "最高仕様圧力",
+        "value": "0.1MPa"
+      },
+      {
+        "label": "伝熱面積",
+        "value": "3.96㎡"
+      },
+      {
+        "label": "燃料",
+        "value": "LPG（プロパンガス）"
+      },
+      {
+        "label": "燃料消費量",
+        "value": "11.3㎥M/h"
+      },
+      {
+        "label": "モーター",
+        "value": "0.4kW"
+      },
+      {
+        "label": "煙導接続口径",
+        "value": "298φ"
+      },
+      {
+        "label": "電源",
+        "value": "200V三相"
+      },
+      {
+        "label": "運送質量",
+        "value": "647kg"
+      },
+      {
+        "label": "運転質量",
+        "value": "2247kg"
+      }
+    ]
+  },
+  "HP-55D": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100～700円"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "外形寸法",
+        "value": "外形寸法H：720×W：410×Ｄ：290"
+      },
+      {
+        "label": "納期",
+        "value": "約45日"
+      }
+    ]
+  },
+  "HP-55DS": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100～700円"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "外形寸法",
+        "value": "外形寸法H：720×W：410×Ｄ：290"
+      },
+      {
+        "label": "納期",
+        "value": "約45日"
+      }
+    ]
+  },
+  "HP-55DS（フローSW仕様）": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100～700円"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "外形寸法",
+        "value": "外形寸法H：720×W：410×Ｄ：290"
+      },
+      {
+        "label": "納期",
+        "value": "約45日"
+      }
+    ]
+  },
+  "HP-55DSD": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100～700円"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "外形寸法",
+        "value": "外形寸法H：720×W：410×Ｄ：290"
+      },
+      {
+        "label": "納期",
+        "value": "約45日"
+      }
+    ]
+  },
+  "HP-55DSD（フローSW仕様）": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100～700円"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "外形寸法",
+        "value": "外形寸法H：720×W：410×Ｄ：290"
+      },
+      {
+        "label": "納期",
+        "value": "約45日"
+      }
+    ]
+  },
+  "HP-55HD": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100～700円"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "納期",
+        "value": "約45日"
+      }
+    ]
+  },
+  "HP-55HDS": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100～700円"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "納期",
+        "value": "約45日"
+      }
+    ]
+  },
+  "HP-55HDS（フローSW仕様）": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100～700円"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "納期",
+        "value": "約45日"
+      }
+    ]
+  },
+  "HP-55HDSD": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100～700円"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "納期",
+        "value": "約45日"
+      }
+    ]
+  },
+  "HP-55HDSD（フローSW仕様）": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100～700円"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "納期",
+        "value": "約45日"
+      }
+    ]
+  },
+  "HP-64ASAD": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100～700円"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "外形寸法",
+        "value": "外形寸法H：1650×W：500×Ｄ：355"
+      },
+      {
+        "label": "納期",
+        "value": "約45日"
+      }
+    ]
+  },
+  "HP-94ASD": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100～700円"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "外形寸法",
+        "value": "外形寸法H：1650×W：800×Ｄ：435×Ｄ´：100"
+      },
+      {
+        "label": "納期",
+        "value": "約45日"
+      }
+    ]
+  },
+  "HP-94B（身障者仕様）": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100～700円"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "外形寸法",
+        "value": "外形寸法H：1650×W：800×Ｄ：435×Ｄ´：100"
+      },
+      {
+        "label": "納期",
+        "value": "約45日"
+      }
+    ]
+  },
+  "HS-A3": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100～700円（100円単位）"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "60W"
+      },
+      {
+        "label": "外形寸法",
+        "value": "外形寸法H：2360×W：1000×Ｄ：1050"
+      },
+      {
+        "label": "納期",
+        "value": "約75日"
+      }
+    ]
+  },
+  "HSK-A3": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100～700円（100円単位）"
+      },
+      {
+        "label": "時間設定",
+        "value": "1分～99分（1分単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "200W"
+      },
+      {
+        "label": "外形寸法",
+        "value": "外形寸法H：2373×W：1000×Ｄ：2030"
+      },
+      {
+        "label": "納期",
+        "value": "約75日"
+      }
+    ]
+  },
+  "HV-10C": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100円硬貨・専用メダル（注文時選択）"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "外形寸法",
+        "value": "外形寸法H：1300×W：250×D：200"
+      },
+      {
+        "label": "納期",
+        "value": "45日"
+      }
+    ]
+  },
+  "HV-10SH": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100円硬貨・専用メダル（注文時選択）"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "35Ｗ"
+      },
+      {
+        "label": "外形寸法",
+        "value": "外形寸法H：1300×W：250×D：200"
+      },
+      {
+        "label": "納期",
+        "value": "45日"
+      }
+    ]
+  },
+  "HV-10SR": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100円硬貨・専用メダル（注文時選択）"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "外形寸法",
+        "value": "外形寸法H：1300×W：250×D：200"
+      },
+      {
+        "label": "納期",
+        "value": "45日"
+      }
+    ]
+  },
+  "HV-10SM": {
+    "sheet": "コインシャワーデータ",
+    "category": "コインシャワー",
+    "specs": [
+      {
+        "label": "料金設定",
+        "value": "100円硬貨・専用メダル（注文時選択）"
+      },
+      {
+        "label": "時間設定",
+        "value": "30秒～19分30秒（30秒単位）"
+      },
+      {
+        "label": "消費電力",
+        "value": "30Ｗ"
+      },
+      {
+        "label": "外形寸法",
+        "value": "外形寸法H：1300×W：250×D：200"
+      },
+      {
+        "label": "納期",
+        "value": "45日"
+      }
+    ]
+  }
+}
