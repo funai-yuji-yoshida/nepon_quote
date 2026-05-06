@@ -2614,10 +2614,6 @@ const app = (() => {
     if (!sec) return;
 
     sec.items.forEach(item => {
-      if (item.unitPrice != null && item.unitPrice !== '') {
-        item.unitPrice = Math.round(Number(item.unitPrice) * rate);
-        item.amount    = Math.round(item.unitPrice * (Number(item.qty) || 1));
-      }
       item.dairiRate = rate;
     });
 
