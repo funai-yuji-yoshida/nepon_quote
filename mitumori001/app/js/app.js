@@ -709,6 +709,7 @@ const app = (() => {
     koujiCategory:  '',   // 工事カテゴリ (CD/CE/CK/CP/CQ/CQX)
     createDeptCode: '',   // 作成所課コード
     createDeptName: '',   // 作成所課名
+    deptRecordId:   null, // DepartmentsList レコードID（遅延解決）
     siteDeptCode:   '',   // 現場所課コード
     siteDeptName:   '',   // 現場所課名
     kikaShita:      '80', // 期下二桁
@@ -1078,7 +1079,9 @@ const app = (() => {
     if (discountLabelEl) {
       discountLabelEl.textContent = isKouji ? '出精値引き' : '値引き額';
     }
-    // 明細印刷オプション: 工事以外（物販・作業）のとき表示
+    // 見積鏡・明細印刷オプション: 工事以外（物販・作業）のとき表示
+    const printCoverGroup = document.getElementById('printCoverGroup');
+    if (printCoverGroup) printCoverGroup.style.display = isKouji ? 'none' : '';
     const printDetailOption = document.getElementById('printDetailOption');
     if (printDetailOption) {
       printDetailOption.style.display = isKouji ? 'none' : '';
@@ -2001,6 +2004,129 @@ const app = (() => {
     const modal = document.getElementById('machineSpecModal');
     if (modal) modal.style.display = 'none';
     clearTimeout(_machineSpecTimer);
+  }
+
+  // ── 機器仕様マスタ（CustomModule21）─────────────────────────────
+
+  async function _resolveDeptRecordId() {
+    if (state.deptRecordId || !state.createDeptCode || !zohoReady) return;
+    try {
+      const res = await ZOHO.CRM.API.searchRecord({
+        Entity: 'DepartmentsList', Type: 'criteria',
+        Query: `(Name:equals:${state.createDeptCode})`,
+        page: 1, per_page: 1
+      });
+      const rec = res?.data?.[0];
+      if (rec) state.deptRecordId = rec.id;
+    } catch(e) { console.warn('DepartmentsList resolve error:', e); }
+  }
+
+  async function loadItemSpecMaster(item) {
+    if (!item.productId || !zohoReady) { item.specMasterLoaded = true; return; }
+    await _resolveDeptRecordId();
+    try {
+      const q = state.deptRecordId
+        ? `(field2:equals:${item.productId})and(field3:equals:${state.deptRecordId})`
+        : `(field2:equals:${item.productId})`;
+      const res = await ZOHO.CRM.API.searchRecord({
+        Entity: 'CustomModule21', Type: 'criteria',
+        Query: q, page: 1, per_page: 1
+      });
+      const rec = res?.data?.[0];
+      item.specMasterId      = rec?.id   || null;
+      item.specMasterContent = rec?.spec  || null;
+    } catch(e) {
+      item.specMasterId = null; item.specMasterContent = null;
+    }
+    item.specMasterLoaded = true;
+  }
+
+  function createSpecMasterRowDOM(item) {
+    const tr = document.createElement('tr');
+    tr.className    = 'spec-master-row';
+    tr.dataset.itemId = item.id;
+    tr.innerHTML = `<td colspan="20" class="spm-cell">
+      <span class="spm-loading">機器仕様 読込中...</span>
+    </td>`;
+    return tr;
+  }
+
+  function updateSpecMasterRow(itemId) {
+    const row  = document.querySelector(`.spec-master-row[data-item-id="${itemId}"]`);
+    if (!row) return;
+    const item = state.sections.flatMap(s => s.items).find(i => i.id === itemId);
+    if (!item) return;
+    const cell = row.querySelector('.spm-cell');
+    if (!item.specMasterLoaded) {
+      cell.innerHTML = '<span class="spm-loading">機器仕様 読込中...</span>';
+      return;
+    }
+    if (item.specMasterContent) {
+      const preview = item.specMasterContent.length > 80
+        ? item.specMasterContent.substring(0, 80) + '...' : item.specMasterContent;
+      cell.innerHTML = `<span class="spm-label">機器仕様</span>
+        <span class="spm-preview">${escHtml(preview)}</span>
+        <button class="spm-btn spm-edit-btn" onclick="app.showSpecMasterModal(${itemId})">編集</button>`;
+    } else {
+      cell.innerHTML = `<span class="spm-label">機器仕様</span>
+        <span class="spm-none">未登録</span>
+        <button class="spm-btn spm-new-btn" onclick="app.showSpecMasterModal(${itemId})">新規登録</button>`;
+    }
+  }
+
+  let _specMasterItemId = null;
+
+  function showSpecMasterModal(itemId) {
+    _specMasterItemId = itemId;
+    const item = state.sections.flatMap(s => s.items).find(i => i.id === itemId);
+    if (!item) return;
+    const modal = document.getElementById('specMasterModal');
+    if (!modal) return;
+    document.getElementById('spmProductName').textContent = item.name  || '';
+    document.getElementById('spmModel').textContent       = item.model || '';
+    document.getElementById('spmContent').value           = item.specMasterContent || '';
+    modal.style.display = 'flex';
+    document.getElementById('spmContent').focus();
+  }
+
+  function closeSpecMasterModal() {
+    const modal = document.getElementById('specMasterModal');
+    if (modal) modal.style.display = 'none';
+    _specMasterItemId = null;
+  }
+
+  async function saveSpecMaster() {
+    if (!_specMasterItemId) return;
+    const item = state.sections.flatMap(s => s.items).find(i => i.id === _specMasterItemId);
+    if (!item || !zohoReady) return;
+    const content = (document.getElementById('spmContent').value || '').trim();
+    const saveBtn = document.getElementById('spmSaveBtn');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '保存中...'; }
+    try {
+      await _resolveDeptRecordId();
+      const apiData = { spec: content, field1: item.model || '' };
+      if (item.productId)     apiData.field2 = { id: item.productId };
+      if (state.deptRecordId) apiData.field3 = { id: state.deptRecordId };
+      if (item.specMasterId) {
+        apiData.id = item.specMasterId;
+        await ZOHO.CRM.API.updateRecord({ Entity: 'CustomModule21', APIData: apiData });
+      } else {
+        apiData.Name = `${item.model || item.name}_${state.createDeptCode}`;
+        const res = await ZOHO.CRM.API.insertRecord({ Entity: 'CustomModule21', APIData: apiData });
+        const newId = res?.data?.[0]?.details?.id;
+        if (newId) item.specMasterId = newId;
+      }
+      item.specMasterContent = content;
+      item.specMasterLoaded  = true;
+      closeSpecMasterModal();
+      updateSpecMasterRow(_specMasterItemId);
+      showToast('機器仕様を保存しました');
+    } catch(e) {
+      console.warn('specMaster save error:', e);
+      showToast('保存に失敗しました');
+    } finally {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '保存'; }
+    }
   }
 
   function searchMachineSpecs() {
@@ -3246,6 +3372,12 @@ const app = (() => {
       if (!row) {
         row = createItemRowDOM(item);
         tbody.appendChild(row);
+        // 商品アイテムには機器仕様マスタ行を追加
+        if (item.productId) {
+          const spmRow = createSpecMasterRowDOM(item);
+          row.insertAdjacentElement('afterend', spmRow);
+          loadItemSpecMaster(item).then(() => updateSpecMasterRow(item.id));
+        }
       } else if (!row.dataset.dragReady) {
         row.draggable = true;
         attachDragEvents(row);
@@ -3566,8 +3698,8 @@ const app = (() => {
     tr.dataset.itemId = itemId;
     tr.innerHTML = `
       <td colspan="14" class="spec-add-td">
-        <button class="btn-spec-add" onclick="app.addSpecLine(this)">＋ 仕様追加</button>
-        <button class="btn-spec-template" onclick="app.showSpecTemplateMenu(this)">📋 テンプレート</button>
+        <button class="btn-spec-add" onclick="app.addSpecLine(this)">＋ 説明文</button>
+        <button class="btn-spec-template" onclick="app.showSpecTemplateMenu(this)">📋 説明テンプレート</button>
       </td>`;
     return tr;
   }
@@ -3678,7 +3810,9 @@ const app = (() => {
     menu.innerHTML = '<div class="stm-loading">🔍 検索中...</div>';
     document.body.appendChild(menu);
     const btnRect = btn.getBoundingClientRect();
-    menu.style.left = btnRect.left + 'px';
+    const menuMinWidth = 300;
+    const left = Math.min(btnRect.left, window.innerWidth - menuMinWidth - 8);
+    menu.style.left = Math.max(0, left) + 'px';
     menu.style.top  = (btnRect.bottom + 4) + 'px';
 
     // CRM からテンプレート検索
@@ -3715,7 +3849,7 @@ const app = (() => {
     } else {
       html += '<div class="stm-none">テンプレートがありません</div>';
     }
-    html += '<button class="stm-save-btn">💾 現在の仕様を保存</button>';
+    html += '<button class="stm-save-btn">💾 現在の説明文を保存</button>';
     menu.innerHTML = html;
 
     menu.querySelectorAll('.stm-apply-btn').forEach(applyBtn => {
@@ -5160,6 +5294,10 @@ const app = (() => {
     removeSpecLine,
     onSpecLineInput,
     showSpecTemplateMenu,
+    // 機器仕様マスタ
+    showSpecMasterModal,
+    closeSpecMasterModal,
+    saveSpecMaster,
     // 列表示
     toggleColDropdown,
     setColVisibility,

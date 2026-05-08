@@ -1763,6 +1763,24 @@ input.item-gensui-b::-webkit-inner-spin-button {
 }
 .col-dd-item input { cursor: pointer; }
 
+/* ── 機器仕様マスタ行 ──────────────────────────────────── */
+.spec-master-row td.spm-cell {
+  padding: 3px 10px; background: #f8fff8;
+  border-bottom: 1px solid #e8f5e9; font-size: 12px;
+}
+.spm-loading { color: #aaa; font-style: italic; }
+.spm-label   { color: #2e7d32; font-weight: bold; margin-right: 8px; }
+.spm-preview { color: #333; white-space: pre-wrap; }
+.spm-none    { color: #999; margin-right: 8px; }
+.spm-btn {
+  font-size: 11px; padding: 2px 10px; cursor: pointer;
+  border-radius: 3px; margin-left: 8px;
+  border: 1px solid #4a90d9; color: #1a73e8; background: #fff;
+}
+.spm-btn:hover { background: #e8f0fe; }
+.spm-new-btn  { border-color: #28a745; color: #28a745; }
+.spm-new-btn:hover { background: #f0fff4; }
+
 /* ── モーダル共通 ──────────────────────────────────────── */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.5);

@@ -546,7 +546,7 @@
             <span class="status-icon">⏳</span> フォント読み込み中...
           </div>
 
-          <div class="print-detail-option">
+          <div id="printCoverGroup" class="print-detail-option">
             <label class="print-detail-label">
               <input type="checkbox" id="printCoverPage">
               見積鏡を独立ページで印刷する
@@ -769,8 +769,8 @@
       <td class="col-item-actions">
         <div class="item-action-btns">
           <button class="btn-icon btn-danger" onclick="app.removeItem(this)" title="削除">✕</button>
-          <button class="btn-spec-add" onclick="app.addSpecLine(this)">＋仕様</button>
-          <button class="btn-spec-template" onclick="app.showSpecTemplateMenu(this)" title="仕様テンプレート">📋</button>
+          <button class="btn-spec-add" onclick="app.addSpecLine(this)">＋説明文</button>
+          <button class="btn-spec-template" onclick="app.showSpecTemplateMenu(this)" title="説明テンプレート">📋</button>
         </div>
       </td>
     </tr>
@@ -832,6 +832,28 @@
       <div class="modal-footer">
         <button class="btn-secondary" onclick="document.getElementById('tplLoadModal').style.display='none'">キャンセル</button>
         <button class="btn-primary" id="btnTplLoad" onclick="app.execTemplateLoad()" disabled>📂 読み込み</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 機器仕様マスタ 編集モーダル -->
+  <div id="specMasterModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)app.closeSpecMasterModal()">
+    <div class="modal-dialog" style="width:520px">
+      <div class="modal-header">
+        <span class="modal-title">機器仕様マスタ 編集</span>
+        <button class="modal-close" onclick="app.closeSpecMasterModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding:16px">
+        <div style="margin-bottom:10px;font-size:13px">
+          <span style="color:#666">商品：</span><strong id="spmProductName"></strong>
+          　<span style="color:#666">型式：</span><strong id="spmModel"></strong>
+        </div>
+        <label style="font-size:12px;color:#555;display:block;margin-bottom:4px">仕様内容</label>
+        <textarea id="spmContent" rows="10" style="width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:4px;padding:8px;font-size:13px;resize:vertical"></textarea>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid #eee">
+        <button onclick="app.closeSpecMasterModal()" style="padding:6px 18px;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer">キャンセル</button>
+        <button id="spmSaveBtn" onclick="app.saveSpecMaster()" style="padding:6px 18px;border:none;border-radius:4px;background:#1a73e8;color:#fff;cursor:pointer;font-weight:bold">保存</button>
       </div>
     </div>
   </div>
