@@ -1413,7 +1413,8 @@ const app = (() => {
           price:  Number(p.Unit_Price) || 0,
           cost:   Number(p.field1)     || 0,   // 標準原価（field1）
           houdan: parseFloat(p.field12) || 0,  // 歩単（field12）
-          hasSpec: !!(p.field13 && String(p.field13).trim()), // CRM 機器仕様（field13）に値あり
+          hasSpec:     !!(p.field13 && String(p.field13).trim()),
+          specContent: p.field13 || '',
           source: 'product',
         }));
       }
@@ -1783,11 +1784,12 @@ const app = (() => {
     if (product.source === 'product') {
       // ── 商品マスタ: 商品1行 + 同型式の工事費を追加 ──────────────
       const item = createItem();
-      item.productId = product.id;
-      item.name      = product.name;
-      item.spec      = product.code;
-      item.model     = product.model || '';  // 製品型式（field2）機器仕様参照用
-      item.unit      = product.unit || '式';
+      item.productId   = product.id;
+      item.name        = product.name;
+      item.spec        = product.code;
+      item.model       = product.model || '';
+      item.productSpec = product.specContent || '';
+      item.unit        = product.unit || '式';
       item.unitPrice = product.price;
       item.amount    = product.price;
       item.genka     = product.cost   || 0; // 標準原価（field1）
@@ -2009,7 +2011,8 @@ const app = (() => {
   // ── 機器仕様マスタ（CustomModule21）─────────────────────────────
 
   async function _resolveDeptRecordId() {
-    if (state.deptRecordId || !state.createDeptCode || !zohoReady) return;
+    if (state.deptRecordId || !zohoReady) return;
+    if (!state.createDeptCode) return;
     try {
       const res = await ZOHO.CRM.API.searchRecord({
         Entity: 'DepartmentsList', Type: 'criteria',
@@ -2021,24 +2024,57 @@ const app = (() => {
     } catch(e) { console.warn('DepartmentsList resolve error:', e); }
   }
 
+  // 仕様テキストを {label,value}[] に変換して item.machineSpec にセット（印刷連動）
+  function _applySpecToMachineSpec(item) {
+    const text = item.specMasterContent || '';
+    if (!text) return;
+    const modelKey = item.model || item.spec || '';
+    const specs = text.split('\n').map(l => l.trim()).filter(Boolean).map(line => {
+      const i = line.indexOf('：');
+      if (i > 0) return { label: line.slice(0, i), value: line.slice(i + 1) };
+      const j = line.indexOf(':');
+      if (j > 0) return { label: line.slice(0, j), value: line.slice(j + 1) };
+      return { label: line, value: '' };
+    });
+    item.machineSpec = { model: modelKey, specs };
+  }
+
   async function loadItemSpecMaster(item) {
     if (!item.productId || !zohoReady) { item.specMasterLoaded = true; return; }
+
+    // 1. CustomModule21（所課別）を優先確認
     await _resolveDeptRecordId();
     try {
-      const q = state.deptRecordId
-        ? `(field2:equals:${item.productId})and(field3:equals:${state.deptRecordId})`
-        : `(field2:equals:${item.productId})`;
+      const modelKey = item.model || item.spec || item.name || '';
+      const nameKey  = state.createDeptCode ? `${modelKey}_${state.createDeptCode}` : modelKey;
       const res = await ZOHO.CRM.API.searchRecord({
         Entity: 'CustomModule21', Type: 'criteria',
-        Query: q, page: 1, per_page: 1
+        Query: `(Name:equals:${nameKey})`, page: 1, per_page: 1
       });
       const rec = res?.data?.[0];
-      item.specMasterId      = rec?.id   || null;
-      item.specMasterContent = rec?.spec  || null;
-    } catch(e) {
-      item.specMasterId = null; item.specMasterContent = null;
+      if (rec) {
+        item.specMasterId          = rec.id;
+        item.specMasterContent     = rec.spec || '';
+        item.specMasterFromProducts = false;
+        item.specMasterLoaded      = true;
+        _applySpecToMachineSpec(item);
+        return;
+      }
+    } catch(e) { /* fall through */ }
+
+    // 2. CustomModule21 になければ Products field13（商品マスタ）をフォールバック
+    if (item.productSpec === undefined) {
+      try {
+        const pRes = await ZOHO.CRM.API.getRecord({ Entity: 'Products', RecordID: item.productId });
+        item.productSpec = pRes?.data?.[0]?.field13 || '';
+      } catch(e) { item.productSpec = ''; }
     }
-    item.specMasterLoaded = true;
+
+    item.specMasterId          = null;
+    item.specMasterContent     = item.productSpec || null;
+    item.specMasterFromProducts = !!(item.productSpec);
+    item.specMasterLoaded      = true;
+    if (item.specMasterContent) _applySpecToMachineSpec(item);
   }
 
   function createSpecMasterRowDOM(item) {
@@ -2064,9 +2100,16 @@ const app = (() => {
     if (item.specMasterContent) {
       const preview = item.specMasterContent.length > 80
         ? item.specMasterContent.substring(0, 80) + '...' : item.specMasterContent;
+      const btnLabel = item.specMasterFromProducts ? '所課用に編集' : '編集';
+      const resetBtn = !item.specMasterFromProducts
+        ? `<button class="spm-btn spm-reset-btn" onclick="app.resetToProductSpec(${itemId})">標準に戻す</button>`
+        : '';
+      const deptRefBtn = item.specMasterFromProducts && item.specMasterId
+        ? `<button class="spm-btn spm-dept-btn" onclick="app.applyDeptSpec(${itemId})">所課仕様を参照</button>`
+        : '';
       cell.innerHTML = `<span class="spm-label">機器仕様</span>
         <span class="spm-preview">${escHtml(preview)}</span>
-        <button class="spm-btn spm-edit-btn" onclick="app.showSpecMasterModal(${itemId})">編集</button>`;
+        <button class="spm-btn spm-edit-btn" onclick="app.showSpecMasterModal(${itemId})">${btnLabel}</button>${deptRefBtn}${resetBtn}`;
     } else {
       cell.innerHTML = `<span class="spm-label">機器仕様</span>
         <span class="spm-none">未登録</span>
@@ -2111,21 +2154,81 @@ const app = (() => {
         apiData.id = item.specMasterId;
         await ZOHO.CRM.API.updateRecord({ Entity: 'CustomModule21', APIData: apiData });
       } else {
-        apiData.Name = `${item.model || item.name}_${state.createDeptCode}`;
+        apiData.Name = `${item.model || item.spec || item.name}_${state.createDeptCode}`;
         const res = await ZOHO.CRM.API.insertRecord({ Entity: 'CustomModule21', APIData: apiData });
         const newId = res?.data?.[0]?.details?.id;
         if (newId) item.specMasterId = newId;
       }
-      item.specMasterContent = content;
-      item.specMasterLoaded  = true;
+      item.specMasterContent      = content;
+      item.specMasterFromProducts  = false;
+      item.specMasterLoaded        = true;
+      _applySpecToMachineSpec(item);
+      const savedItemId = _specMasterItemId;  // closeModal より先に退避
       closeSpecMasterModal();
-      updateSpecMasterRow(_specMasterItemId);
+      updateSpecMasterRow(savedItemId);
+      // 印刷プレビュー更新
+      const sec = state.sections.find(s => s.items.some(i => i.id === item.id));
+      if (sec) {
+        const block = document.querySelector(`.section-block[data-section-id="${sec.id}"]`);
+        if (block) renderSection(sec, block);
+      }
+      updateOutput();
       showToast('機器仕様を保存しました');
     } catch(e) {
       console.warn('specMaster save error:', e);
       showToast('保存に失敗しました');
     } finally {
       if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '保存'; }
+    }
+  }
+
+  async function resetToProductSpec(itemId) {
+    const item = state.sections.flatMap(s => s.items).find(i => i.id === itemId);
+    if (!item) return;
+    // CRM レコードは変更せず表示のみ切り替え（specMasterId は保持）
+    if (item.productSpec === undefined && item.productId && zohoReady) {
+      try {
+        const pRes = await ZOHO.CRM.API.getRecord({ Entity: 'Products', RecordID: item.productId });
+        item.productSpec = pRes?.data?.[0]?.field13 || '';
+      } catch(e) { item.productSpec = ''; }
+    }
+    item.specMasterContent     = item.productSpec || null;
+    item.specMasterFromProducts = true;
+    item.specMasterLoaded       = true;
+    if (item.specMasterContent) _applySpecToMachineSpec(item);
+    else item.machineSpec = null;
+    updateSpecMasterRow(itemId);
+    const sec = state.sections.find(s => s.items.some(i => i.id === item.id));
+    if (sec) {
+      const block = document.querySelector(`.section-block[data-section-id="${sec.id}"]`);
+      if (block) renderSection(sec, block);
+    }
+    updateOutput();
+    showToast('商品マスタの仕様に戻しました');
+  }
+
+  async function applyDeptSpec(itemId) {
+    const item = state.sections.flatMap(s => s.items).find(i => i.id === itemId);
+    if (!item || !item.specMasterId || !zohoReady) return;
+    try {
+      const res = await ZOHO.CRM.API.getRecord({ Entity: 'CustomModule21', RecordID: item.specMasterId });
+      const rec = res?.data?.[0];
+      if (!rec) { showToast('所課仕様が見つかりません'); return; }
+      item.specMasterContent     = rec.spec || '';
+      item.specMasterFromProducts = false;
+      item.specMasterLoaded       = true;
+      _applySpecToMachineSpec(item);
+      updateSpecMasterRow(itemId);
+      const sec = state.sections.find(s => s.items.some(i => i.id === item.id));
+      if (sec) {
+        const block = document.querySelector(`.section-block[data-section-id="${sec.id}"]`);
+        if (block) renderSection(sec, block);
+      }
+      updateOutput();
+      showToast('所課仕様を参照しました');
+    } catch(e) {
+      console.warn('applyDeptSpec error:', e);
+      showToast('所課仕様の読み込みに失敗しました');
     }
   }
 
@@ -3361,9 +3464,16 @@ const app = (() => {
     const existingIds = new Set([...tbody.querySelectorAll('.item-row')].map(r => Number(r.dataset.itemId)));
     const newIds      = new Set(sec.items.map(i => i.id));
 
-    // 削除
+    // 削除: item-row と対応する spec-master-row も一緒に削除
     existingIds.forEach(id => {
-      if (!newIds.has(id)) tbody.querySelector(`.item-row[data-item-id="${id}"]`)?.remove();
+      if (!newIds.has(id)) {
+        tbody.querySelector(`.item-row[data-item-id="${id}"]`)?.remove();
+        tbody.querySelector(`.spec-master-row[data-item-id="${id}"]`)?.remove();
+      }
+    });
+    // 孤立した spec-master-row を除去（念のため）
+    tbody.querySelectorAll('.spec-master-row').forEach(r => {
+      if (!newIds.has(Number(r.dataset.itemId))) r.remove();
     });
 
     // 追加・更新
@@ -3499,7 +3609,7 @@ const app = (() => {
       }
     });
 
-    // 順序修正＋仕様行を各アイテム行の直後に挿入
+    // 順序修正＋仕様行・機器仕様マスタ行を各アイテム行の直後に挿入
     const fragment = document.createDocumentFragment();
     sec.items.forEach((item, rowIdx) => {
       const itemRow = tbody.querySelector(`.item-row[data-item-id="${item.id}"]`);
@@ -3508,7 +3618,10 @@ const app = (() => {
         if (numEl) numEl.textContent = rowIdx + 1;
         fragment.appendChild(itemRow);
       }
-      // 仕様行
+      // 機器仕様マスタ行（item-row の直後）
+      const spmRow = tbody.querySelector(`.spec-master-row[data-item-id="${item.id}"]`);
+      if (spmRow) fragment.appendChild(spmRow);
+      // 説明文行
       (item.specLines || []).forEach((line, idx) => {
         fragment.appendChild(createSpecLineRowDOM(item.id, idx, line));
       });
@@ -5298,6 +5411,8 @@ const app = (() => {
     showSpecMasterModal,
     closeSpecMasterModal,
     saveSpecMaster,
+    resetToProductSpec,
+    applyDeptSpec,
     // 列表示
     toggleColDropdown,
     setColVisibility,

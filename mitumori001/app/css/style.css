@@ -1778,8 +1778,12 @@ input.item-gensui-b::-webkit-inner-spin-button {
   border: 1px solid #4a90d9; color: #1a73e8; background: #fff;
 }
 .spm-btn:hover { background: #e8f0fe; }
-.spm-new-btn  { border-color: #28a745; color: #28a745; }
+.spm-new-btn   { border-color: #28a745; color: #28a745; }
 .spm-new-btn:hover { background: #f0fff4; }
+.spm-reset-btn { border-color: #e57373; color: #c62828; }
+.spm-reset-btn:hover { background: #fff5f5; }
+.spm-dept-btn  { border-color: #7e57c2; color: #4527a0; }
+.spm-dept-btn:hover { background: #f3f0ff; }
 
 /* ── モーダル共通 ──────────────────────────────────────── */
 .modal-overlay {
