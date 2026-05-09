@@ -1203,6 +1203,7 @@ const app = (() => {
       '作業用電気使用料',
       '試運転用燃料・水・電気使用料',
       '見積記載以外の機器・設備工事',
+      '消費税及び地方税',
     ],
     fuukei: [
       '防油堤及びタンク基礎工事',
@@ -5058,6 +5059,7 @@ const app = (() => {
 
     let grandTotal = 0;
     let grandDairi = 0;
+    let grandGenka = 0;
     let html = '';
 
     state.sections.forEach(sec => {
@@ -5084,6 +5086,8 @@ const app = (() => {
       const secDairiTotal = secSubDairi != null ? secSubDairi * secQty : null;
       grandTotal += secTotal;
       if (secDairiTotal != null) grandDairi += secDairiTotal;
+      const secGenka = (sec.items || []).reduce((ss, i) => ss + (Number(i.genka) || 0) * (Number(i.qty) || 1), 0);
+      grandGenka += secGenka * secQty;
 
       html += `<div class="summary-section-block">
         <div class="summary-section-header">No.${sec.no}　${escHtml(sec.name || '')}</div>
@@ -5154,9 +5158,18 @@ const app = (() => {
       </div>`;
     });
 
-    const dairiGrandStr = rate != null ? `　代理店合計　<span>¥${fmtN(grandDairi)}</span>` : '';
+    const araRiBase = (state.deliveryPrice > 0) ? state.deliveryPrice : grandTotal;
+    const araRi     = araRiBase - grandGenka;
+    const araRiRate = araRiBase > 0 ? araRi / araRiBase * 100 : null;
+    const dairiStr  = rate != null
+      ? `<span class="sgf-sep">／</span><span class="sgf-item"><span class="sgf-label">代理店合計</span> <span>¥${fmtN(grandDairi)}</span></span>`
+      : '';
+    const araRiStr  = grandGenka > 0
+      ? `<span class="sgf-sep">｜</span><span class="sgf-item"><span class="sgf-label">粗利</span> <span>¥${fmtN(araRi)}</span></span>` +
+        `<span class="sgf-sep">｜</span><span class="sgf-item"><span class="sgf-label">粗利率</span> <span>${araRiRate != null ? araRiRate.toFixed(1) + '%' : '―'}</span></span>`
+      : '';
     html += `<div class="summary-grand-total">
-      合　計　<span>¥${fmtN(grandTotal)}</span>${dairiGrandStr}
+      <span class="sgf-item"><span class="sgf-label">合　計</span> <span>¥${fmtN(grandTotal)}</span></span>${dairiStr}${araRiStr}
     </div>`;
 
     container.innerHTML = html;

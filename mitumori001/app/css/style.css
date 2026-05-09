@@ -1508,14 +1508,21 @@ input.item-gensui-b::-webkit-inner-spin-button {
 .summary-subtotal-per td { background: #f5f5f5; border-top: 1px solid #bbb; color: #555; }
 .summary-subtotal td { background: #e8edf5; font-weight: bold; border-top: 1px solid #999; }
 .summary-grand-total {
-  text-align: right;
-  font-size: 16px;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 14px;
   font-weight: bold;
   padding: 12px 16px;
   color: #1a4d8f;
   border-top: 2px solid #1a4d8f;
 }
-.summary-grand-total span { font-size: 20px; }
+.summary-grand-total span { font-size: 18px; }
+.sgf-label { font-size: 13px; margin-right: 4px; }
+.sgf-sep   { font-size: 13px; color: #888; margin: 0 6px; }
+.sgf-item  { display: inline-flex; align-items: baseline; }
 
 /* ── 見積外工事 プリセットバー ──────────────────────────────── */
 .exclusion-preset-bar {
