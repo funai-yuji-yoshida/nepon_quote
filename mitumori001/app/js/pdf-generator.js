@@ -945,11 +945,13 @@ const QuotationPDF = (() => {
     sectionTotals.forEach((section, sIdx) => {
       const rows = [makeHeaderRow()];
 
-      rows.push([
-        { text: String(section.no || sIdx + 1), alignment: 'center', style: 'sectionHdr' },
-        { text: `※${section.name || ''}`, style: 'sectionHdr', colSpan: COLS - 1 },
-        ...emp(COLS - 2),
-      ]);
+      if ((section.name || '').trim()) {
+        rows.push([
+          { text: String(section.no || sIdx + 1), alignment: 'center', style: 'sectionHdr' },
+          { text: `※${section.name}`, style: 'sectionHdr', colSpan: COLS - 1 },
+          ...emp(COLS - 2),
+        ]);
+      }
 
       const catTotals = {};
       const catDairiTotals = {};
@@ -1131,11 +1133,13 @@ const QuotationPDF = (() => {
     sectionTotals.forEach((section, sIdx) => {
       const rows = [makeHeaderRow()];
 
-      rows.push([
-        { text: String(section.no || sIdx + 1), alignment: 'center', style: 'sectionHdr' },
-        { text: `※${section.name || ''}`, style: 'sectionHdr', colSpan: COLS - 1 },
-        ...emp(COLS - 2),
-      ]);
+      if ((section.name || '').trim()) {
+        rows.push([
+          { text: String(section.no || sIdx + 1), alignment: 'center', style: 'sectionHdr' },
+          { text: `※${section.name}`, style: 'sectionHdr', colSpan: COLS - 1 },
+          ...emp(COLS - 2),
+        ]);
+      }
 
       const catTotals = {};
       const catDairiTotals = {};
@@ -1325,11 +1329,13 @@ const QuotationPDF = (() => {
       const rows = [makeHeaderRow()];
 
       // セクションヘッダー行
-      rows.push([
-        { text: String(section.no || sIdx + 1), alignment: 'center', style: 'sectionHdr' },
-        { text: `※${section.name || ''}`, style: 'sectionHdr', colSpan: COLS - 1 },
-        ...emp(COLS - 2),
-      ]);
+      if ((section.name || '').trim()) {
+        rows.push([
+          { text: String(section.no || sIdx + 1), alignment: 'center', style: 'sectionHdr' },
+          { text: `※${section.name}`, style: 'sectionHdr', colSpan: COLS - 1 },
+          ...emp(COLS - 2),
+        ]);
+      }
 
       // 明細行（個別）
       (section.items || []).forEach(item => {
@@ -1489,11 +1495,13 @@ const QuotationPDF = (() => {
     sectionTotals.forEach((section, sIdx) => {
       const rows = [makeHeaderRow()];
 
-      rows.push([
-        { text: String(section.no || sIdx + 1), alignment: 'center', style: 'sectionHdr' },
-        { text: `※${section.name || ''}`, style: 'sectionHdr', colSpan: COLS - 1 },
-        ...emp(COLS - 2),
-      ]);
+      if ((section.name || '').trim()) {
+        rows.push([
+          { text: String(section.no || sIdx + 1), alignment: 'center', style: 'sectionHdr' },
+          { text: `※${section.name}`, style: 'sectionHdr', colSpan: COLS - 1 },
+          ...emp(COLS - 2),
+        ]);
+      }
 
       (section.items || []).forEach((item, itemIdx) => {
         const qtyStr = item.qty != null && item.qty !== '' ? String(item.qty) : '';
