@@ -217,7 +217,7 @@ const QuotationPDF = (() => {
           data, sectionTotals, grandTotal, discount, discountEnabled, quoteCategory,
           deliveryPrice, materialCost, laborCost, legalWelfare, legalRate, anzenCost,
           buhanDiscTotal: data.buhanDiscTotal || 0,
-          mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode,
+          mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal,
           showUchiwake,
           frpMode, frpItems, frpAB, frpPriceTotal, frpShikiriTotal,
         }),
@@ -246,16 +246,21 @@ const QuotationPDF = (() => {
 
   function buildCoverPage({ quoteNoStr, dateStr, branch, data, sectionTotals,
     grandTotal, discount, discountEnabled, quoteCategory, deliveryPrice, materialCost, laborCost, legalWelfare, legalRate, anzenCost, buhanDiscTotal = 0,
-    mainRate, pdfPriceMode, showUchiwake,
+    mainRate, pdfPriceMode, dairiTotal, showUchiwake,
     frpMode, frpItems, frpAB, frpPriceTotal, frpShikiriTotal }) {
-    const useDairi = pdfPriceMode === 'dairi' && mainRate != null;
+    const useDairi = pdfPriceMode === 'dairi' && (mainRate != null || dairiTotal != null);
     const dairi = (v, item) => {
-      if (item?.dairiUnitPrice != null) return item.dairiUnitPrice * (Number(item?.qty) || 1);
-      return Math.round((Number(v) || 0) * ((item?.dairiRate ?? mainRate) ?? mainRate));
+      const qty = Number(item?.qty) || 1;
+      if (item?.finalDairiUnit != null) return item.finalDairiUnit * qty;
+      if (item?.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
+      const rate = (item?.dairiRate ?? mainRate) ?? mainRate;
+      return rate != null ? Math.round((Number(v) || 0) * rate) : 0;
     };
     const dairiUnit = (item) => {
+      if (item?.finalDairiUnit != null) return item.finalDairiUnit;
       if (item?.dairiUnitPrice != null) return item.dairiUnitPrice;
-      return item?.unitPrice ? Math.round(item.unitPrice * ((item.dairiRate ?? mainRate) ?? mainRate)) : null;
+      const rate = (item?.dairiRate ?? mainRate) ?? mainRate;
+      return item?.unitPrice && rate != null ? Math.round(item.unitPrice * rate) : null;
     };
     // 値引き額ラベル: 工事を含む場合→「出精値引き」、物販・作業→「値引き額」
     const discountLabel = (quoteCategory || '').includes('工事') ? '出精値引き' : '値引き額';
@@ -359,8 +364,10 @@ const QuotationPDF = (() => {
         const s = entry.s;
         const dairiSubtotal = (s.items || []).reduce((sum, i) => {
           const qty = Number(i.qty) || 1;
+          if (i.finalDairiUnit != null) return sum + i.finalDairiUnit * qty;
           if (i.dairiUnitPrice != null) return sum + i.dairiUnitPrice * qty;
-          return sum + Math.round((Number(i.amount) || 0) * ((i.dairiRate ?? mainRate) ?? mainRate));
+          const rate = (i.dairiRate ?? mainRate) ?? mainRate;
+          return sum + (rate != null ? Math.round((Number(i.amount) || 0) * rate) : 0);
         }, 0);
         const row = [
           { text: String(s.no || ''), alignment: 'center', fontSize: itemFs },
@@ -904,8 +911,10 @@ const QuotationPDF = (() => {
     const useDairi = pdfPriceMode === 'dairi' && (mainRate != null || dairiTotal != null);
     const dairiItemAmt = (item) => {
       const qty = Number(item.qty) || 1;
+      if (item.finalDairiUnit != null) return item.finalDairiUnit * qty;
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
-      return Math.round((Number(item.amount) || 0) * (item.dairiRate ?? mainRate));
+      const rate = item.dairiRate ?? mainRate;
+      return rate != null ? Math.round((Number(item.amount) || 0) * rate) : 0;
     };
     const dairiItemUnit = (item) => {
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
@@ -1088,8 +1097,10 @@ const QuotationPDF = (() => {
     const useDairi = pdfPriceMode === 'dairi' && (mainRate != null || dairiTotal != null);
     const dairiItemAmt = (item) => {
       const qty = Number(item.qty) || 1;
+      if (item.finalDairiUnit != null) return item.finalDairiUnit * qty;
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
-      return Math.round((Number(item.amount) || 0) * (item.dairiRate ?? mainRate));
+      const rate = item.dairiRate ?? mainRate;
+      return rate != null ? Math.round((Number(item.amount) || 0) * rate) : 0;
     };
     const dairiItemUnit = (item) => {
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
@@ -1276,13 +1287,17 @@ const QuotationPDF = (() => {
   function buildKoujiDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal }) {
     const useDairi = pdfPriceMode === 'dairi' && (mainRate != null || dairiTotal != null);
     const dairiItemUnit = (item) => {
+      if (item.finalDairiUnit != null) return item.finalDairiUnit;
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
-      return item.unitPrice ? Math.round(item.unitPrice * (item.dairiRate ?? mainRate)) : null;
+      const rate = item.dairiRate ?? mainRate;
+      return item.unitPrice && rate != null ? Math.round(item.unitPrice * rate) : null;
     };
     const dairiItemAmt = (item) => {
       const qty = Number(item.qty) || 1;
+      if (item.finalDairiUnit != null) return item.finalDairiUnit * qty;
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
-      return Math.round((Number(item.amount) || 0) * (item.dairiRate ?? mainRate));
+      const rate = item.dairiRate ?? mainRate;
+      return rate != null ? Math.round((Number(item.amount) || 0) * rate) : 0;
     };
     const COL_WIDTHS = useDairi ? [22, '*', 36, 30, 48, 48, 52] : [22, '*', 36, 30, 58, 58];
     const COLS = useDairi ? 7 : 6;
@@ -1437,13 +1452,17 @@ const QuotationPDF = (() => {
   function buildBuppanSagyoDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal }) {
     const useDairi = pdfPriceMode === 'dairi' && (mainRate != null || dairiTotal != null);
     const dairiItemUnit = (item) => {
+      if (item.finalDairiUnit != null) return item.finalDairiUnit;
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
-      return item.unitPrice ? Math.round(item.unitPrice * (item.dairiRate ?? mainRate)) : null;
+      const rate = item.dairiRate ?? mainRate;
+      return item.unitPrice && rate != null ? Math.round(item.unitPrice * rate) : null;
     };
     const dairiItemAmt = (item) => {
       const qty = Number(item.qty) || 1;
+      if (item.finalDairiUnit != null) return item.finalDairiUnit * qty;
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
-      return Math.round((Number(item.amount) || 0) * (item.dairiRate ?? mainRate));
+      const rate = item.dairiRate ?? mainRate;
+      return rate != null ? Math.round((Number(item.amount) || 0) * rate) : 0;
     };
     const COL_WIDTHS = useDairi ? [22, '*', 36, 30, 48, 48, 52] : [22, '*', 36, 30, 58, 58];
     const COLS = useDairi ? 7 : 6;
