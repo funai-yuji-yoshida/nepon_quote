@@ -63,11 +63,9 @@ const QuotationPDF = (() => {
     if (fontLoaded) return true;
 
     // CDNからフォントを取得（Latin + 日本語の両方を含む完全なフォントが必要）
-    // ※ サブセット(japanese-only)はLatinが含まれず数字・英字が表示されない
+    // ※ OTFはpdfmake 0.1.xでTTFとして解析されハングするためTTFのみ使用する
     const candidates = [
-      // 1st: NotoSansJP SubsetOTF（Google Fonts GitHub）- Latin+日本語含む、約5MB
-      'https://cdn.jsdelivr.net/gh/googlefonts/noto-cjk@main/Sans/SubsetOTF/JP/NotoSansJP-Regular.otf',
-      // 2nd: minoryorg ミラー（TTF形式）
+      // minoryorg ミラー（TTF形式）Latin+日本語含む
       'https://cdn.jsdelivr.net/gh/minoryorg/Noto-Sans-CJK-JP/fonts/NotoSansCJKjp-Regular.ttf',
     ];
 
@@ -79,14 +77,14 @@ const QuotationPDF = (() => {
         const b64 = arrayBufferToBase64(buf);
         // 拡張子で登録名を決める（pdfmakeはfontkit経由でフォーマット自動判定）
         pdfMake.vfs['NotoSansJP.ttf'] = b64;
-        pdfMake.fonts = {
+        pdfMake.fonts = Object.assign({}, pdfMake.fonts || {}, {
           NotoSansJP: {
             normal:      'NotoSansJP.ttf',
             bold:        'NotoSansJP.ttf',
             italics:     'NotoSansJP.ttf',
             bolditalics: 'NotoSansJP.ttf',
           }
-        };
+        });
         fontLoaded = true;
         console.log('フォント読み込み成功:', url);
         return true;
@@ -270,7 +268,7 @@ const QuotationPDF = (() => {
     // 代理店モード: 7列（単価・貴社仕切・金額）、定価モード: 6列
     const COL_WIDTHS = useDairi ? [22, '*', 30, 24, 46, 46, 50] : [22, '*', 36, 30, 58, 58];
     const COLS = useDairi ? 7 : 6;
-    const emp = (n) => Array.from({ length: n }, () => ({}));
+    const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
 
     // ── サマリーテーブルの行 ──────────────────────────────────
     const tableRows = [];
@@ -350,14 +348,16 @@ const QuotationPDF = (() => {
     // 第2パス: 決定したフォントサイズで行を生成
     mirrorEntries.forEach(entry => {
       if (entry.type === 'frp') {
-        tableRows.push([
+        const row = [
           { text: '1', alignment: 'center', fontSize: itemFs },
           { text: 'FRP機器一式', fontSize: itemFs },
           { text: '1', alignment: 'center', fontSize: itemFs },
           { text: '式', alignment: 'center', fontSize: itemFs },
           { text: '', fontSize: itemFs },
           { text: fmt(frpShikiriTotal), alignment: 'right', fontSize: itemFs },
-        ]);
+        ];
+        if (useDairi) row.splice(5, 0, { text: '', fontSize: itemFs });
+        tableRows.push(row);
         return;
       }
       if (entry.type === 'section') {
@@ -853,7 +853,7 @@ const QuotationPDF = (() => {
           { text: '', border: [true, false, false, false] },
           { text: `　${spec}`, fontSize: 8, color: '#555', colSpan: 7,
             border: [false, false, true, false] },
-          {}, {}, {}, {}, {}, {},
+          { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
         ]);
       });
     });
@@ -877,7 +877,7 @@ const QuotationPDF = (() => {
       { text: '', border: [true, true, false, true], fillColor: '#e8f0f8' },
       { text: '合　　計', alignment: 'center', bold: true, colSpan: 4,
         border: [false, true, false, true], fillColor: '#e8f0f8' },
-      {}, {}, {},
+      { text: '' }, { text: '' }, { text: '' },
       { text: fmt(frpPriceTotal),   alignment: 'right', bold: true,
         border: [false, true, false, true], fillColor: '#e8f0f8' },
       { text: '', border: [false, true, false, true], fillColor: '#e8f0f8' },
@@ -922,7 +922,7 @@ const QuotationPDF = (() => {
     };
     const COL_WIDTHS = useDairi ? [22, '*', 36, 30, 48, 48, 52] : [22, '*', 36, 30, 58, 58];
     const COLS = useDairi ? 7 : 6;
-    const emp = (n) => Array.from({ length: n }, () => ({}));
+    const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
 
     const makeHeaderRow = () => useDairi ? [
@@ -1110,7 +1110,7 @@ const QuotationPDF = (() => {
     };
     const COL_WIDTHS = useDairi ? [22, '*', 36, 30, 48, 48, 52] : [22, '*', 36, 30, 58, 58];
     const COLS = useDairi ? 7 : 6;
-    const emp = (n) => Array.from({ length: n }, () => ({}));
+    const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
 
     const makeHeaderRow = () => useDairi ? [
@@ -1305,7 +1305,7 @@ const QuotationPDF = (() => {
     };
     const COL_WIDTHS = useDairi ? [22, '*', 36, 30, 48, 48, 52] : [22, '*', 36, 30, 58, 58];
     const COLS = useDairi ? 7 : 6;
-    const emp = (n) => Array.from({ length: n }, () => ({}));
+    const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
 
     const makeHeaderRow = () => useDairi ? [
@@ -1472,7 +1472,7 @@ const QuotationPDF = (() => {
     };
     const COL_WIDTHS = useDairi ? [22, '*', 36, 30, 48, 48, 52] : [22, '*', 36, 30, 58, 58];
     const COLS = useDairi ? 7 : 6;
-    const emp = (n) => Array.from({ length: n }, () => ({}));
+    const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
 
     const makeHeaderRow = () => useDairi ? [
@@ -1675,7 +1675,7 @@ const QuotationPDF = (() => {
       : [hdr('No.'), hdr('項　　　目'), hdr('数量'), hdr('単位'), hdr('単　価'), hdr('金　　額')];
 
     const tableRows = [headerRow];
-    const empties = (n) => Array(n).fill({});
+    const empties = (n) => Array.from({ length: n }, () => ({ text: '' }));
 
     sectionRows.forEach(({ sec, catTotals, catDairiTotals, noCategory }) => {
       // セクションヘッダー
@@ -1731,7 +1731,7 @@ const QuotationPDF = (() => {
       const subtotalRow = [
         { text: '', border: [true, true, true, true], fillColor: F },
         { text: '─ 小 計 ─', alignment: 'center', bold: true, colSpan: 4, border: [true, true, true, true], fillColor: F },
-        {}, {}, {},
+        { text: '' }, { text: '' }, { text: '' },
         { text: fmt(subtotal), alignment: 'right', bold: true, border: [true, true, true, true], fillColor: F },
       ];
       if (showDairi) {
@@ -1744,7 +1744,7 @@ const QuotationPDF = (() => {
         const secTotalRow = [
           { text: '', border: [true, false, true, true], fillColor: G },
           { text: `×${secQtyPdf}式　合計`, alignment: 'center', bold: true, colSpan: 4, border: [true, false, true, true], fillColor: G },
-          {}, {}, {},
+          { text: '' }, { text: '' }, { text: '' },
           { text: fmt(subtotal * secQtyPdf), alignment: 'right', bold: true, border: [true, false, true, true], fillColor: G },
         ];
         if (showDairi) {
@@ -1768,7 +1768,7 @@ const QuotationPDF = (() => {
     const grandRow = [
       { text: '', border: [true, true, false, false] },
       { text: '合　　計', alignment: 'center', bold: true, colSpan: 4, border: [false, true, false, false] },
-      {}, {}, {},
+      { text: '' }, { text: '' }, { text: '' },
       { text: fmt(grandTotal), alignment: 'right', bold: true, border: [false, true, true, false] },
     ];
     if (showDairi) {
@@ -1845,9 +1845,55 @@ const QuotationPDF = (() => {
       return new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error('PDF生成タイムアウト（30秒）')), 30000);
         try {
+          console.log('[PDF] buildDocDefinition 開始');
           const docDef = buildDocDefinition(data);
-          pdfMake.createPdf(docDef).getBlob(blob => { clearTimeout(timer); resolve(blob); });
+          console.log('[PDF] content構造:', docDef.content.length + '件',
+            docDef.content.map((c, i) => i + ':' +
+              (!c || typeof c !== 'object' ? 'prim' :
+               c.table ? 'table' + (Array.isArray(c.table.widths) ? c.table.widths.length : '?') :
+               c.columns ? 'cols' + c.columns.length :
+               c.stack ? 'stack' :
+               c.text !== undefined ? 'text' :
+               Object.keys(c).join('-'))));
+          console.log('[PDF] buildDocDefinition 完了, createPdf 開始');
+          // テーブルのセルをスキャンしてundefinedを探す
+          (function scanTables(node, path) {
+            if (!node || typeof node !== 'object') return;
+            if (node.table && Array.isArray(node.table.body)) {
+              const colCount = Array.isArray(node.table.widths) ? node.table.widths.length : null;
+              node.table.body.forEach((row, ri) => {
+                if (!Array.isArray(row)) { console.error('[PDF] 不正な行:', path, 'row', ri, row); return; }
+                if (colCount !== null && row.length !== colCount) {
+                  console.error('[PDF] 列数不一致:', path, 'row', ri, '期待:', colCount, '実際:', row.length, row);
+                }
+                for (let ci = 0; ci < (colCount || row.length); ci++) {
+                  const cell = row[ci];
+                  if (cell === undefined || cell === null || cell === false) {
+                    console.error('[PDF] 不正なセル:', path, 'row', ri, 'col', ci, '=', cell);
+                  }
+                }
+              });
+            }
+            if (Array.isArray(node)) { node.forEach((item, i) => scanTables(item, path + '[' + i + ']')); return; }
+            if (node.content)  scanTables(node.content,  path + '.content');
+            if (node.stack)    scanTables(node.stack,    path + '.stack');
+            if (node.columns)  scanTables(node.columns,  path + '.columns');
+            if (node.header)   { try { scanTables(node.header(2, 10), path + '.header'); } catch(e) {} }
+          })(docDef.content, 'content');
+          pdfMake.createPdf(docDef).getBase64((base64) => {
+            console.log('[PDF] getBase64 コールバック受信, base64長:', base64 ? base64.length : 'null');
+            clearTimeout(timer);
+            try {
+              const binary = atob(base64);
+              const bytes = new Uint8Array(binary.length);
+              for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+              resolve(new Blob([bytes], { type: 'application/pdf' }));
+            } catch (e2) {
+              reject(e2);
+            }
+          });
         } catch (e) {
+          console.error('[PDF] エラー:', e);
           clearTimeout(timer);
           reject(e);
         }

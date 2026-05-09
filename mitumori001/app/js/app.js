@@ -2355,9 +2355,13 @@ const app = (() => {
     }
 
     if (entering) {
-      state.frpMode   = true;
-      state.frpItems  = [];
-      state.nextFrpId = 1;
+      state.frpMode       = true;
+      state.frpItems      = [];
+      state.nextFrpId     = 1;
+      state.sections      = [];
+      state.nextSectionId = 1;
+      state.nextItemId    = 1;
+      renderSections();
     } else {
       state.frpMode  = false;
       state.frpItems = [];
@@ -2440,7 +2444,9 @@ const app = (() => {
         </div>
       `).join('');
       dd.querySelectorAll('.frp-search-item[data-idx]').forEach(el => {
-        el.addEventListener('click', () => {
+        el.addEventListener('mousedown', (e) => {
+          // blurより先にmousedownで選択確定することでblur/clickの競合を回避
+          e.preventDefault();
           const r = results[Number(el.dataset.idx)];
           addFrpItem(r);
           hideFrpDropdown();
@@ -2460,8 +2466,8 @@ const app = (() => {
   function addFrpItem(record) {
     const specs = [];
     for (let i = 1; i <= 9; i++) {
-      const v = record[`spec${i}`] || '';
-      if (v.trim()) specs.push(v.trim());
+      const v = String(record[`spec${i}`] || '').trim();
+      if (v) specs.push(v);
     }
     const item = {
       id:      state.nextFrpId++,
