@@ -280,8 +280,8 @@ const QuotationPDF = (() => {
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '単　価', style: 'tableHeader' },
-      { text: '貴社仕切', style: 'tableHeader' },
-      { text: '金　　額', style: 'tableHeader' },
+      { text: '仕切単価', style: 'tableHeader' },
+      { text: '仕切金額', style: 'tableHeader' },
     ] : [
       { text: 'No.', style: 'tableHeader' },
       { text: '項　　　目', style: 'tableHeader' },
@@ -467,13 +467,16 @@ const QuotationPDF = (() => {
         return ss + Math.round((Number(i.amount) || 0) * ((i.dairiRate ?? mainRate) ?? mainRate));
       }, 0) * (s.secQty || 1), 0);
 
-    // 合計行
-    tableRows.push([
-      { text: '', border: [true, true, false, false] },
-      { text: '合　　計', alignment: 'center', bold: true, fontSize: itemFs, colSpan: spanMid, border: [false, true, false, false] },
-      ...emp(spanMid - 1),
-      { text: fmt(useDairi ? dairiGrandTotal : grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
-    ]);
+    // 合計行: 代理店モードで値引きなしの場合は「貴社お渡し価格」と同額になるため省略
+    const willShowDeliveryPrice = !isTeika && discountEnabled && !isBuppan && useDairi;
+    if (!(willShowDeliveryPrice && discount === 0)) {
+      tableRows.push([
+        { text: '', border: [true, true, false, false] },
+        { text: '合　　計', alignment: 'center', bold: true, fontSize: itemFs, colSpan: spanMid, border: [false, true, false, false] },
+        ...emp(spanMid - 1),
+        { text: fmt(useDairi ? dairiGrandTotal : grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
+      ]);
+    }
 
     if (!isTeika && discountEnabled && !isBuppan) {
     // 値引き額：値引きがある場合のみ表示
@@ -920,8 +923,8 @@ const QuotationPDF = (() => {
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
       return item.unitPrice ? Math.round(item.unitPrice * (item.dairiRate ?? mainRate)) : null;
     };
-    const COL_WIDTHS = useDairi ? [22, '*', 36, 30, 48, 48, 52] : [22, '*', 36, 30, 58, 58];
-    const COLS = useDairi ? 7 : 6;
+    const COL_WIDTHS = useDairi ? [20, '*', 28, 24, 44, 44, 44, 50] : [22, '*', 36, 30, 58, 58];
+    const COLS = useDairi ? 8 : 6;
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
 
@@ -931,8 +934,9 @@ const QuotationPDF = (() => {
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '単　価', style: 'tableHeader' },
-      { text: '貴社仕切', style: 'tableHeader' },
-      { text: '金　　額', style: 'tableHeader' },
+      { text: '合　計', style: 'tableHeader' },
+      { text: '仕切単価', style: 'tableHeader' },
+      { text: '仕切合計', style: 'tableHeader' },
     ] : [
       { text: 'No.', style: 'tableHeader' },
       { text: '項　　　目', style: 'tableHeader' },
@@ -966,20 +970,23 @@ const QuotationPDF = (() => {
         }
       });
 
+      let itemNo = 1;
       normalItems.forEach(item => {
+        const noCell = { text: String(itemNo++), alignment: 'right' };
         if (useDairi) {
           rows.push([
-            { text: '' },
+            noCell,
             { text: item.name || '' },
             { text: item.qty != null && item.qty !== '' ? String(item.qty) : '', alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
             { text: item.unitPrice ? fmt(item.unitPrice) : '', alignment: 'right' },
+            { text: fmt(item.amount), alignment: 'right' },
             { text: dairiItemUnit(item) != null ? fmt(dairiItemUnit(item)) : '', alignment: 'right' },
             { text: fmt(dairiItemAmt(item)), alignment: 'right' },
           ]);
         } else {
           rows.push([
-            { text: '' },
+            noCell,
             { text: item.name || '' },
             { text: item.qty != null && item.qty !== '' ? String(item.qty) : '', alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
@@ -993,19 +1000,21 @@ const QuotationPDF = (() => {
       CALC_CATEGORY_ORDER.forEach(prefix => {
         const amount = useDairi ? catDairiTotals[prefix] : catTotals[prefix];
         if (!amount) return;
+        const noCell = { text: String(itemNo++), alignment: 'right' };
         if (useDairi) {
           rows.push([
-            { text: '' },
+            noCell,
             { text: CALC_CATEGORY_LABELS[prefix].slice(1) },
             { text: '1', alignment: 'right' },
             { text: '式', alignment: 'center' },
             { text: '', alignment: 'right' },
+            { text: fmt(catTotals[prefix] || 0), alignment: 'right' },
             { text: '', alignment: 'right' },
             { text: fmt(amount), alignment: 'right' },
           ]);
         } else {
           rows.push([
-            { text: '' },
+            noCell,
             { text: CALC_CATEGORY_LABELS[prefix].slice(1) },
             { text: '1', alignment: 'right' },
             { text: '式', alignment: 'center' },
@@ -1025,7 +1034,7 @@ const QuotationPDF = (() => {
           { text: '', border: [false, false, false, false] },
           { text: '', border: [false, false, true, false] },
         ];
-        if (useDairi) er.splice(5, 0, { text: '', border: [false, false, false, false] });
+        if (useDairi) er.splice(5, 0, { text: '', border: [false, false, false, false] }, { text: '', border: [false, false, false, false] });
         rows.push(er);
       }
 
@@ -1108,8 +1117,8 @@ const QuotationPDF = (() => {
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
       return item.unitPrice ? Math.round(item.unitPrice * (item.dairiRate ?? mainRate)) : null;
     };
-    const COL_WIDTHS = useDairi ? [22, '*', 36, 30, 48, 48, 52] : [22, '*', 36, 30, 58, 58];
-    const COLS = useDairi ? 7 : 6;
+    const COL_WIDTHS = useDairi ? [20, '*', 28, 24, 44, 44, 44, 50] : [22, '*', 36, 30, 58, 58];
+    const COLS = useDairi ? 8 : 6;
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
 
@@ -1119,8 +1128,9 @@ const QuotationPDF = (() => {
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '単　価', style: 'tableHeader' },
-      { text: '貴社仕切', style: 'tableHeader' },
-      { text: '金　　額', style: 'tableHeader' },
+      { text: '合　計', style: 'tableHeader' },
+      { text: '仕切単価', style: 'tableHeader' },
+      { text: '仕切合計', style: 'tableHeader' },
     ] : [
       { text: 'No.', style: 'tableHeader' },
       { text: '項　　　目', style: 'tableHeader' },
@@ -1163,6 +1173,7 @@ const QuotationPDF = (() => {
             { text: item.qty != null && item.qty !== '' ? String(item.qty) : '', alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
             { text: item.unitPrice ? fmt(item.unitPrice) : '', alignment: 'right' },
+            { text: fmt(item.amount), alignment: 'right' },
             { text: dairiItemUnit(item) != null ? fmt(dairiItemUnit(item)) : '', alignment: 'right' },
             { text: fmt(dairiItemAmt(item)), alignment: 'right' },
           ]);
@@ -1196,6 +1207,7 @@ const QuotationPDF = (() => {
             { text: '1', alignment: 'right' },
             { text: '式', alignment: 'center' },
             { text: '', alignment: 'right' },
+            { text: fmt(catTotals[prefix] || 0), alignment: 'right' },
             { text: '', alignment: 'right' },
             { text: fmt(amount), alignment: 'right' },
           ]);
@@ -1221,7 +1233,7 @@ const QuotationPDF = (() => {
           { text: '', border: [false, false, false, false] },
           { text: '', border: [false, false, true, false] },
         ];
-        if (useDairi) er.splice(5, 0, { text: '', border: [false, false, false, false] });
+        if (useDairi) er.splice(5, 0, { text: '', border: [false, false, false, false] }, { text: '', border: [false, false, false, false] });
         rows.push(er);
       }
 
@@ -1303,8 +1315,8 @@ const QuotationPDF = (() => {
       const rate = item.dairiRate ?? mainRate;
       return rate != null ? Math.round((Number(item.amount) || 0) * rate) : 0;
     };
-    const COL_WIDTHS = useDairi ? [22, '*', 36, 30, 48, 48, 52] : [22, '*', 36, 30, 58, 58];
-    const COLS = useDairi ? 7 : 6;
+    const COL_WIDTHS = useDairi ? [20, '*', 28, 24, 44, 44, 44, 50] : [22, '*', 36, 30, 58, 58];
+    const COLS = useDairi ? 8 : 6;
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
 
@@ -1314,8 +1326,9 @@ const QuotationPDF = (() => {
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '単　価', style: 'tableHeader' },
-      { text: '貴社仕切', style: 'tableHeader' },
-      { text: '金　　額', style: 'tableHeader' },
+      { text: '合　計', style: 'tableHeader' },
+      { text: '仕切単価', style: 'tableHeader' },
+      { text: '仕切合計', style: 'tableHeader' },
     ] : [
       { text: 'No.', style: 'tableHeader' },
       { text: '項　　　目', style: 'tableHeader' },
@@ -1338,21 +1351,24 @@ const QuotationPDF = (() => {
       }
 
       // 明細行（個別）
+      let itemNo = 1;
       (section.items || []).forEach(item => {
         const qtyStr = item.qty != null && item.qty !== '' ? String(item.qty) : '';
+        const noCell = { text: String(itemNo++), alignment: 'right' };
         if (useDairi) {
           rows.push([
-            { text: '' },
+            noCell,
             { text: item.name || '' },
             { text: qtyStr, alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
             { text: item.unitPrice ? fmt(item.unitPrice) : '', alignment: 'right' },
+            { text: fmt(item.amount), alignment: 'right' },
             { text: dairiItemUnit(item) != null ? fmt(dairiItemUnit(item)) : '', alignment: 'right' },
             { text: fmt(dairiItemAmt(item)), alignment: 'right' },
           ]);
         } else {
           rows.push([
-            { text: '' },
+            noCell,
             { text: item.name || '' },
             { text: qtyStr, alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
@@ -1380,7 +1396,7 @@ const QuotationPDF = (() => {
           { text: '', border: [false, false, false, false] },
           { text: '', border: [false, false, true, false] },
         ];
-        if (useDairi) er.splice(5, 0, { text: '', border: [false, false, false, false] });
+        if (useDairi) er.splice(5, 0, { text: '', border: [false, false, false, false] }, { text: '', border: [false, false, false, false] });
         rows.push(er);
       }
 
@@ -1470,8 +1486,8 @@ const QuotationPDF = (() => {
       const rate = item.dairiRate ?? mainRate;
       return rate != null ? Math.round((Number(item.amount) || 0) * rate) : 0;
     };
-    const COL_WIDTHS = useDairi ? [22, '*', 36, 30, 48, 48, 52] : [22, '*', 36, 30, 58, 58];
-    const COLS = useDairi ? 7 : 6;
+    const COL_WIDTHS = useDairi ? [20, '*', 28, 24, 44, 44, 44, 50] : [22, '*', 36, 30, 58, 58];
+    const COLS = useDairi ? 8 : 6;
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
 
@@ -1481,8 +1497,9 @@ const QuotationPDF = (() => {
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '単　価', style: 'tableHeader' },
-      { text: '貴社仕切', style: 'tableHeader' },
-      { text: '金　　額', style: 'tableHeader' },
+      { text: '合　計', style: 'tableHeader' },
+      { text: '仕切単価', style: 'tableHeader' },
+      { text: '仕切合計', style: 'tableHeader' },
     ] : [
       { text: 'No.', style: 'tableHeader' },
       { text: '項　　　目', style: 'tableHeader' },
@@ -1513,6 +1530,7 @@ const QuotationPDF = (() => {
             { text: qtyStr, alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
             { text: item.unitPrice ? fmt(item.unitPrice) : '', alignment: 'right' },
+            { text: fmt(item.amount), alignment: 'right' },
             { text: dairiItemUnit(item) != null ? fmt(dairiItemUnit(item)) : '', alignment: 'right' },
             { text: fmt(dairiItemAmt(item)), alignment: 'right' },
           ]);
@@ -1551,7 +1569,7 @@ const QuotationPDF = (() => {
           { text: '', border: [false, false, false, false] },
           { text: '', border: [false, false, true, false] },
         ];
-        if (useDairi) er.splice(5, 0, { text: '', border: [false, false, false, false] });
+        if (useDairi) er.splice(5, 0, { text: '', border: [false, false, false, false] }, { text: '', border: [false, false, false, false] });
         rows.push(er);
       }
 
