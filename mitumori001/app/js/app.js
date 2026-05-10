@@ -4708,6 +4708,15 @@ const app = (() => {
       if (!confirm('見積番号が未設定です。このまま生成しますか？')) return;
     }
 
+    // 原価未入力チェック
+    const missingGenkaItems = state.sections.flatMap(sec =>
+      (sec.items || []).filter(item => !item.genka).map(item => item.name || '（名称未入力）')
+    );
+    if (missingGenkaItems.length > 0) {
+      const list = missingGenkaItems.map((n, i) => `${i + 1}. ${n}`).join('\n');
+      if (!confirm(`原価が未入力の項目が ${missingGenkaItems.length} 件あります。\n\n${list}\n\nこのまま印刷しますか？`)) return;
+    }
+
     const btnSimple = document.getElementById('btnSimplePDF');
     const btnDetail = document.getElementById('btnDetailPDF');
     const btn = mode === 'simple' ? btnSimple : btnDetail;
