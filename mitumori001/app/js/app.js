@@ -1079,18 +1079,41 @@ const app = (() => {
     if (discountLabelEl) {
       discountLabelEl.textContent = isKouji ? '出精値引き' : '値引き額';
     }
-    // 見積鏡・明細印刷オプション: 工事以外（物販・作業）のとき表示
+    // ─── 印刷オプション表示ルール ───────────────────────────────
+    // 【工事・物販・作業 共通】
+    //   printCoverGroup   (鏡のみ)    → 常時表示（ラジオボタン）
+    //   printDetailOption (鏡+明細)   → 常時表示（ラジオボタン）
+    //   ※ 上記2つはラジオボタンで排他選択。工事を含む全カテゴリに適用。
+    //   ※ 「工事は常に明細印刷」という思い込みで非表示にしないこと。
+    // 【工事・作業のみ】
+    //   naiyakuPrintGroup (内訳)      → 表示
+    // 【物販のみ】
+    //   naiyakuPrintGroup             → 非表示
+    // ────────────────────────────────────────────────────────────
     const printCoverGroup = document.getElementById('printCoverGroup');
-    if (printCoverGroup) printCoverGroup.style.display = isKouji ? 'none' : '';
+    if (printCoverGroup) printCoverGroup.style.display = '';
     const printDetailOption = document.getElementById('printDetailOption');
     if (printDetailOption) {
-      printDetailOption.style.display = isKouji ? 'none' : '';
+      printDetailOption.style.display = '';
     }
     // 内訳印刷オプション: 工事・作業のとき表示、物販は非表示
     const isBuhan = (state.quoteCategory || '').includes('物販');
     const isSagyo = (state.quoteCategory || '').includes('作業');
     const naiyakuGrp = document.getElementById('naiyakuPrintGroup');
     if (naiyakuGrp) naiyakuGrp.style.display = (isKouji || isSagyo) ? '' : 'none';
+    // カテゴリ別デフォルト印刷モード設定
+    // 物販: 鏡のみ  作業: 鏡のみ＋内訳チェックON  工事: 鏡＋明細（HTML既定値）
+    const radioCover  = document.getElementById('printCoverPage');
+    const radioDetail = document.getElementById('printDetailPages');
+    const chkNaiyaku  = document.getElementById('printNaiyaku');
+    if (isBuhan) {
+      if (radioCover)  radioCover.checked  = true;
+      if (radioDetail) radioDetail.checked = false;
+    } else if (isSagyo) {
+      if (radioCover)  radioCover.checked  = true;
+      if (radioDetail) radioDetail.checked = false;
+      if (chkNaiyaku)  chkNaiyaku.checked  = true;
+    }
     // 物販: 値引き額行を非表示
     const rowDiscountEl = document.getElementById('rowDiscount');
     if (rowDiscountEl) rowDiscountEl.style.display = isBuhan ? 'none' : '';
@@ -4708,14 +4731,14 @@ const app = (() => {
       if (!confirm('見積番号が未設定です。このまま生成しますか？')) return;
     }
 
-    // 原価未入力チェック
-    const missingGenkaItems = state.sections.flatMap(sec =>
-      (sec.items || []).filter(item => !item.genka).map(item => item.name || '（名称未入力）')
-    );
-    if (missingGenkaItems.length > 0) {
-      const list = missingGenkaItems.map((n, i) => `${i + 1}. ${n}`).join('\n');
-      if (!confirm(`原価が未入力の項目が ${missingGenkaItems.length} 件あります。\n\n${list}\n\nこのまま印刷しますか？`)) return;
-    }
+    // 原価未入力チェック（停止中）
+    // const missingGenkaItems = state.sections.flatMap(sec =>
+    //   (sec.items || []).filter(item => !item.genka).map(item => item.name || '（名称未入力）')
+    // );
+    // if (missingGenkaItems.length > 0) {
+    //   const list = missingGenkaItems.map((n, i) => `${i + 1}. ${n}`).join('\n');
+    //   if (!confirm(`原価が未入力の項目が ${missingGenkaItems.length} 件あります。\n\n${list}\n\nこのまま印刷しますか？`)) return;
+    // }
 
     const btnSimple = document.getElementById('btnSimplePDF');
     const btnDetail = document.getElementById('btnDetailPDF');
@@ -4805,8 +4828,8 @@ const app = (() => {
         return cb ? cb.checked : true;
       })(),
       printDetail:     (() => {
-        const isKouji = (state.quoteCategory || '').includes('工事');
-        if (isKouji || state.frpMode) return true; // 工事・FRPは常に明細印刷
+        if (state.frpMode) return true; // FRPは常に明細印刷
+        // ※ 工事であっても強制trueにしないこと。チェックボックス/ラジオの値に従う。
         const cb = document.getElementById('printDetailPages');
         return cb ? cb.checked : true;
       })(),
