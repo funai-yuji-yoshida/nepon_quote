@@ -4956,12 +4956,12 @@ const app = (() => {
       // ① まずサブフォームなしで基本フィールドを保存
       const apiDataMain = Object.assign({}, apiData);
       delete apiDataMain.LinkingModule1;
+      delete apiDataMain._subformCurrentItems;
       const updateRes = await ZOHO.CRM.API.updateRecord({
         Entity:  'Quotes',
         APIData: apiDataMain,
         Trigger: [],
       });
-      console.log('updateRecord(main) response:', JSON.stringify(updateRes));
 
       const resData = updateRes?.data?.[0];
       if (resData?.code !== 'SUCCESS') {
@@ -4978,16 +4978,16 @@ const app = (() => {
       // ② サブフォームを deleteRecord で旧行削除 → updateRecord で新規挿入
       const currentItems = apiData._subformCurrentItems || [];
       delete apiData._subformCurrentItems;
-      const oldIds = state.subformRowIds || [];
-
       // ②-a 旧行を LinkingModule1 レコードとして直接削除
-      if (oldIds.length > 0) {
+      // ※ getRecord/getRelatedRecords はサブフォームデータを返さないため state.subformRowIds のIDに依存
+      const idsToDelete = state.subformRowIds?.length ? [...state.subformRowIds] : [];
+      if (idsToDelete.length > 0) {
         await ZOHO.CRM.API.deleteRecord({
           Entity:   'LinkingModule1',
-          RecordID: oldIds,
+          RecordID: idsToDelete,
         });
-        state.subformRowIds = [];
       }
+      state.subformRowIds = [];
 
       // ②-b 現在の明細を新規挿入
       let newIds = [];
