@@ -4451,6 +4451,8 @@ const app = (() => {
       if (dpHidden) dpHidden.value = frpShikiriTotal;
       const pdfModeGrp = document.getElementById('pdfPriceModeGroup');
       if (pdfModeGrp) pdfModeGrp.style.display = '';
+      const subtotalBothGrpFrp = document.getElementById('subtotalBothGroup');
+      if (subtotalBothGrpFrp) subtotalBothGrpFrp.style.display = '';
 
       setText('sum-quoteNo',   state.seqNo || '（未採番）');
       setText('sum-date',      formatDisplayDate(new Date(getValue('quoteDate') || Date.now())));
@@ -4646,6 +4648,8 @@ const app = (() => {
     // PDF価格モード選択の表示切替
     const pdfModeGrp = document.getElementById('pdfPriceModeGroup');
     if (pdfModeGrp) pdfModeGrp.style.display = dairiTotal != null ? '' : 'none';
+    const subtotalBothGrp = document.getElementById('subtotalBothGroup');
+    if (subtotalBothGrp) subtotalBothGrp.style.display = dairiTotal != null ? '' : 'none';
     const dpHidden = document.getElementById('deliveryPrice');
     if (dpHidden) dpHidden.value = deliveryPrice;
 
@@ -4847,6 +4851,10 @@ const app = (() => {
         return cb ? cb.checked : true;
       })(),
       printMode:        mode,
+      showSubtotalBoth: (() => {
+        const cb = document.getElementById('printSubtotalBoth');
+        return cb ? cb.checked : false;
+      })(),
       frpMode:   state.frpMode  || false,
       frpAB:     state.frpAB    || 'A',
       frpItems:  state.frpMode ? (state.frpItems || []) : undefined,
