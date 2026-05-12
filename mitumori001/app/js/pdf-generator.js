@@ -269,7 +269,7 @@ const QuotationPDF = (() => {
           deliveryPrice, materialCost, laborCost, legalWelfare, legalRate, anzenCost,
           buhanDiscTotal: data.buhanDiscTotal || 0,
           mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal,
-          showUchiwake, showLegalWelfareDetail: data.showLegalWelfareDetail, legalWelfareItems: data.legalWelfareItems || [],
+          showUchiwake,
           frpMode, frpItems, frpAB, frpPriceTotal, frpShikiriTotal,
         }),
 
@@ -297,7 +297,7 @@ const QuotationPDF = (() => {
 
   function buildCoverPage({ quoteNoStr, dateStr, branch, data, sectionTotals,
     grandTotal, discount, discountEnabled, quoteCategory, deliveryPrice, materialCost, laborCost, legalWelfare, legalRate, anzenCost, buhanDiscTotal = 0,
-    mainRate, pdfPriceMode, dairiTotal, showUchiwake, showLegalWelfareDetail = false, legalWelfareItems = [],
+    mainRate, pdfPriceMode, dairiTotal, showUchiwake,
     frpMode, frpItems, frpAB, frpPriceTotal, frpShikiriTotal }) {
     const isDairiAvailable = mainRate != null || dairiTotal != null;
     const isActiveDairi = pdfPriceMode !== 'teika' && isDairiAvailable;
@@ -392,18 +392,37 @@ const QuotationPDF = (() => {
       mirrorEntries.push({ type: 'frp' });
     }
     // 見積外工事行・固定行も含めてトータル行数を算出
-    const legalWelfareItemCount = showLegalWelfareDetail ? (legalWelfareItems || []).length : 0;
+    // 工事カテゴリは isTeika でも showUchiwake=true なら内訳8行を表示するためカウントに含める
+    const showUchiwakeInCover = showUchiwake && (!isTeika || isKouji);
     const mirrorRowCount = mirrorEntries.length + exRowCount +
-      (isTeika ? 1 : showUchiwake ? 8 + legalWelfareItemCount : 3);
+      (showUchiwakeInCover ? 8 : isTeika ? 1 : 3);
 
     // 行数に応じてフォントサイズ・パディング・マージンを動的調整（1ページ収容のため）
-    let itemFs = 8.5;
-    if (mirrorRowCount > 18) itemFs = 7.5;
-    if (mirrorRowCount > 26) itemFs = 7.0;
-    if (mirrorRowCount > 34) itemFs = 6.5;
-    if (mirrorRowCount > 42) itemFs = 6.0;
-    const cellPad   = mirrorRowCount > 30 ? 1 : mirrorRowCount > 20 ? 1.5 : 2;
-    const topMargin = mirrorRowCount > 26 ? 10 : mirrorRowCount > 18 ? 20 : 50;
+    // 行数が少ない場合は拡大・多い場合は縮小の双方向スケーリング
+    let itemFs;
+    if      (mirrorRowCount <= 5)  itemFs = 12.5;
+    else if (mirrorRowCount <= 8)  itemFs = 11.0;
+    else if (mirrorRowCount <= 11) itemFs = 10.0;
+    else if (mirrorRowCount <= 14) itemFs =  9.0;
+    else if (mirrorRowCount <= 18) itemFs =  8.5;
+    else if (mirrorRowCount <= 26) itemFs =  7.5;
+    else if (mirrorRowCount <= 34) itemFs =  7.0;
+    else if (mirrorRowCount <= 42) itemFs =  6.5;
+    else                           itemFs =  6.0;
+
+    const cellPad   = mirrorRowCount <= 5  ? 6   :
+                      mirrorRowCount <= 8  ? 5   :
+                      mirrorRowCount <= 11 ? 4   :
+                      mirrorRowCount <= 14 ? 3   :
+                      mirrorRowCount <= 20 ? 2   :
+                      mirrorRowCount <= 30 ? 1.5 : 1;
+
+    const topMargin = mirrorRowCount <= 5  ? 110 :
+                      mirrorRowCount <= 8  ?  90 :
+                      mirrorRowCount <= 11 ?  70 :
+                      mirrorRowCount <= 14 ?  55 :
+                      mirrorRowCount <= 18 ?  50 :
+                      mirrorRowCount <= 26 ?  20 : 10;
 
     // 第2パス: 決定したフォントサイズで行を生成
     mirrorEntries.forEach(entry => {
@@ -510,8 +529,12 @@ const QuotationPDF = (() => {
       }
     });
 
-    // 空白行（行数が少ない場合のみ余白を確保）
-    const emptyRows = Math.max(0, 10 - mirrorRowCount);
+    // 空白行（行数が少ない場合ほど多めに挿入してページを埋める）
+    const emptyTarget = mirrorRowCount <= 6  ? 26 :
+                        mirrorRowCount <= 10 ? 22 :
+                        mirrorRowCount <= 15 ? 18 :
+                        mirrorRowCount <= 18 ? 14 : 10;
+    const emptyRows = Math.max(0, emptyTarget - mirrorRowCount);
     for (let i = 0; i < emptyRows; i++) {
       const er = [
         { text: '', border: [true, false, true, false] },
@@ -631,35 +654,21 @@ const QuotationPDF = (() => {
         ...emp(spanMid - 1),
         { text: fmt(grandTotal), alignment: 'right', fontSize: itemFs, bold: true, border: [false, true, true, false] },
       ]);
-      if (!isBuppan && discountEnabled && discount > 0) {
+      const discountAmt = grandTotal - deliveryPrice;
+      if (discountAmt > 0) {
         tableRows.push([
           { text: '', border: [true, false, false, false] },
-          { text: discountLabel, alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
+          { text: '値引き額', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
           ...emp(spanMid - 1),
-          { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+          { text: '▲ ' + fmt(discountAmt), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
         ]);
       }
-      if (isBuppan && buhanDiscTotal > 0) {
-        tableRows.push([
-          { text: '', border: [true, false, false, false] },
-          { text: '値引き（明細計）', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
-          ...emp(spanMid - 1),
-          { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
-        ]);
-        tableRows.push([
-          { text: '', border: [true, false, false, false] },
-          { text: '販売価格合計', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
-          ...emp(spanMid - 1),
-          { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
-        ]);
-      } else if (!isBuppan) {
-        tableRows.push([
-          { text: '', border: [true, false, false, false] },
-          { text: '貴社お渡し価格', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
-          ...emp(spanMid - 1),
-          { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
-        ]);
-      }
+      tableRows.push([
+        { text: '', border: [true, false, false, false] },
+        { text: isBuppan ? '販売価格合計' : '貴社お渡し価格', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
+        ...emp(spanMid - 1),
+        { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
+      ]);
     } else {
       // 6列 (Mode 1: teika、または代理店価格未設定時のフォールバック)
       tableRows.push([
@@ -694,7 +703,7 @@ const QuotationPDF = (() => {
       }
     }
 
-    if (!isTeika && showUchiwake) {
+    if (showUchiwakeInCover) {
       tableRows.push([
         { text: '', border: [true, false, false, false] },
         { text: '＜内訳＞', alignment: 'center', fontSize: itemFs, colSpan: COLS - 1, border: [false, false, true, false] },
@@ -718,16 +727,6 @@ const QuotationPDF = (() => {
         ...emp(spanMid - 1),
         { text: fmt(legalWelfare), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
       ]);
-      if (showLegalWelfareDetail && legalWelfareItems.length > 0) {
-        legalWelfareItems.forEach(item => {
-          tableRows.push([
-            { text: '', border: [true, false, false, false] },
-            { text: `　　${item.name}`, fontSize: itemFs - 1, colSpan: spanMid, border: [false, false, false, false] },
-            ...emp(spanMid - 1),
-            { text: fmt(item.amount), alignment: 'right', fontSize: itemFs - 1, border: [false, false, true, false] },
-          ]);
-        });
-      }
       // 内訳 4) 安全衛生経費 ※後日実装予定のため一時非表示
       // tableRows.push([
       //   { text: '', border: [true, false, false, true] },

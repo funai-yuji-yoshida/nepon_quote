@@ -2032,7 +2032,7 @@ input.item-gensui-b::-webkit-inner-spin-button {
 .items-footer-bar {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 4px 8px;
   padding: 8px 12px;
   background: #f0f4fa;
@@ -2042,6 +2042,7 @@ input.item-gensui-b::-webkit-inner-spin-button {
 }
 .items-footer-bar .footer-item { display: flex; align-items: center; gap: 4px; }
 #footerDairiWrap { display: inline-flex; align-items: center; white-space: nowrap; }
+#footerGenkaWrap { display: inline-flex; align-items: center; white-space: nowrap; }
 .items-footer-bar .footer-label { color: #555; }
 .items-footer-bar .footer-item strong { color: #1a4d8f; font-size: 13px; }
 .items-footer-bar .footer-total strong { color: #c0392b; font-size: 14px; }

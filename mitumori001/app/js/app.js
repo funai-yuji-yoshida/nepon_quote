@@ -163,6 +163,12 @@ const app = (() => {
     '消費税及び地方税',
   ];
 
+  // 初期チェック必須の見積外工事項目（解除可能）
+  const EXCLUSION_MANDATORY = new Set([
+    '見積記載以外の機器・設備工事',
+    '消費税及び地方税',
+  ]);
+
   // ── 大項目カテゴリマスタ ──────────────────────────────────────────
   const SECTION_CATEGORIES = [
     { label: '主要項目', items: [
@@ -1302,7 +1308,15 @@ const app = (() => {
     });
 
     if (preset === 'general') {
-      // 一般: 全解除のまま（全項目から自由選択）
+      // 必須項目を再チェック
+      EXCLUSION_MANDATORY.forEach(name => {
+        const idx = EXCLUSION_MASTER.indexOf(name);
+        if (idx === -1) return;
+        const cb = document.querySelector(`.excl-check[data-index="${idx}"]`);
+        if (cb) cb.checked = true;
+        const editEl = document.querySelector(`.excl-edit[data-index="${idx}"]`);
+        if (editEl) editEl.style.display = 'block';
+      });
       updateExclusionCount();
       showToast('全項目から選択できます');
       return;
@@ -1337,18 +1351,22 @@ const app = (() => {
   function buildExclusionUI() {
     const container = document.getElementById('exclusionList');
     if (!container) return;
-    container.innerHTML = EXCLUSION_MASTER.map((item, i) => `
+    container.innerHTML = EXCLUSION_MASTER.map((item, i) => {
+      const mandatory = EXCLUSION_MANDATORY.has(item);
+      return `
       <div class="excl-row" id="excl-row-${i}">
         <label class="excl-label">
           <input type="checkbox" class="excl-check" data-index="${i}"
+                 ${mandatory ? 'checked' : ''}
                  onchange="app.onExclusionChange(this)">
           <span class="excl-text">${item}</span>
         </label>
         <input type="text" class="excl-edit" data-index="${i}"
-               value="${item}" style="display:none"
+               value="${item}" style="${mandatory ? '' : 'display:none'}"
                oninput="app.updateExclusionCount()">
       </div>
-    `).join('');
+    `;
+    }).join('');
     updateExclusionCount();
   }
 
@@ -1468,10 +1486,11 @@ const app = (() => {
           .replace(/[A-Za-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 0xFEE0))
           .replace(/[0-9]/g,     c => String.fromCharCode(c.charCodeAt(0) + 0xFEE0))
           .replace(/-/g, '－');
-        // word 検索: モジュールの全テキストフィールド（Product_Name・Product_Code・field2 等）を横断検索
+        // criteria starts_with 検索（word検索は部分一致しないケースがあるため）
         const res = await ZOHO.CRM.API.searchRecord({
-          Entity: 'Products', Type: 'word',
-          Query: q, page: 1, per_page: 25,
+          Entity: 'Products', Type: 'criteria',
+          Query: `((Product_Name:starts_with:${q})or(Product_Code:starts_with:${q}))`,
+          page: 1, per_page: 100,
         });
         products = (res?.data || []).map(p => ({
           id:     p.id,
@@ -1757,9 +1776,10 @@ const app = (() => {
     }
 
     const item = createItem();
-    item.name         = name;
-    item.calcCategory = '④工事費';
-    item.gensuiKubun  = gensuiKubun;
+    item.name           = name;
+    item.calcCategory   = '④工事費';
+    item.includeInLabor = true;
+    item.gensuiKubun    = gensuiKubun;
     const master = state.koujihi.find(k => k.gensuiKubun === gensuiKubun);
     if (master) { item.gensuiA = master.gensuiA; item.gensuiB = master.gensuiB; }
 
@@ -4706,6 +4726,11 @@ const app = (() => {
           footerDairiWrap.style.display = 'none';
         }
       }
+      const footerGenkaWrap = document.getElementById('footerGenkaWrap');
+      if (footerGenkaWrap) {
+        footerGenkaWrap.style.display = genkaTotal > 0 ? '' : 'none';
+        setText('footerGenka', '¥' + genkaTotal.toLocaleString('ja-JP'));
+      }
       const araRiBase  = deliveryPrice > 0 ? deliveryPrice : grandTotal;
       const araRiF     = araRiBase - genkaTotal;
       const araRiRateF = araRiBase > 0 ? araRiF / araRiBase * 100 : null;
@@ -4741,11 +4766,6 @@ const app = (() => {
     if (pdfModeGrpKouji) pdfModeGrpKouji.style.display = (dairiTotal != null && isKoujiCat) ? '' : 'none';
     const pdfModeGrp = document.getElementById('pdfPriceModeGroup');
     if (pdfModeGrp) pdfModeGrp.style.display = (dairiTotal != null && !isKoujiCat) ? '' : 'none';
-    const legalWelfareDetailGrp = document.getElementById('legalWelfareDetailGroup');
-    if (legalWelfareDetailGrp) {
-      const cat = state.quoteCategory || '';
-      legalWelfareDetailGrp.style.display = (dairiTotal != null && !cat.includes('物販')) ? '' : 'none';
-    }
     const subtotalBothGrp = document.getElementById('subtotalBothGroup');
     if (subtotalBothGrp) subtotalBothGrp.style.display = dairiTotal != null ? '' : 'none';
     const dpHidden = document.getElementById('deliveryPrice');
@@ -4957,22 +4977,7 @@ const app = (() => {
         const cb = document.getElementById('printSubtotalBoth');
         return cb ? cb.checked : false;
       })(),
-      showLegalWelfareDetail: (() => {
-        const cb = document.getElementById('printLegalWelfareDetail');
-        return cb ? cb.checked : false;
-      })(),
-      legalWelfareItems: (() => {
-        const lrRate = (Number(state.legalWelfareRate) || 14.6) / 100;
-        const mainR = state.mainRate;
-        return state.sections.flatMap(s =>
-          (s.items || []).filter(i => i.includeInLabor).map(i => {
-            const r = i.dairiRate ?? mainR;
-            const amt = Number(i.amount) || 0;
-            const baseAmt = r != null ? Math.round(amt * r) : amt;
-            return { name: i.name, amount: Math.round(baseAmt * lrRate) };
-          })
-        );
-      })(),
+
       frpMode:   state.frpMode  || false,
       frpAB:     state.frpAB    || 'A',
       frpItems:  state.frpMode ? (state.frpItems || []) : undefined,
@@ -5230,6 +5235,7 @@ const app = (() => {
       const secQty = Math.max(1, Number(sec.secQty) || 1);
       const catTotals      = {};
       const catDairiTotals = {};
+      const catGenkaTotals = {};
       const normalItems    = [];
 
       (sec.items || []).forEach(item => {
@@ -5237,6 +5243,7 @@ const app = (() => {
         if (SUMMARY_CATEGORIES[prefix]) {
           catTotals[prefix]      = (catTotals[prefix]      || 0) + (Number(item.amount) || 0);
           catDairiTotals[prefix] = (catDairiTotals[prefix] || 0) + (dairiAmt(item) ?? 0);
+          catGenkaTotals[prefix] = (catGenkaTotals[prefix] || 0) + (Number(item.genka) || 0) * (Number(item.qty) || 1);
         } else {
           normalItems.push(item);
         }
@@ -5260,12 +5267,15 @@ const app = (() => {
             <th>項目</th><th>数量</th><th>単位</th>
             <th>単価</th><th>金額</th>
             <th>代理店単価</th><th>代理店価格</th>
+            <th>原価</th><th>原価合計</th>
           </tr></thead>
           <tbody>`;
 
       normalItems.forEach(item => {
         const du = dairiUnit(item);
         const da = dairiAmt(item);
+        const genkaU = item.genka ? Number(item.genka) : null;
+        const genkaA = genkaU != null ? genkaU * (Number(item.qty) || 1) : null;
         html += `<tr>
           <td>${escHtml(item.name || '')}</td>
           <td class="num">${item.qty || 1}</td>
@@ -5274,6 +5284,8 @@ const app = (() => {
           <td class="num">${fmtN(item.amount)}</td>
           <td class="num dairi-col">${du != null ? fmtN(du) : (rate == null ? '―' : '')}</td>
           <td class="num dairi-col">${da != null ? fmtN(da) : (rate == null ? '―' : '')}</td>
+          <td class="num">${genkaU != null ? fmtN(genkaU) : ''}</td>
+          <td class="num">${genkaA != null ? fmtN(genkaA) : ''}</td>
         </tr>`;
       });
 
@@ -5281,6 +5293,7 @@ const app = (() => {
         const amount = catTotals[prefix];
         if (!amount) return;
         const cd = catDairiTotals[prefix];
+        const cg = catGenkaTotals[prefix] || 0;
         html += `<tr class="summary-cat-row">
           <td>${escHtml(SUMMARY_CATEGORIES[prefix])}</td>
           <td class="num">1</td><td class="center">式</td>
@@ -5288,6 +5301,8 @@ const app = (() => {
           <td class="num">${fmtN(amount)}</td>
           <td class="num dairi-col"></td>
           <td class="num dairi-col">${rate != null ? fmtN(cd) : '―'}</td>
+          <td class="num"></td>
+          <td class="num">${cg > 0 ? fmtN(cg) : ''}</td>
         </tr>`;
       });
 
@@ -5300,12 +5315,16 @@ const app = (() => {
             <td class="num">${fmtN(secSubtotal)}</td>
             <td class="num dairi-col"></td>
             <td class="num dairi-col">${secSubDairi != null ? fmtN(secSubDairi) : dairiColspan}</td>
+            <td class="num"></td>
+            <td class="num">${secGenka > 0 ? fmtN(secGenka) : ''}</td>
           </tr>
           <tr class="summary-subtotal">
             <td colspan="4" class="center">×${secQty}式　合計</td>
             <td class="num">${fmtN(secTotal)}</td>
             <td class="num dairi-col"></td>
             <td class="num dairi-col">${secDairiTotal != null ? fmtN(secDairiTotal) : dairiColspan}</td>
+            <td class="num"></td>
+            <td class="num">${secGenka > 0 ? fmtN(secGenka * secQty) : ''}</td>
           </tr>`;
       } else {
         tfootHtml = `
@@ -5314,6 +5333,8 @@ const app = (() => {
             <td class="num">${fmtN(secTotal)}</td>
             <td class="num dairi-col"></td>
             <td class="num dairi-col">${secDairiTotal != null ? fmtN(secDairiTotal) : dairiColspan}</td>
+            <td class="num"></td>
+            <td class="num">${secGenka > 0 ? fmtN(secGenka) : ''}</td>
           </tr>`;
       }
       html += `</tbody>
@@ -5328,12 +5349,15 @@ const app = (() => {
     const dairiStr  = rate != null
       ? `<span class="sgf-sep">／</span><span class="sgf-item"><span class="sgf-label">代理店合計</span> <span>¥${fmtN(grandDairi)}</span></span>`
       : '';
+    const genkaStr  = grandGenka > 0
+      ? `<span class="sgf-sep">／</span><span class="sgf-item"><span class="sgf-label">原価合計</span> <span>¥${fmtN(grandGenka)}</span></span>`
+      : '';
     const araRiStr  = grandGenka > 0
       ? `<span class="sgf-sep">｜</span><span class="sgf-item"><span class="sgf-label">粗利</span> <span>¥${fmtN(araRi)}</span></span>` +
         `<span class="sgf-sep">｜</span><span class="sgf-item"><span class="sgf-label">粗利率</span> <span>${araRiRate != null ? araRiRate.toFixed(1) + '%' : '―'}</span></span>`
       : '';
     html += `<div class="summary-grand-total">
-      <span class="sgf-item"><span class="sgf-label">合　計</span> <span>¥${fmtN(grandTotal)}</span></span>${dairiStr}${araRiStr}
+      <span class="sgf-item"><span class="sgf-label">合　計</span> <span>¥${fmtN(grandTotal)}</span></span>${dairiStr}${genkaStr}${araRiStr}
     </div>`;
 
     container.innerHTML = html;
