@@ -538,7 +538,7 @@ const QuotationPDF = (() => {
                         mirrorRowCount <= 26 ? 26 : 10;
     const emptyRows = Math.max(0, emptyTarget - mirrorRowCount);
     for (let i = 0; i < emptyRows; i++) {
-      const er = Array.from({ length: COLS }, () => ({ text: '' }));
+      const er = Array.from({ length: COLS }, () => ({ text: ' ', fontSize: itemFs }));
       tableRows.push(er);
     }
 
@@ -1412,14 +1412,14 @@ const QuotationPDF = (() => {
       for (let i = 0; i < 2; i++) {
         const tb = i === 0; // 最初の空白行のみ上辺を表示（最終明細行の下線）
         const er = [
-          { text: '', border: [true, tb, true, false] },
-          { text: '', border: [false, tb, false, false] },
-          { text: '', border: [false, tb, false, false] },
-          { text: '', border: [false, tb, false, false] },
-          { text: '', border: [false, tb, false, false] },
-          { text: '', border: [false, tb, true, false] },
+          { text: ' ', border: [true, tb, true, false] },
+          { text: ' ', border: [false, tb, false, false] },
+          { text: ' ', border: [false, tb, false, false] },
+          { text: ' ', border: [false, tb, false, false] },
+          { text: ' ', border: [false, tb, false, false] },
+          { text: ' ', border: [false, tb, true, false] },
         ];
-        if (useDairi) er.splice(5, 0, { text: '', border: [false, tb, false, false] }, { text: '', border: [false, tb, false, false] });
+        if (useDairi) er.splice(5, 0, { text: ' ', border: [false, tb, false, false] }, { text: ' ', border: [false, tb, false, false] });
         rows.push(er);
       }
 
@@ -1793,14 +1793,14 @@ const QuotationPDF = (() => {
       for (let i = 0; i < 2; i++) {
         const tb = i === 0; // 最初の空白行のみ上辺を表示（最終明細行の下線）
         const er = [
-          { text: '', border: [true, tb, true, false] },
-          { text: '', border: [false, tb, false, false] },
-          { text: '', border: [false, tb, false, false] },
-          { text: '', border: [false, tb, false, false] },
-          { text: '', border: [false, tb, false, false] },
-          { text: '', border: [false, tb, true, false] },
+          { text: ' ', border: [true, tb, true, false] },
+          { text: ' ', border: [false, tb, false, false] },
+          { text: ' ', border: [false, tb, false, false] },
+          { text: ' ', border: [false, tb, false, false] },
+          { text: ' ', border: [false, tb, false, false] },
+          { text: ' ', border: [false, tb, true, false] },
         ];
-        if (useDairi) er.splice(5, 0, { text: '', border: [false, tb, false, false] }, { text: '', border: [false, tb, false, false] });
+        if (useDairi) er.splice(5, 0, { text: ' ', border: [false, tb, false, false] }, { text: ' ', border: [false, tb, false, false] });
         rows.push(er);
       }
 
