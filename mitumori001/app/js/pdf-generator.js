@@ -530,10 +530,12 @@ const QuotationPDF = (() => {
     });
 
     // 空白行（行数が少ない場合ほど多めに挿入してページを埋める）
-    const emptyTarget = mirrorRowCount <= 6  ? 26 :
-                        mirrorRowCount <= 10 ? 22 :
-                        mirrorRowCount <= 15 ? 18 :
-                        mirrorRowCount <= 18 ? 14 : 10;
+    // ※ emptyTarget は見積外工事・備考の占有領域(~100pt)を考慮した安全値
+    const emptyTarget = mirrorRowCount <= 5  ? 12 :
+                        mirrorRowCount <= 8  ? 15 :
+                        mirrorRowCount <= 11 ? 18 :
+                        mirrorRowCount <= 18 ? 20 :
+                        mirrorRowCount <= 26 ? 26 : 10;
     const emptyRows = Math.max(0, emptyTarget - mirrorRowCount);
     for (let i = 0; i < emptyRows; i++) {
       const er = [
