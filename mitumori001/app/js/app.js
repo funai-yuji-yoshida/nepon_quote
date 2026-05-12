@@ -311,16 +311,18 @@ const app = (() => {
     // houkouDirect > 0 のアイテム: field16の直接値を使用（減衰計算スキップ）
     // ただし④工事費行でhoudan>0のもの（自己完結型）は後続ループで処理するため除外
     state.sections.forEach(sec => {
+      const secQty = Math.max(1, Number(sec.secQty) || 1);
       sec.items.forEach(item => {
         if ((Number(item.houkouDirect) || 0) <= 0) return;
         if (item.calcCategory === '④工事費' && (Number(item.houdan) || 0) > 0) return;
         item.houkouGoukei = Number(item.houkouDirect);
-        totalReducedHoukou += item.houkouGoukei;
+        totalReducedHoukou += item.houkouGoukei * secQty;
       });
     });
 
     // セクション内で④工事費ごとにグループ化し、各④工事費のgensuiEnabledを使用
     state.sections.forEach(sec => {
+      const secQty = Math.max(1, Number(sec.secQty) || 1);
       let group = [];
       sec.items.forEach(item => {
         if (item.calcCategory === '④工事費') {
@@ -342,12 +344,12 @@ const app = (() => {
                   Math.floor(A * Math.pow(d / b, -0.3) * 100 + 0.5) / 100);
               }
               const houkouTotal = Math.floor(d * rate * 100 + 0.5) / 100;
-              totalReducedHoukou += houkouTotal;
+              totalReducedHoukou += houkouTotal * secQty;
               summaryRows.push({
                 category: item.kojiCategory || item.calcCategory || item.gensuiKubun || '（未分類）',
-                d, rate,
-                before: Math.round(d * 100) / 100,
-                after:  houkouTotal,
+                d: d * secQty, rate,
+                before: Math.round(d * secQty * 100) / 100,
+                after:  houkouTotal * secQty,
               });
               group.forEach(gi => {
                 const itemD = (Number(gi.qty) || 1) * (Number(gi.houdan) || 0);
@@ -364,12 +366,12 @@ const app = (() => {
               }
               const houkouTotal = Math.floor(d * rate * 100 + 0.5) / 100;
               item.houkouGoukei = houkouTotal;
-              totalReducedHoukou += houkouTotal;
+              totalReducedHoukou += houkouTotal * secQty;
               summaryRows.push({
                 category: item.name || item.calcCategory || '④工事費',
-                d, rate,
-                before: Math.round(d * 100) / 100,
-                after:  houkouTotal,
+                d: d * secQty, rate,
+                before: Math.round(d * secQty * 100) / 100,
+                after:  houkouTotal * secQty,
               });
             }
           }
@@ -385,7 +387,7 @@ const app = (() => {
           const itemD = (Number(gi.qty) || 1) * (Number(gi.houdan) || 0);
           if (itemD > 0) {
             gi.houkouGoukei = Math.floor(itemD * 100 + 0.5) / 100;
-            totalReducedHoukou += gi.houkouGoukei;
+            totalReducedHoukou += gi.houkouGoukei * secQty;
           }
         });
         group = [];
@@ -394,6 +396,7 @@ const app = (() => {
 
     // ⑤その他: 自身の houdan×qty を人工数として自己完結型の減衰計算
     state.sections.forEach(sec => {
+      const secQty = Math.max(1, Number(sec.secQty) || 1);
       sec.items.forEach(item => {
         if (item.calcCategory !== '⑤その他') return;
         // houdan>0なら常にhoudan×qtyから再計算（gensuiEnabled変更に追従）
@@ -406,12 +409,12 @@ const app = (() => {
         }
         const houkouTotal = Math.floor(d * rate * 100 + 0.5) / 100;
         item.houkouGoukei = houkouTotal;
-        totalReducedHoukou += houkouTotal;
+        totalReducedHoukou += houkouTotal * secQty;
         summaryRows.push({
           category: item.name || '⑤その他',
-          d, rate,
-          before: Math.round(d * 100) / 100,
-          after:  houkouTotal,
+          d: d * secQty, rate,
+          before: Math.round(d * secQty * 100) / 100,
+          after:  houkouTotal * secQty,
         });
       });
     });
@@ -419,6 +422,7 @@ const app = (() => {
     // ⑥配管材料・⑦支持具・雑材費: ⑤その他と同様の自己完結型減衰計算
     ['⑥配管材料', '⑦支持具・雑材費'].forEach(targetCat => {
       state.sections.forEach(sec => {
+        const secQty = Math.max(1, Number(sec.secQty) || 1);
         sec.items.forEach(item => {
           if (item.calcCategory !== targetCat) return;
           const rawD = (Number(item.qty) || 1) * (Number(item.houdan) || 0);
@@ -430,12 +434,12 @@ const app = (() => {
           }
           const houkouTotal = Math.floor(d * rate * 100 + 0.5) / 100;
           item.houkouGoukei = houkouTotal;
-          totalReducedHoukou += houkouTotal;
+          totalReducedHoukou += houkouTotal * secQty;
           summaryRows.push({
             category: item.name || targetCat,
-            d, rate,
-            before: Math.round(d * 100) / 100,
-            after:  houkouTotal,
+            d: d * secQty, rate,
+            before: Math.round(d * secQty * 100) / 100,
+            after:  houkouTotal * secQty,
           });
         });
       });
@@ -449,6 +453,8 @@ const app = (() => {
         summaryEl.style.display = 'none';
       } else {
         summaryEl.style.display = '';
+        const totalBefore = summaryRows.reduce((s, r) => s + r.before, 0);
+        const totalAfter  = summaryRows.reduce((s, r) => s + r.after,  0);
         tbody.innerHTML = summaryRows.map(r => `
           <tr>
             <td>${r.category}</td>
@@ -457,7 +463,13 @@ const app = (() => {
             <td>${r.before.toFixed(2)}</td>
             <td>${r.after.toFixed(2)}</td>
           </tr>
-        `).join('');
+        `).join('') + `
+          <tr class="gensui-summary-total">
+            <td colspan="3">合計</td>
+            <td>${totalBefore.toFixed(2)}</td>
+            <td>${totalAfter.toFixed(2)}</td>
+          </tr>
+        `;
       }
     }
 
@@ -2816,6 +2828,30 @@ const app = (() => {
     [state.sections[idx], state.sections[idx + 1]] = [state.sections[idx + 1], state.sections[idx]];
     renumberSections();
     renderSections();
+  }
+
+  function duplicateSection(btn) {
+    const block = btn.closest('.section-block');
+    const id    = Number(block.dataset.sectionId);
+    const idx   = state.sections.findIndex(s => s.id === id);
+    if (idx < 0) return;
+    const src = state.sections[idx];
+    const copy = {
+      id:     state.nextSectionId++,
+      no:     src.no + 1,
+      name:   src.name,
+      secQty: src.secQty,
+      items:  src.items.map(item => ({
+        ...item,
+        id: state.nextItemId++,
+        specLines:   item.specLines   ? [...item.specLines]   : [],
+        machineSpec: item.machineSpec ? JSON.parse(JSON.stringify(item.machineSpec)) : null,
+      })),
+    };
+    state.sections.splice(idx + 1, 0, copy);
+    renumberSections();
+    renderSections();
+    updateOutput();
   }
 
   function renumberSections() {
@@ -5413,6 +5449,7 @@ const app = (() => {
     removeSection,
     moveSectionUp,
     moveSectionDown,
+    duplicateSection,
     // カテゴリタブ
     switchCatTab,
     execCatAdd,

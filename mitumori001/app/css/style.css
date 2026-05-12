@@ -1426,6 +1426,7 @@ input.item-gensui-b::-webkit-inner-spin-button {
 .gensui-rate-reduced { color: #c0392b; font-weight: bold; }
 .gensui-rate-full    { color: #888; }
 .gensui-saving       { color: #2e7d32; font-weight: bold; }
+.gensui-summary-total td { font-weight: bold; border-top: 2px solid #2563a8; background: #eef3fb; }
 
 /* ── ③PDF出力 労務費・法定福利費入力 ─────────────────────────── */
 .labor-input-row {
