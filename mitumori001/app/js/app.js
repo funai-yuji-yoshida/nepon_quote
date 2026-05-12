@@ -4532,6 +4532,8 @@ const app = (() => {
       if (dpHidden) dpHidden.value = frpShikiriTotal;
       const pdfModeGrp = document.getElementById('pdfPriceModeGroup');
       if (pdfModeGrp) pdfModeGrp.style.display = '';
+      const pdfModeGrpKoujiF = document.getElementById('pdfPriceModeGroupKouji');
+      if (pdfModeGrpKoujiF) pdfModeGrpKoujiF.style.display = 'none';
       const subtotalBothGrpFrp = document.getElementById('subtotalBothGroup');
       if (subtotalBothGrpFrp) subtotalBothGrpFrp.style.display = '';
 
@@ -4730,9 +4732,20 @@ const app = (() => {
       setText('basicBuhanDiscount', buhanDiscTotal.toLocaleString('ja-JP'));
     }
     setText('basicDeliveryPrice', deliveryPrice.toLocaleString('ja-JP'));
+    // 貴社お渡し価格行：代理店価格が未設定のとき非表示
+    const rowDeliveryCalc = document.querySelector('.row-delivery-calc');
+    if (rowDeliveryCalc) rowDeliveryCalc.style.display = dairiTotal != null ? '' : 'none';
     // PDF価格モード選択の表示切替
+    const isKoujiCat = (state.quoteCategory || '').includes('工事');
+    const pdfModeGrpKouji = document.getElementById('pdfPriceModeGroupKouji');
+    if (pdfModeGrpKouji) pdfModeGrpKouji.style.display = (dairiTotal != null && isKoujiCat) ? '' : 'none';
     const pdfModeGrp = document.getElementById('pdfPriceModeGroup');
-    if (pdfModeGrp) pdfModeGrp.style.display = dairiTotal != null ? '' : 'none';
+    if (pdfModeGrp) pdfModeGrp.style.display = (dairiTotal != null && !isKoujiCat) ? '' : 'none';
+    const legalWelfareDetailGrp = document.getElementById('legalWelfareDetailGroup');
+    if (legalWelfareDetailGrp) {
+      const cat = state.quoteCategory || '';
+      legalWelfareDetailGrp.style.display = (dairiTotal != null && !cat.includes('物販')) ? '' : 'none';
+    }
     const subtotalBothGrp = document.getElementById('subtotalBothGroup');
     if (subtotalBothGrp) subtotalBothGrp.style.display = dairiTotal != null ? '' : 'none';
     const dpHidden = document.getElementById('deliveryPrice');
@@ -4769,6 +4782,8 @@ const app = (() => {
     if (sumDairiRow) sumDairiRow.style.display = dairiTotal != null ? '' : 'none';
     setText('sum-dairi',      dairiTotal != null ? '¥' + dairiTotal.toLocaleString('ja-JP') : '¥0');
     setText('sum-discount',   discount > 0 ? '¥' + discount.toLocaleString('ja-JP') : '¥0');
+    const rowDeliverySum = document.querySelector('tr.row-delivery');
+    if (rowDeliverySum) rowDeliverySum.style.display = dairiTotal != null ? '' : 'none';
     setText('sum-delivery',   '¥' + deliveryPrice.toLocaleString('ja-JP'));
     setText('sum-material',   '¥' + Math.max(0, materialCost).toLocaleString('ja-JP'));
     setText('sum-labor',      '¥' + laborCost.toLocaleString('ja-JP'));
@@ -4925,7 +4940,9 @@ const app = (() => {
       dairiTotal:      state.dairiTotal != null ? state.dairiTotal : undefined,
       mainRate:        state.mainRate   != null ? state.mainRate   : undefined,
       pdfPriceMode:    (() => {
-        const radios = document.getElementsByName('pdfPriceMode');
+        const cat = state.quoteCategory || '';
+        const name = (!state.frpMode && cat.includes('工事')) ? 'pdfPriceModeKouji' : 'pdfPriceMode';
+        const radios = document.getElementsByName(name);
         for (const r of radios) { if (r.checked) return r.value; }
         return 'teika';
       })(),
@@ -4939,6 +4956,22 @@ const app = (() => {
       showSubtotalBoth: (() => {
         const cb = document.getElementById('printSubtotalBoth');
         return cb ? cb.checked : false;
+      })(),
+      showLegalWelfareDetail: (() => {
+        const cb = document.getElementById('printLegalWelfareDetail');
+        return cb ? cb.checked : false;
+      })(),
+      legalWelfareItems: (() => {
+        const lrRate = (Number(state.legalWelfareRate) || 14.6) / 100;
+        const mainR = state.mainRate;
+        return state.sections.flatMap(s =>
+          (s.items || []).filter(i => i.includeInLabor).map(i => {
+            const r = i.dairiRate ?? mainR;
+            const amt = Number(i.amount) || 0;
+            const baseAmt = r != null ? Math.round(amt * r) : amt;
+            return { name: i.name, amount: Math.round(baseAmt * lrRate) };
+          })
+        );
       })(),
       frpMode:   state.frpMode  || false,
       frpAB:     state.frpAB    || 'A',
