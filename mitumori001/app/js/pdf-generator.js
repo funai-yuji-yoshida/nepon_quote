@@ -538,15 +538,7 @@ const QuotationPDF = (() => {
                         mirrorRowCount <= 26 ? 26 : 10;
     const emptyRows = Math.max(0, emptyTarget - mirrorRowCount);
     for (let i = 0; i < emptyRows; i++) {
-      const er = [
-        { text: '', border: [true, false, true, false] },
-        { text: '', border: [false, false, false, false] },
-        { text: '', border: [false, false, false, false] },
-        { text: '', border: [false, false, false, false] },
-        { text: '', border: [false, false, false, false] },
-        { text: '', border: [false, false, true, false] },
-      ];
-      if (useDairi) er.splice(5, 0, { text: '', border: [false, false, false, false] }, { text: '', border: [false, false, false, false] });
+      const er = Array.from({ length: COLS }, () => ({ text: '' }));
       tableRows.push(er);
     }
 
@@ -930,8 +922,6 @@ const QuotationPDF = (() => {
         layout: {
           hLineWidth: (i, node) => {
             if (i === 0 || i === 1 || i === node.table.body.length) return 0.8;
-            // 空白行の範囲内（最終データ行〜サマリー行の間）は線を引かない
-            if (i >= mirrorEntries.length + 1 && i < mirrorEntries.length + 1 + emptyRows) return 0;
             return 0.4;
           },
           vLineWidth: ()        => 0.5,
