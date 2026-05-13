@@ -5550,9 +5550,9 @@ const app = (() => {
   const PDF_MODE_DESC = {
     teika:          '定価のみ印刷。代理店価格列は表示しません。',
     'dairi-kouji':  '定価に加えて代理店仕切合計（列）を追加表示します。',
-    'dairi-bulk':   '定価と代理店仕切合計を並列表示します。各行の仕切単価は非表示です。',
+    'dairi-bulk':   '表示は定価。仕切は合計を一括表示。',
     'dairi-discount': '定価合計から値引き額を差し引いた形式で表示します。',
-    dairi:          '各行に仕切単価・仕切合計を個別表示します。',
+    dairi:          '各行に定価及び仕切の単価、合計を表示。',
   };
 
   function updatePdfModeDesc() {
