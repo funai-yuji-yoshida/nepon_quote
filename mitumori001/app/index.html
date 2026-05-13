@@ -574,16 +574,18 @@
 
           <div id="pdfPriceModeGroupKouji" class="pdf-price-mode-group" style="display:none">
             <span class="pdf-price-mode-label">印刷価格:</span>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="teika"> 定価</label>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-kouji" checked> 代理店価格</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="teika" onchange="app.updatePdfModeDesc()"> 定価</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-kouji" checked onchange="app.updatePdfModeDesc()"> 代理店価格</label>
+            <div class="pdf-price-mode-desc" id="pdfPriceModeDescKouji"></div>
           </div>
 
           <div id="pdfPriceModeGroup" class="pdf-price-mode-group" style="display:none">
             <div class="pdf-price-mode-label">印刷価格モード:</div>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="teika"> 1. 定価のみ</label>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-bulk" checked> 2. 一括仕切</label>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-discount"> 3. 出精値引き</label>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi"> 4. 仕切表示</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="teika" onchange="app.updatePdfModeDesc()"> 1. 定価のみ</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-bulk" checked onchange="app.updatePdfModeDesc()"> 2. 一括仕切</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-discount" onchange="app.updatePdfModeDesc()"> 3. 出精値引き</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi" onchange="app.updatePdfModeDesc()"> 4. 仕切表示</label>
+            <div class="pdf-price-mode-desc" id="pdfPriceModeDesc"></div>
           </div>
 
           <div class="pdf-btn-group">
@@ -605,7 +607,7 @@
 
           <div id="pdfStatus" class="pdf-status-msg"></div>
 
-          <div class="font-guide">
+          <div class="font-guide" style="display:none">
             <details>
               <summary>日本語フォントについて</summary>
               <p>PDFの日本語表示には <code>NotoSansJP-Regular.ttf</code> が必要です。</p>

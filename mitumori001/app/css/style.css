@@ -1044,8 +1044,24 @@ button {
   border-radius: 5px;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   font-size: 13px;
+}
+.pdf-price-mode-desc {
+  width: 100%;
+  font-size: 11px;
+  color: #555;
+  background: #fff;
+  border: 1px solid #c8d8ee;
+  border-radius: 3px;
+  padding: 4px 8px;
+  margin-top: -4px;
+  line-height: 1.5;
+  display: none;
+}
+.pdf-price-mode-desc.visible {
+  display: block;
 }
 .pdf-price-mode-label {
   font-weight: bold;

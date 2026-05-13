@@ -4554,6 +4554,7 @@ const app = (() => {
       if (pdfModeGrp) pdfModeGrp.style.display = '';
       const pdfModeGrpKoujiF = document.getElementById('pdfPriceModeGroupKouji');
       if (pdfModeGrpKoujiF) pdfModeGrpKoujiF.style.display = 'none';
+      updatePdfModeDesc();
       const subtotalBothGrpFrp = document.getElementById('subtotalBothGroup');
       if (subtotalBothGrpFrp) subtotalBothGrpFrp.style.display = '';
 
@@ -4766,6 +4767,7 @@ const app = (() => {
     if (pdfModeGrpKouji) pdfModeGrpKouji.style.display = (dairiTotal != null && isKoujiCat) ? '' : 'none';
     const pdfModeGrp = document.getElementById('pdfPriceModeGroup');
     if (pdfModeGrp) pdfModeGrp.style.display = (dairiTotal != null && !isKoujiCat) ? '' : 'none';
+    updatePdfModeDesc();
     const subtotalBothGrp = document.getElementById('subtotalBothGroup');
     if (subtotalBothGrp) subtotalBothGrp.style.display = dairiTotal != null ? '' : 'none';
     const dpHidden = document.getElementById('deliveryPrice');
@@ -5544,6 +5546,36 @@ const app = (() => {
     if (block) { updateSectionSubtotal(block); updateOutput(); }
   }
 
+  // ── 印刷価格モード説明 ─────────────────────────────────────────
+  const PDF_MODE_DESC = {
+    teika:          '定価のみ印刷。代理店価格列は表示しません。',
+    'dairi-kouji':  '定価に加えて代理店仕切合計（列）を追加表示します。',
+    'dairi-bulk':   '定価と代理店仕切合計を並列表示します。各行の仕切単価は非表示です。',
+    'dairi-discount': '定価合計から値引き額を差し引いた形式で表示します。',
+    dairi:          '各行に仕切単価・仕切合計を個別表示します。',
+  };
+
+  function updatePdfModeDesc() {
+    const groupKouji = document.getElementById('pdfPriceModeGroupKouji');
+    const descKouji  = document.getElementById('pdfPriceModeDescKouji');
+    if (descKouji) {
+      const r = groupKouji && groupKouji.style.display !== 'none'
+        ? [...document.getElementsByName('pdfPriceModeKouji')].find(r => r.checked)
+        : null;
+      descKouji.textContent = r ? (PDF_MODE_DESC[r.value] || '') : '';
+      descKouji.classList.toggle('visible', !!r);
+    }
+    const group = document.getElementById('pdfPriceModeGroup');
+    const desc  = document.getElementById('pdfPriceModeDesc');
+    if (desc) {
+      const r = group && group.style.display !== 'none'
+        ? [...document.getElementsByName('pdfPriceMode')].find(r => r.checked)
+        : null;
+      desc.textContent = r ? (PDF_MODE_DESC[r.value] || '') : '';
+      desc.classList.toggle('visible', !!r);
+    }
+  }
+
   // ── 公開API ───────────────────────────────────────────────────
 
   return {
@@ -5598,6 +5630,7 @@ const app = (() => {
     // PDF
     generatePDF,
     generateSummaryPDF,
+    updatePdfModeDesc,
     // 貴社お渡し価格リセット
     resetDeliveryPrice: () => {
       const el = document.getElementById('deliveryPrice');
