@@ -1487,9 +1487,13 @@ const app = (() => {
           .replace(/[0-9]/g,     c => String.fromCharCode(c.charCodeAt(0) + 0xFEE0))
           .replace(/-/g, '－');
         // criteria starts_with 検索（word検索は部分一致しないケースがあるため）
+        // 半角入力の場合、コード・型式フィールドは半角のまま追加検索（半角登録商品に対応）
+        const rawExtra = raw !== q
+          ? `or(Product_Code:starts_with:${raw})or(field2:starts_with:${raw})`
+          : '';
         const res = await ZOHO.CRM.API.searchRecord({
           Entity: 'Products', Type: 'criteria',
-          Query: `((Product_Name:starts_with:${q})or(Product_Code:starts_with:${q}))`,
+          Query: `((Product_Name:starts_with:${q})or(Product_Code:starts_with:${q})or(field2:starts_with:${q})${rawExtra})`,
           page: 1, per_page: 100,
         });
         products = (res?.data || []).map(p => ({
