@@ -207,7 +207,8 @@ const QuotationPDF = (() => {
     const laborCost     = Number(data.laborCost) || 0;
     const legalWelfare  = Math.round(laborCost * legalRate);
     const anzenCost     = Number(data.anzenCost) || 0;
-    const materialCost  = deliveryPrice - laborCost - legalWelfare - anzenCost;
+    const uchiwakeBase  = data.pdfPriceMode === 'teika' ? grandTotal : deliveryPrice;
+    const materialCost  = uchiwakeBase - laborCost - legalWelfare - anzenCost;
     const showUchiwake   = data.showUchiwake !== false;
 
     const font = fontLoaded ? 'NotoSansJP' : 'Roboto';
@@ -393,8 +394,7 @@ const QuotationPDF = (() => {
       mirrorEntries.push({ type: 'frp' });
     }
     // 見積外工事行・固定行も含めてトータル行数を算出
-    // 工事カテゴリは isTeika でも showUchiwake=true なら内訳8行を表示するためカウントに含める
-    const showUchiwakeInCover = showUchiwake && (!isTeika || isKouji);
+    const showUchiwakeInCover = showUchiwake;
     const mirrorRowCount = mirrorEntries.length + exRowCount +
       (showUchiwakeInCover ? 8 : isTeika ? 1 : 3);
 

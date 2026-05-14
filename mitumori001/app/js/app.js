@@ -817,6 +817,8 @@ const app = (() => {
     roundingEnabled: false, // 切り上げ表示モード
   };
 
+  let isDirty = false;
+
   let _machineSpecSectionId     = null;
   let _machineSpecModel         = null;
   let _machineSpecSearchResults = [];
@@ -893,6 +895,16 @@ const app = (() => {
         setTimeout(hideFrpDropdown, 200);
       });
     }
+
+    // 未保存警告: 入力・変更・ページ離脱を監視
+    document.addEventListener('input',  markDirty);
+    document.addEventListener('change', markDirty);
+    window.addEventListener('beforeunload', e => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
 
     // フォント初期化
     initFont();
@@ -1069,6 +1081,7 @@ const app = (() => {
 
     // フォームに反映
     applyStateToForm();
+    markClean();
     const _roundBtn = document.getElementById('btnToggleRounding');
     if (_roundBtn) _roundBtn.classList.toggle('is-active', state.roundingEnabled);
 
@@ -1093,6 +1106,7 @@ const app = (() => {
     state.laborCost     = 280366;
 
     applyStateToForm();
+    markClean();
     showToast('デモデータで起動しました（Zoho未接続）', 'warn');
   }
 
@@ -1720,6 +1734,7 @@ const app = (() => {
     }
 
     matched.forEach(k => addKoujihiItem(targetSection, k));
+    markDirty();
     renderSections();
     updateOutput();
     showToast(`No.${targetSection.no}「${targetSection.name || '無題'}」に ${matched.length} 件追加しました`);
@@ -1788,6 +1803,7 @@ const app = (() => {
     if (master) { item.gensuiA = master.gensuiA; item.gensuiB = master.gensuiB; }
 
     targetSection.items.push(item);
+    markDirty();
     renderSections();
     updateOutput();
     showToast(`「${name}」を追加しました`);
@@ -1917,6 +1933,7 @@ const app = (() => {
     const btn = document.getElementById('btnProductAdd');
     if (btn) { btn.disabled = true; btn.classList.remove('active'); }
 
+    markDirty();
     renderSections();
     updateOutput();
   }
@@ -2027,6 +2044,7 @@ const app = (() => {
     const btn = document.getElementById(btnId);
     if (btn) { btn.disabled = true; btn.classList.remove('active'); }
 
+    markDirty();
     renderSections();
     updateOutput();
   }
@@ -2424,6 +2442,7 @@ const app = (() => {
     }
     item.machineSpec = { model: _machineSpecModel, specs };
     sec.items.push(item);
+    markDirty();
     const block = document.querySelector(`.section-block[data-section-id="${_machineSpecSectionId}"]`);
     if (block) { renderSection(sec, block); updateSectionSubtotal(block); }
     updateOutput();
@@ -2574,6 +2593,7 @@ const app = (() => {
       specs,
     };
     state.frpItems.push(item);
+    markDirty();
     renderFrpItems();
     updateFrpTotals();
     updateOutput();
@@ -2581,6 +2601,7 @@ const app = (() => {
 
   function removeFrpItem(itemId) {
     state.frpItems = state.frpItems.filter(i => i.id !== itemId);
+    markDirty();
     renderFrpItems();
     updateFrpTotals();
     updateOutput();
@@ -2837,6 +2858,7 @@ const app = (() => {
     // 最初の行を1つ追加
     section.items.push(createItem());
     state.sections.push(section);
+    markDirty();
     renderSections();
     updateOutput();
     document.getElementById('noSectionsMsg').style.display = 'none';
@@ -2862,6 +2884,7 @@ const app = (() => {
     const id    = Number(block.dataset.sectionId);
     if (!confirm('このセクションを削除しますか？')) return;
     state.sections = state.sections.filter(s => s.id !== id);
+    markDirty();
     renumberSections();
     renderSections();
     updateOutput();
@@ -2873,6 +2896,7 @@ const app = (() => {
     const idx   = state.sections.findIndex(s => s.id === id);
     if (idx <= 0) return;
     [state.sections[idx - 1], state.sections[idx]] = [state.sections[idx], state.sections[idx - 1]];
+    markDirty();
     renumberSections();
     renderSections();
   }
@@ -2883,6 +2907,7 @@ const app = (() => {
     const idx   = state.sections.findIndex(s => s.id === id);
     if (idx < 0 || idx >= state.sections.length - 1) return;
     [state.sections[idx], state.sections[idx + 1]] = [state.sections[idx + 1], state.sections[idx]];
+    markDirty();
     renumberSections();
     renderSections();
   }
@@ -2906,6 +2931,7 @@ const app = (() => {
       })),
     };
     state.sections.splice(idx + 1, 0, copy);
+    markDirty();
     renumberSections();
     renderSections();
     updateOutput();
@@ -2948,6 +2974,7 @@ const app = (() => {
     const sec   = state.sections.find(s => s.id === id);
     if (sec) {
       sec.items.push(createItem());
+      markDirty();
       renderSection(sec, block);
       updateSectionSubtotal(block);
     }
@@ -3021,6 +3048,7 @@ const app = (() => {
     const sec   = state.sections.find(s => s.id === secId);
     if (sec) {
       sec.items = sec.items.filter(i => i.id !== itemId);
+      markDirty();
       // アイテム行・仕様行・追加ボタン行をまとめて削除
       const tbody = block.querySelector('.items-tbody');
       tbody.querySelectorAll(`[data-item-id="${itemId}"]`).forEach(r => r.remove());
@@ -4471,6 +4499,7 @@ const app = (() => {
       state.sections.push(section);
     });
 
+    markDirty();
     renumberSections();
     renderSections();
     updateOutput();
@@ -4778,13 +4807,15 @@ const app = (() => {
     if (dpHidden) dpHidden.value = deliveryPrice;
 
     const legalRate    = (Number(getValue('legalWelfareRate')) || 14.6) / 100;
-    // 工事費合計 = 労務チェック行の代理店価格合計（掛率適用後）
+    // 工事費合計 = 労務チェック行の価格合計（定価モード時は定価、それ以外は代理店価格）
+    const _pdfModeNameUO = (!state.frpMode && (state.quoteCategory || '').includes('工事')) ? 'pdfPriceModeKouji' : 'pdfPriceMode';
+    const _isTeika = ([...document.getElementsByName(_pdfModeNameUO)].find(r => r.checked)?.value || 'teika') === 'teika';
     const koujihi = state.sections.reduce((sum, s) =>
       sum + s.items.reduce((ss, i) => {
         if (!i.includeInLabor) return ss;
         const r = i.dairiRate ?? state.mainRate;
         const amt = Number(i.amount) || 0;
-        return ss + (r != null ? Math.round(amt * r) : amt);
+        return ss + (!_isTeika && r != null ? Math.round(amt * r) : amt);
       }, 0), 0);
     // 労務費 = 手入力優先、なければ逆算（工事費 ÷ (1 + 法定福利費率)）
     const manualLaborCost = Number(getValue('laborCost')) || 0;
@@ -4795,7 +4826,7 @@ const app = (() => {
       ? Math.round(manualLaborCost * legalRate)
       : koujihi - laborCost;
     const anzenCost    = Number(getValue('anzenCost')) || 0;
-    const materialCost = deliveryPrice - koujihi - anzenCost;
+    const materialCost = (_isTeika ? grandTotal : deliveryPrice) - koujihi - anzenCost;
 
     const quoteNoStr   = state.seqNo || '（未採番）';
     setText('sum-quoteNo',    quoteNoStr);
@@ -4925,12 +4956,15 @@ const app = (() => {
       validDays:       state.validDays,
       deliveryPrice:   state.deliveryPrice,
       laborCost:       (() => {
+        const cat = state.quoteCategory || '';
+        const modeName = (!state.frpMode && cat.includes('工事')) ? 'pdfPriceModeKouji' : 'pdfPriceMode';
+        const isTeika = ([...document.getElementsByName(modeName)].find(r => r.checked)?.value || 'teika') === 'teika';
         const koujihi = state.sections.reduce((sum, s) =>
           sum + s.items.reduce((ss, i) => {
             if (!i.includeInLabor) return ss;
             const r = i.dairiRate ?? state.mainRate;
             const amt = Number(i.amount) || 0;
-            return ss + (r != null ? Math.round(amt * r) : amt);
+            return ss + (!isTeika && r != null ? Math.round(amt * r) : amt);
           }, 0), 0);
         const rate = (Number(state.legalWelfareRate) || 14.6) / 100;
         return state.laborCost != null
@@ -5174,6 +5208,7 @@ const app = (() => {
       });
       statusEl.textContent = '✅ 保存しました（' + new Date().toLocaleTimeString('ja-JP') + '）';
       showToast('CRMに保存しました');
+      markClean();
     } catch (e) {
       const errData = e?.data?.[0];
       const msg = errData
@@ -5476,6 +5511,18 @@ const app = (() => {
     updateOutput();
   }
 
+  function markDirty() {
+    isDirty = true;
+    const banner = document.getElementById('unsavedBanner');
+    if (banner) banner.style.display = '';
+  }
+
+  function markClean() {
+    isDirty = false;
+    const banner = document.getElementById('unsavedBanner');
+    if (banner) banner.style.display = 'none';
+  }
+
   function showToast(msg, type = 'info') {
     const colors = { info: '#1a4d8f', warn: '#856404', err: '#c0392b' };
     const div = document.createElement('div');
@@ -5635,6 +5682,7 @@ const app = (() => {
     generatePDF,
     generateSummaryPDF,
     updatePdfModeDesc,
+    updateOutput,
     // 貴社お渡し価格リセット
     resetDeliveryPrice: () => {
       const el = document.getElementById('deliveryPrice');

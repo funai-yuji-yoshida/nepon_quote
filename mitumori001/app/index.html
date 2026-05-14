@@ -23,6 +23,11 @@
       <div class="quote-no-badge" id="quoteNoBadge">採番待ち</div>
     </header>
 
+    <!-- 未保存警告バナー -->
+    <div id="unsavedBanner" style="display:none;background:#fff3cd;border-bottom:1px solid #ffc107;padding:6px 16px;font-size:12px;color:#856404;">
+      ⚠️ 未保存の変更があります。閉じる前に「CRMに保存」を押してください。
+    </div>
+
     <!-- タブナビゲーション -->
     <nav class="tab-nav">
       <button class="tab-btn active" data-tab="basic">① 基本情報</button>
@@ -574,17 +579,17 @@
 
           <div id="pdfPriceModeGroupKouji" class="pdf-price-mode-group" style="display:none">
             <span class="pdf-price-mode-label">印刷価格:</span>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="teika" onchange="app.updatePdfModeDesc()"> 定価</label>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-kouji" checked onchange="app.updatePdfModeDesc()"> 代理店価格</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="teika" onchange="app.updateOutput()"> 定価</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-kouji" checked onchange="app.updateOutput()"> 代理店価格</label>
             <div class="pdf-price-mode-desc" id="pdfPriceModeDescKouji"></div>
           </div>
 
           <div id="pdfPriceModeGroup" class="pdf-price-mode-group" style="display:none">
             <div class="pdf-price-mode-label">印刷価格モード:</div>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="teika" onchange="app.updatePdfModeDesc()"> 1. 定価のみ</label>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-bulk" checked onchange="app.updatePdfModeDesc()"> 2. 一括仕切</label>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-discount" onchange="app.updatePdfModeDesc()"> 3. 出精値引き</label>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi" onchange="app.updatePdfModeDesc()"> 4. 仕切表示</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="teika" onchange="app.updateOutput()"> 1. 定価のみ</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-bulk" checked onchange="app.updateOutput()"> 2. 一括仕切</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-discount" onchange="app.updateOutput()"> 3. 出精値引き</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi" onchange="app.updateOutput()"> 4. 仕切表示</label>
             <div class="pdf-price-mode-desc" id="pdfPriceModeDesc"></div>
           </div>
 
