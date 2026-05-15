@@ -4809,13 +4809,15 @@ const app = (() => {
     const legalRate    = (Number(getValue('legalWelfareRate')) || 14.6) / 100;
     // 工事費合計 = 労務チェック行の価格合計（定価モード時は定価、それ以外は代理店価格）
     const _pdfModeNameUO = (!state.frpMode && (state.quoteCategory || '').includes('工事')) ? 'pdfPriceModeKouji' : 'pdfPriceMode';
-    const _isTeika = ([...document.getElementsByName(_pdfModeNameUO)].find(r => r.checked)?.value || 'teika') === 'teika';
+    const _pdfModeVal = ([...document.getElementsByName(_pdfModeNameUO)].find(r => r.checked)?.value || 'teika');
+    const _isTeika = _pdfModeVal === 'teika';
+    const _useTeikaForKouji = ['teika', 'dairi-discount'].includes(_pdfModeVal);
     const koujihi = state.sections.reduce((sum, s) =>
       sum + s.items.reduce((ss, i) => {
         if (!i.includeInLabor) return ss;
         const r = i.dairiRate ?? state.mainRate;
         const amt = Number(i.amount) || 0;
-        return ss + (!_isTeika && r != null ? Math.round(amt * r) : amt);
+        return ss + (!_useTeikaForKouji && r != null ? Math.round(amt * r) : amt);
       }, 0), 0);
     // 労務費 = 手入力優先、なければ逆算（工事費 ÷ (1 + 法定福利費率)）
     const manualLaborCost = Number(getValue('laborCost')) || 0;
@@ -4958,13 +4960,14 @@ const app = (() => {
       laborCost:       (() => {
         const cat = state.quoteCategory || '';
         const modeName = (!state.frpMode && cat.includes('工事')) ? 'pdfPriceModeKouji' : 'pdfPriceMode';
-        const isTeika = ([...document.getElementsByName(modeName)].find(r => r.checked)?.value || 'teika') === 'teika';
+        const modeVal = ([...document.getElementsByName(modeName)].find(r => r.checked)?.value || 'teika');
+        const useTeikaForKouji = ['teika', 'dairi-discount'].includes(modeVal);
         const koujihi = state.sections.reduce((sum, s) =>
           sum + s.items.reduce((ss, i) => {
             if (!i.includeInLabor) return ss;
             const r = i.dairiRate ?? state.mainRate;
             const amt = Number(i.amount) || 0;
-            return ss + (!isTeika && r != null ? Math.round(amt * r) : amt);
+            return ss + (!useTeikaForKouji && r != null ? Math.round(amt * r) : amt);
           }, 0), 0);
         const rate = (Number(state.legalWelfareRate) || 14.6) / 100;
         return state.laborCost != null
@@ -5604,6 +5607,7 @@ const app = (() => {
     'dairi-bulk':   '表示は定価。仕切は合計を一括表示。',
     'dairi-discount': '定価合計から値引き額を差し引いた形式で表示します。',
     dairi:          '各行に定価及び仕切の単価、合計を表示。',
+    'dairi-only':   '仕切単価・仕切合計のみ表示。値引きがある場合は表示。お渡し価格を表示。',
   };
 
   function updatePdfModeDesc() {
