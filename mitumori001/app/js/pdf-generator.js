@@ -971,9 +971,24 @@ const QuotationPDF = (() => {
                   },
                 ],
               },
-              { text: `納期（御注文後）　${data.deliveryTerm || ''}`, fontSize: 8, margin: [0, amountMgn, 0, 0] },
-              { text: `受 渡 し 方 法　　${data.deliveryMethod || ''}`, fontSize: 8 },
-              { text: `支 払 い 条 件　　${data.paymentTerm || ''}`, fontSize: 8 },
+              {
+                margin: [0, amountMgn, 0, 0],
+                table: {
+                  widths: [70, '*'],
+                  body: [
+                    [{ text: '納期（御注文後）', fontSize: 8 }, { text: data.deliveryTerm || '', fontSize: 8 }],
+                    [{ text: '受 渡 し 方 法', fontSize: 8 }, { text: data.deliveryMethod || '', fontSize: 8 }],
+                    [{ text: '支 払 い 条 件', fontSize: 8 }, { text: data.paymentTerm || '', fontSize: 8 }],
+                  ],
+                },
+                layout: {
+                  defaultBorder: false,
+                  paddingLeft: () => 0,
+                  paddingRight: () => 2,
+                  paddingTop: () => 0,
+                  paddingBottom: () => 2,
+                },
+              },
               { text: `${data.validDays || ''}`, fontSize: 8, margin: [0, compact ? 1 : 3, 0, 0] },
             ],
           },

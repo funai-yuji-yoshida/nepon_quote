@@ -3645,11 +3645,15 @@ const app = (() => {
       if (!row) {
         row = createItemRowDOM(item);
         tbody.appendChild(row);
-        // 商品アイテムには機器仕様マスタ行を追加
-        if (item.productId) {
+        // 商品アイテムまたは機器仕様があるアイテムには機器仕様マスタ行を追加
+        if (item.productId || item.machineSpec || item.specMasterContent) {
           const spmRow = createSpecMasterRowDOM(item);
           row.insertAdjacentElement('afterend', spmRow);
-          loadItemSpecMaster(item).then(() => updateSpecMasterRow(item.id));
+          if (item.productId && !item.specMasterLoaded) {
+            loadItemSpecMaster(item).then(() => updateSpecMasterRow(item.id));
+          } else {
+            updateSpecMasterRow(item.id);
+          }
         }
       } else if (!row.dataset.dragReady) {
         row.draggable = true;
@@ -4338,6 +4342,8 @@ const app = (() => {
           gensuiEnabled: item.gensuiEnabled,
           kojiCategory: item.kojiCategory,
           specLines: item.specLines,
+          machineSpec: item.machineSpec,
+          specMasterContent: item.specMasterContent,
         })),
       })),
     });
@@ -4491,8 +4497,18 @@ const app = (() => {
         item.gensuiA       = tplItem.gensuiA       || 0;
         item.gensuiB       = tplItem.gensuiB       || 0;
         item.gensuiEnabled = tplItem.gensuiEnabled || false;
-        item.kojiCategory  = tplItem.kojiCategory  || '';
-        item.specLines     = Array.isArray(tplItem.specLines) ? [...tplItem.specLines] : [];
+        item.kojiCategory      = tplItem.kojiCategory      || '';
+        item.specLines         = Array.isArray(tplItem.specLines) ? [...tplItem.specLines] : [];
+        item.machineSpec       = tplItem.machineSpec       || null;
+        item.specMasterContent = tplItem.specMasterContent || null;
+        if (item.machineSpec && !item.specMasterContent) {
+          item.specMasterContent = item.machineSpec.specs
+            .map(s => s.value ? `${s.label}：${s.value}` : s.label).filter(Boolean).join('\n');
+        }
+        if (item.machineSpec || item.specMasterContent) {
+          item.specMasterLoaded      = true;
+          item.specMasterFromProducts = false;
+        }
         section.items.push(item);
       });
       if (section.items.length === 0) section.items.push(createItem());
