@@ -4827,7 +4827,7 @@ const app = (() => {
     const _pdfModeNameUO = (!state.frpMode && (state.quoteCategory || '').includes('工事')) ? 'pdfPriceModeKouji' : 'pdfPriceMode';
     const _pdfModeVal = ([...document.getElementsByName(_pdfModeNameUO)].find(r => r.checked)?.value || 'teika');
     const _isTeika = _pdfModeVal === 'teika';
-    const _useTeikaForKouji = ['teika', 'dairi-discount'].includes(_pdfModeVal);
+    const _useTeikaForKouji = ['teika', 'dairi-discount', 'dairi'].includes(_pdfModeVal);
     const koujihi = state.sections.reduce((sum, s) =>
       sum + s.items.reduce((ss, i) => {
         if (!i.includeInLabor) return ss;
@@ -4977,7 +4977,7 @@ const app = (() => {
         const cat = state.quoteCategory || '';
         const modeName = (!state.frpMode && cat.includes('工事')) ? 'pdfPriceModeKouji' : 'pdfPriceMode';
         const modeVal = ([...document.getElementsByName(modeName)].find(r => r.checked)?.value || 'teika');
-        const useTeikaForKouji = ['teika', 'dairi-discount'].includes(modeVal);
+        const useTeikaForKouji = ['teika', 'dairi-discount', 'dairi'].includes(modeVal);
         const koujihi = state.sections.reduce((sum, s) =>
           sum + s.items.reduce((ss, i) => {
             if (!i.includeInLabor) return ss;
@@ -5623,7 +5623,7 @@ const app = (() => {
     'dairi-bulk':   '表示は定価。仕切は合計を一括表示。',
     'dairi-discount': '定価合計から値引き額を差し引いた形式で表示します。',
     dairi:          '各行に定価及び仕切の単価、合計を表示。',
-    'dairi-only':   '仕切単価・仕切合計のみ表示。値引きがある場合は表示。お渡し価格を表示。',
+    'dairi-only':   '仕切単価・仕切合計のみ表示',
   };
 
   function updatePdfModeDesc() {
