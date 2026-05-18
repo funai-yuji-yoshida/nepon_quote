@@ -578,9 +578,12 @@
 
 
           <div id="pdfPriceModeGroupKouji" class="pdf-price-mode-group" style="display:none">
-            <span class="pdf-price-mode-label">印刷価格:</span>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="teika" onchange="app.updateOutput()"> 定価</label>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-kouji" checked onchange="app.updateOutput()"> 代理店価格</label>
+            <div class="pdf-price-mode-label">印刷価格モード:</div>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="teika" checked onchange="app.updateOutput()"> 1. 定価のみ</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-bulk" onchange="app.updateOutput()"> 2. 一括仕切</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-discount" onchange="app.updateOutput()"> 3. 出精値引き</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi" onchange="app.updateOutput()"> 4. 仕切表示（定価も表示）</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-only" onchange="app.updateOutput()"> 5. 仕切表示のみ</label>
             <div class="pdf-price-mode-desc" id="pdfPriceModeDescKouji"></div>
           </div>
 
