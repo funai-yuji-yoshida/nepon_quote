@@ -340,7 +340,7 @@ const QuotationPDF = (() => {
     const displayPrice = isTeika ? grandTotal : deliveryPrice;
 
     // 代理店モード: 8列（単価・合計・仕切単価・仕切合計）、定価モード: 6列
-    const COL_WIDTHS = useDairi ? [22, '*', 24, 30, 44, 44, 44, 50] : [22, '*', 36, 30, 58, 58];
+    const COL_WIDTHS = useDairi ? [22, '*', 24, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58];
     const COLS = useDairi ? 8 : 6;
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
 
@@ -1222,7 +1222,7 @@ const QuotationPDF = (() => {
       if (roundingEnabled && item.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
       return Math.round((Number(item.amount) || 0) * rate);
     };
-    const COL_WIDTHS = useDairi ? [20, '*', 22, 30, 44, 44, 44, 50] : [22, '*', 36, 30, 58, 58];
+    const COL_WIDTHS = useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58];
     const COLS = useDairi ? 8 : 6;
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
@@ -1430,7 +1430,7 @@ const QuotationPDF = (() => {
       if (roundingEnabled && item.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
       return Math.round((Number(item.amount) || 0) * rate);
     };
-    const COL_WIDTHS = useDairi ? [20, '*', 22, 30, 44, 44, 44, 50] : [22, '*', 36, 30, 58, 58];
+    const COL_WIDTHS = useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58];
     const COLS = useDairi ? 8 : 6;
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
@@ -1653,7 +1653,7 @@ const QuotationPDF = (() => {
       const qty = Number(item.qty) || 1;
       return Math.round(dairiItemAmt(item) / qty);
     };
-    const COL_WIDTHS = useDairi ? [20, '*', 22, 30, 44, 44, 44, 50] : [22, '*', 36, 30, 58, 58];
+    const COL_WIDTHS = useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58];
     const COLS = useDairi ? 8 : 6;
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
@@ -1870,7 +1870,7 @@ const QuotationPDF = (() => {
       const qty = Number(item.qty) || 1;
       return Math.round(dairiItemAmt(item) / qty);
     };
-    const COL_WIDTHS = useDairi ? [20, '*', 22, 30, 44, 44, 44, 50] : [22, '*', 36, 30, 58, 58];
+    const COL_WIDTHS = useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58];
     const COLS = useDairi ? 8 : 6;
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
