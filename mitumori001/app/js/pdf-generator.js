@@ -73,6 +73,13 @@ const QuotationPDF = (() => {
     return num.toLocaleString('ja-JP');
   }
 
+  function roundUp(price) {
+    if (!price || price < 100) return price;
+    if (price < 10000)   return Math.ceil(price / 10)   * 10;
+    if (price < 1000000) return Math.ceil(price / 100)  * 100;
+    return                      Math.ceil(price / 1000) * 1000;
+  }
+
   /** Date → 和暦文字列（例: 令和8年4月7日） */
   function toJpDate(date) {
     try {
@@ -283,11 +290,11 @@ const QuotationPDF = (() => {
             ? buildFrpDetailPages({ quoteNoStr, frpItems, frpAB, frpPriceTotal, frpShikiriTotal })
             : quoteCategory.includes('工事')
               ? (data.printMode === 'simple'
-                  ? buildKoujiSummaryDetailPages({ sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal })
-                  : buildKoujiDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, showSubtotalBoth: data.showSubtotalBoth }))
+                  ? buildKoujiSummaryDetailPages({ sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, roundingEnabled: data.roundingEnabled })
+                  : buildKoujiDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, showSubtotalBoth: data.showSubtotalBoth, roundingEnabled: data.roundingEnabled }))
               : (data.printMode === 'simple'
-                  ? buildBuppanSagyoSummaryDetailPages({ sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal })
-                  : buildBuppanSagyoDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, showSubtotalBoth: data.showSubtotalBoth }))
+                  ? buildBuppanSagyoSummaryDetailPages({ sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, roundingEnabled: data.roundingEnabled })
+                  : buildBuppanSagyoDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, showSubtotalBoth: data.showSubtotalBoth, roundingEnabled: data.roundingEnabled }))
           ),
         ] : []),
       ],
@@ -307,18 +314,23 @@ const QuotationPDF = (() => {
     const useDairiColumns = pdfPriceMode === 'dairi' && isDairiAvailable;
     const isShikiOnly = pdfPriceMode === 'dairi-only' && isDairiAvailable;
     const useDairi = useDairiColumns || isKoujiDairi;
+    const roundingEnabled = data.roundingEnabled || false;
+    const dairiUnit = (item) => {
+      if (item?.finalDairiUnit != null) return item.finalDairiUnit;
+      if (item?.dairiUnitPrice != null) return item.dairiUnitPrice;
+      const rate = (item?.dairiRate ?? mainRate) ?? mainRate;
+      if (!item?.unitPrice || rate == null) return null;
+      const auto = Math.round(item.unitPrice * rate);
+      return roundingEnabled ? roundUp(auto) : auto;
+    };
     const dairi = (v, item) => {
       const qty = Number(item?.qty) || 1;
       if (item?.finalDairiUnit != null) return item.finalDairiUnit * qty;
       if (item?.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
       const rate = (item?.dairiRate ?? mainRate) ?? mainRate;
-      return rate != null ? Math.round((Number(v) || 0) * rate) : 0;
-    };
-    const dairiUnit = (item) => {
-      if (item?.finalDairiUnit != null) return item.finalDairiUnit;
-      if (item?.dairiUnitPrice != null) return item.dairiUnitPrice;
-      const rate = (item?.dairiRate ?? mainRate) ?? mainRate;
-      return item?.unitPrice && rate != null ? Math.round(item.unitPrice * rate) : null;
+      if (rate == null) return 0;
+      if (roundingEnabled && item?.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
+      return Math.round((Number(v) || 0) * rate);
     };
     // 値引き額ラベル: 工事を含む場合→「出精値引き」、物販・作業→「値引き額」
     const discountLabel = (quoteCategory || '').includes('工事') ? '出精値引き' : '値引き額';
@@ -1190,20 +1202,25 @@ const QuotationPDF = (() => {
 
   // ── 2ページ目以降（見積まとめモード・工事）────────────────────
 
-  function buildKoujiSummaryDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal }) {
+  function buildKoujiSummaryDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, roundingEnabled }) {
     const useDairi    = pdfPriceMode === 'dairi'      && (mainRate != null || dairiTotal != null);
     const isBulk      = pdfPriceMode === 'dairi-bulk' && (mainRate != null || dairiTotal != null);
     const isShikiOnly = pdfPriceMode === 'dairi-only' && (mainRate != null || dairiTotal != null);
+    const dairiItemUnit = (item) => {
+      if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
+      const rate = item.dairiRate ?? mainRate;
+      if (!item.unitPrice || rate == null) return null;
+      const auto = Math.round(item.unitPrice * rate);
+      return roundingEnabled ? roundUp(auto) : auto;
+    };
     const dairiItemAmt = (item) => {
       const qty = Number(item.qty) || 1;
       if (item.finalDairiUnit != null) return item.finalDairiUnit * qty;
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
       const rate = item.dairiRate ?? mainRate;
-      return rate != null ? Math.round((Number(item.amount) || 0) * rate) : 0;
-    };
-    const dairiItemUnit = (item) => {
-      if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
-      return item.unitPrice ? Math.round(item.unitPrice * (item.dairiRate ?? mainRate)) : null;
+      if (rate == null) return 0;
+      if (roundingEnabled && item.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
+      return Math.round((Number(item.amount) || 0) * rate);
     };
     const COL_WIDTHS = useDairi ? [20, '*', 22, 30, 44, 44, 44, 50] : [22, '*', 36, 30, 58, 58];
     const COLS = useDairi ? 8 : 6;
@@ -1393,20 +1410,25 @@ const QuotationPDF = (() => {
 
   // ── 2ページ目以降（見積まとめモード・物販/作業）────────────────
 
-  function buildBuppanSagyoSummaryDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal }) {
+  function buildBuppanSagyoSummaryDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, roundingEnabled }) {
     const useDairi = (pdfPriceMode === 'dairi' || pdfPriceMode === 'dairi-kouji') && (mainRate != null || dairiTotal != null);
     const isBulk = pdfPriceMode === 'dairi-bulk' && (mainRate != null || dairiTotal != null);
     const isShikiOnly = pdfPriceMode === 'dairi-only' && (mainRate != null || dairiTotal != null);
+    const dairiItemUnit = (item) => {
+      if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
+      const rate = item.dairiRate ?? mainRate;
+      if (!item.unitPrice || rate == null) return null;
+      const auto = Math.round(item.unitPrice * rate);
+      return roundingEnabled ? roundUp(auto) : auto;
+    };
     const dairiItemAmt = (item) => {
       const qty = Number(item.qty) || 1;
       if (item.finalDairiUnit != null) return item.finalDairiUnit * qty;
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
       const rate = item.dairiRate ?? mainRate;
-      return rate != null ? Math.round((Number(item.amount) || 0) * rate) : 0;
-    };
-    const dairiItemUnit = (item) => {
-      if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
-      return item.unitPrice ? Math.round(item.unitPrice * (item.dairiRate ?? mainRate)) : null;
+      if (rate == null) return 0;
+      if (roundingEnabled && item.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
+      return Math.round((Number(item.amount) || 0) * rate);
     };
     const COL_WIDTHS = useDairi ? [20, '*', 22, 30, 44, 44, 44, 50] : [22, '*', 36, 30, 58, 58];
     const COLS = useDairi ? 8 : 6;
@@ -1599,7 +1621,7 @@ const QuotationPDF = (() => {
 
   // ── 2ページ目以降（明細書・工事）────────────────────────────
 
-  function buildKoujiDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, showSubtotalBoth }) {
+  function buildKoujiDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, showSubtotalBoth, roundingEnabled }) {
     const useDairi    = pdfPriceMode === 'dairi'      && (mainRate != null || dairiTotal != null);
     const isBulk      = pdfPriceMode === 'dairi-bulk' && (mainRate != null || dairiTotal != null);
     const isShikiOnly = pdfPriceMode === 'dairi-only' && (mainRate != null || dairiTotal != null);
@@ -1607,14 +1629,18 @@ const QuotationPDF = (() => {
       if (item.finalDairiUnit != null) return item.finalDairiUnit;
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
       const rate = item.dairiRate ?? mainRate;
-      return item.unitPrice && rate != null ? Math.round(item.unitPrice * rate) : null;
+      if (!item.unitPrice || rate == null) return null;
+      const auto = Math.round(item.unitPrice * rate);
+      return roundingEnabled ? roundUp(auto) : auto;
     };
     const dairiItemAmt = (item) => {
       const qty = Number(item.qty) || 1;
       if (item.finalDairiUnit != null) return item.finalDairiUnit * qty;
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
       const rate = item.dairiRate ?? mainRate;
-      return rate != null ? Math.round((Number(item.amount) || 0) * rate) : 0;
+      if (rate == null) return 0;
+      if (roundingEnabled && item.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
+      return Math.round((Number(item.amount) || 0) * rate);
     };
     const effectiveUnitPrice = (item) => {
       if (item.unitPrice) return item.unitPrice;
@@ -1812,7 +1838,7 @@ const QuotationPDF = (() => {
 
   // ── 2ページ目以降（明細書・物販/作業）──────────────────────────
 
-  function buildBuppanSagyoDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, showSubtotalBoth }) {
+  function buildBuppanSagyoDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, showSubtotalBoth, roundingEnabled }) {
     const useDairi = (pdfPriceMode === 'dairi' || pdfPriceMode === 'dairi-kouji') && (mainRate != null || dairiTotal != null);
     const isBulk = pdfPriceMode === 'dairi-bulk' && (mainRate != null || dairiTotal != null);
     const isShikiOnly = pdfPriceMode === 'dairi-only' && (mainRate != null || dairiTotal != null);
@@ -1820,14 +1846,18 @@ const QuotationPDF = (() => {
       if (item.finalDairiUnit != null) return item.finalDairiUnit;
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
       const rate = item.dairiRate ?? mainRate;
-      return item.unitPrice && rate != null ? Math.round(item.unitPrice * rate) : null;
+      if (!item.unitPrice || rate == null) return null;
+      const auto = Math.round(item.unitPrice * rate);
+      return roundingEnabled ? roundUp(auto) : auto;
     };
     const dairiItemAmt = (item) => {
       const qty = Number(item.qty) || 1;
       if (item.finalDairiUnit != null) return item.finalDairiUnit * qty;
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
       const rate = item.dairiRate ?? mainRate;
-      return rate != null ? Math.round((Number(item.amount) || 0) * rate) : 0;
+      if (rate == null) return 0;
+      if (roundingEnabled && item.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
+      return Math.round((Number(item.amount) || 0) * rate);
     };
     const effectiveUnitPrice = (item) => {
       if (item.unitPrice) return item.unitPrice;

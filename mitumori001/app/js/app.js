@@ -5037,6 +5037,8 @@ const app = (() => {
         return cb ? cb.checked : false;
       })(),
 
+      roundingEnabled: state.roundingEnabled || false,
+
       frpMode:   state.frpMode  || false,
       frpAB:     state.frpAB    || 'A',
       frpItems:  state.frpMode ? (state.frpItems || []) : undefined,
