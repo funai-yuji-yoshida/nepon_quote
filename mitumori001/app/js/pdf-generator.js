@@ -591,7 +591,7 @@ const QuotationPDF = (() => {
           { text: '' }, { text: '' }, { text: '' },
           { text: '', border: [false, false, false, false] },
           { text: '', border: [false, false, false, false] },
-          { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+          { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
         ]);
       }
       if (isBuppan) {
@@ -602,7 +602,7 @@ const QuotationPDF = (() => {
             { text: '' }, { text: '' }, { text: '' },
             { text: '', border: [false, false, false, false] },
             { text: '', border: [false, false, false, false] },
-            { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+            { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
           ]);
         }
         tableRows.push([
@@ -643,7 +643,7 @@ const QuotationPDF = (() => {
             { text: '', border: [true, false, false, false] },
             { text: discountLabel, alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
             ...emp(spanMid - 1),
-            { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+            { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
           ]);
         }
         tableRows.push([
@@ -658,7 +658,7 @@ const QuotationPDF = (() => {
             { text: '', border: [true, false, false, false] },
             { text: '値引き（明細計）', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
             ...emp(spanMid - 1),
-            { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+            { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
           ]);
         }
         tableRows.push([
@@ -685,7 +685,7 @@ const QuotationPDF = (() => {
             { text: '', border: [true, false, false, false] },
             { text: discountLabel, alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
             ...emp(spanMid - 1),
-            { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+            { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
           ]);
         }
         const oshiTop = willShowDeliveryPrice && discount === 0;
@@ -701,7 +701,7 @@ const QuotationPDF = (() => {
           { text: '', border: [true, false, false, false] },
           { text: '値引き（明細計）', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
           ...emp(spanMid - 1),
-          { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+          { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
         ]);
         tableRows.push([
           { text: '', border: [true, false, false, false] },
@@ -724,7 +724,7 @@ const QuotationPDF = (() => {
           { text: '', border: [true, false, false, false] },
           { text: '値引き額', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
           ...emp(spanMid - 1),
-          { text: '▲ ' + fmt(discountAmt), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+          { text: '▲ ' + fmt(discountAmt), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
         ]);
       }
       tableRows.push([
@@ -746,7 +746,7 @@ const QuotationPDF = (() => {
           { text: '', border: [true, false, false, false] },
           { text: discountLabel, alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
           ...emp(spanMid - 1),
-          { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+          { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
         ]);
       }
       if (isBuppan && buhanDiscTotal > 0) {
@@ -754,7 +754,7 @@ const QuotationPDF = (() => {
           { text: '', border: [true, false, false, false] },
           { text: '値引き（明細計）', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
           ...emp(spanMid - 1),
-          { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+          { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
         ]);
       }
       tableRows.push([
@@ -776,7 +776,7 @@ const QuotationPDF = (() => {
           { text: '', border: [true, false, false, false] },
           { text: discountLabel, alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
           ...emp(spanMid - 1),
-          { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+          { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
         ]);
       }
       if (isBuppan && buhanDiscTotal > 0) {
@@ -784,7 +784,7 @@ const QuotationPDF = (() => {
           { text: '', border: [true, false, false, false] },
           { text: '値引き（明細計）', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
           ...emp(spanMid - 1),
-          { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+          { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
         ]);
       }
     }
