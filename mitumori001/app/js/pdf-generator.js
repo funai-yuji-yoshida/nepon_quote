@@ -632,12 +632,6 @@ const QuotationPDF = (() => {
         { text: fmt(grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
       ]);
       if (!isBuppan) {
-        tableRows.push([
-          { text: '', border: [true, false, false, false] },
-          { text: '仕切合計', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
-          ...emp(spanMid - 1),
-          { text: fmt(dairiGrandTotal), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
-        ]);
         if (discountEnabled && discount > 0) {
           tableRows.push([
             { text: '', border: [true, false, false, false] },
