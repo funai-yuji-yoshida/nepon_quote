@@ -343,6 +343,7 @@
             <div class="cat-search-wrap" style="flex:1;min-width:0;">
               <div class="cat-tabs">
                 <button class="cat-tab active" data-cat="product" onclick="app.switchCatTab('product')">商品</button>
+                <button class="cat-tab" data-cat="kiki" onclick="app.switchCatTab('kiki')" style="display:none">機器</button>
                 <button class="cat-tab" data-cat="kanzai" onclick="app.switchCatTab('kanzai')">管材</button>
                 <button class="cat-tab" data-cat="denzai" onclick="app.switchCatTab('denzai')">電材</button>
                 <button class="cat-tab" data-cat="kouji" onclick="app.switchCatTab('kouji')">工事</button>
@@ -353,6 +354,15 @@
                   <div class="product-search-group">
                     <input type="text" id="productSearch" placeholder="商品名・型式で検索..." class="input-search" oninput="app.searchProducts(this.value)">
                     <div id="productDropdown" class="product-dropdown" style="display:none"></div>
+                  </div>
+                </div>
+                <div class="cat-panel" id="catPanel-kiki" style="display:none">
+                  <div class="product-search-group">
+                    <select id="kikiKubunFilter" class="input-search" style="height:30px;width:80px;" onchange="app.searchKiki(document.getElementById('kikiSearch').value)">
+                      <option value="">― 分類 ―</option>
+                    </select>
+                    <input type="text" id="kikiSearch" placeholder="品名・品番・型式で検索..." class="input-search" oninput="app.searchKiki(this.value)">
+                    <div id="kikiDropdown" class="product-dropdown" style="display:none"></div>
                   </div>
                 </div>
                 <div class="cat-panel" id="catPanel-kanzai" style="display:none">
@@ -409,6 +419,7 @@
 
         <!-- 既存関数との互換用（非表示） -->
         <select id="productTargetSection" style="display:none"></select>
+        <select id="kikiTargetSection" style="display:none"></select>
         <select id="kanzaiTargetSection" style="display:none"></select>
         <select id="denzaiTargetSection" style="display:none"></select>
         <select id="standardTargetSection" style="display:none"></select>

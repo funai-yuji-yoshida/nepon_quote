@@ -800,8 +800,10 @@ const app = (() => {
     koujihi:        [],       // 工事費マスタ（CustomModule1 から取得）
     kanzai:         [],       // 管材マスタ（CustomModule18 から取得）
     denzai:         [],       // 電材マスタ（CustomModule19 から取得）
+    kiki:           [],       // 工事用機器リスト（CustomModule23 から取得）
     pendingKanzai:  null,     // 管材選択済み・追加待ち
     pendingDenzai:  null,     // 電材選択済み・追加待ち
+    pendingKiki:    null,     // 機器選択済み・追加待ち
     searchResults:  [],       // 直近の検索結果（クリック時に参照）
     pendingProduct:  null,     // 検索で選択済み・追加待ちの商品
     savedJson:       null,     // CRM に保存済みの見積JSON
@@ -873,7 +875,7 @@ const app = (() => {
 
     document.addEventListener('click', e => {
       if (!e.target.closest('.product-search-group')) {
-        ['productDropdown', 'kanzaiDropdown', 'denzaiDropdown'].forEach(id => {
+        ['productDropdown', 'kikiDropdown', 'kanzaiDropdown', 'denzaiDropdown'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.style.display = 'none';
         });
@@ -1008,8 +1010,10 @@ const app = (() => {
         }
       }
     }
-    // 物販・作業には工事カテゴリ採番が不要 → seqNo を自動クリア
-    if (state.seqNo && !(state.quoteCategory || '').includes('工事')) {
+    // 工事採番コード（CD/CE/CK/CP/CQ）が誤混入している物販・作業見積のみクリア
+    const _KOUJI_PREFIXES = ['CD','CE','CK','CP','CQ'];
+    if (state.seqNo && _KOUJI_PREFIXES.some(p => state.seqNo.startsWith(p))
+        && !(state.quoteCategory || '').includes('工事')) {
       state.seqNo        = '';
       state.koujiCategory  = '';
       state.createDeptCode = '';
@@ -1090,6 +1094,7 @@ const app = (() => {
     loadKoujihi();
     loadKanzai();
     loadDenzai();
+    loadKiki();
     loadCurrentUser();
 
     showToast('CRMデータを読み込みました');
@@ -1140,6 +1145,10 @@ const app = (() => {
     if (catEl) catEl.textContent = state.quoteCategory || '―';
     // 値引き額ラベル切り替え（工事を含む場合→出精値引き）
     const isKouji = (state.quoteCategory || '').includes('工事');
+    // 機器タブ: 工事カテゴリのみ表示
+    const kikiTabBtn = document.querySelector('.cat-tab[data-cat="kiki"]');
+    if (kikiTabBtn) kikiTabBtn.style.display = isKouji ? '' : 'none';
+    if (!isKouji && currentCat === 'kiki') switchCatTab('product');
     const discountLabelEl = document.getElementById('discountLabel');
     if (discountLabelEl) {
       discountLabelEl.textContent = isKouji ? '出精値引き' : '値引き額';
@@ -1630,6 +1639,116 @@ const app = (() => {
     }
   }
 
+  // ── 工事用機器リスト（CustomModule23）────────────────────────────
+
+  async function loadKiki() {
+    if (!zohoReady) return;
+    if (!(state.quoteCategory || '').includes('工事')) return;
+    try {
+      const data = await fetchAllRecords('CustomModule23', 'Name');
+      state.kiki = data.map(r => ({
+        id:     r.id,
+        name:   r.Name    || '',         // 品名
+        code:   r.field1  || '',         // 品番
+        model:  r.field2  || '',         // 型式
+        unit:   r.field3  || '台',       // 単位
+        price:  Number(r.price)  || 0,   // 小売価格
+        cost:   Number(r.field4) || 0,   // 原価
+        houdan: parseFloat(r.field5) || 0, // 歩単
+        kubun:  r.field6  || '',         // 分類
+        source: 'kiki',
+      }));
+      // 分類フィルターの選択肢を生成
+      const kubunSet = [...new Set(state.kiki.map(r => r.kubun).filter(Boolean))].sort();
+      const sel = document.getElementById('kikiKubunFilter');
+      if (sel) {
+        kubunSet.forEach(k => {
+          const opt = document.createElement('option');
+          opt.value = k;
+          opt.textContent = k;
+          sel.appendChild(opt);
+        });
+      }
+      console.log(`工事用機器リスト ${state.kiki.length} 件読み込み`);
+    } catch (e) {
+      console.warn('工事用機器リスト取得失敗:', e);
+    }
+  }
+
+  function searchKiki(query) {
+    const dd = document.getElementById('kikiDropdown');
+    const kubun = document.getElementById('kikiKubunFilter')?.value || '';
+    let items = state.kiki;
+    if (kubun) items = items.filter(r => r.kubun === kubun);
+    let filtered;
+    if (!query || query.length < 1) {
+      if (!kubun) { dd.style.display = 'none'; state._kikiResults = []; return; }
+      filtered = items.slice(0, 25);
+    } else {
+      const q = normalize(query);
+      filtered = items.filter(r =>
+        normalize(r.name).includes(q) ||
+        normalize(r.code || '').includes(q) ||
+        normalize(r.model || '').includes(q)
+      ).slice(0, 25);
+    }
+    state._kikiResults = filtered;
+    if (filtered.length === 0) { dd.style.display = 'none'; return; }
+    dd.innerHTML = filtered.map((item, idx) => `
+      <div class="product-item" data-idx="${idx}">
+        <div style="flex:1;min-width:0">
+          <div class="p-name">${escHtml(item.name)}</div>
+          <div class="p-code">${escHtml(item.model || '')}${item.code ? ' | ' + escHtml(item.code) : ''}${item.kubun ? ' [' + escHtml(item.kubun) + ']' : ''}</div>
+        </div>
+        <div class="p-price">¥${item.price.toLocaleString('ja-JP')}</div>
+      </div>`).join('');
+    dd.style.display = 'block';
+    dd.querySelectorAll('.product-item').forEach(el => {
+      el.addEventListener('click', e => {
+        e.stopPropagation();
+        const item = state._kikiResults[Number(el.dataset.idx)];
+        if (!item) return;
+        state.pendingKiki = item;
+        document.getElementById('kikiSearch').value = item.name;
+        dd.style.display = 'none';
+      });
+    });
+  }
+
+  function execKikiAdd() {
+    if (!state.pendingKiki) { showToast('機器を検索して選択してください', 'warn'); return; }
+    if (state.sections.length === 0) addSection();
+    const targetVal = (document.getElementById('kikiTargetSection') || {}).value || 'last';
+    let targetSection;
+    if (targetVal === 'last') {
+      targetSection = state.sections[state.sections.length - 1];
+    } else {
+      const id = Number(targetVal);
+      targetSection = state.sections.find(s => s.id === id) || state.sections[state.sections.length - 1];
+    }
+    const lastItem = targetSection.items[targetSection.items.length - 1];
+    if (lastItem && !lastItem.name && !lastItem.spec && !lastItem.unitPrice && !lastItem.amount) {
+      targetSection.items.pop();
+    }
+    const m = state.pendingKiki;
+    const item = createItem();
+    item.name      = m.name;
+    item.spec      = m.model || '';
+    item.unit      = m.unit  || '台';
+    item.unitPrice = m.price || 0;
+    item.amount    = (m.price || 0) * (item.qty || 1);
+    item.genka     = m.cost  || 0;
+    item.houdan    = m.houdan || 0;
+    targetSection.items.push(item);
+    showToast(`No.${targetSection.no} に ${m.name} を追加しました`);
+    state.pendingKiki = null;
+    const searchEl = document.getElementById('kikiSearch');
+    if (searchEl) searchEl.value = '';
+    markDirty();
+    renderSections();
+    updateOutput();
+  }
+
   /** 全角→半角正規化（英数字・記号・スペース除去） */
   function normalize(s) {
     return String(s || '')
@@ -1749,7 +1868,7 @@ const app = (() => {
     document.querySelectorAll('.cat-tab').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.cat === cat);
     });
-    ['product', 'kanzai', 'denzai', 'standard', 'kouji'].forEach(c => {
+    ['product', 'kiki', 'kanzai', 'denzai', 'standard', 'kouji'].forEach(c => {
       const panel = document.getElementById(`catPanel-${c}`);
       if (panel) panel.style.display = c === cat ? '' : 'none';
     });
@@ -1812,11 +1931,12 @@ const app = (() => {
   function execCatAdd() {
     // 共通セレクトの値を各隠しセレクトに同期
     const val = document.getElementById('commonTargetSection')?.value || 'last';
-    ['productTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'standardTargetSection'].forEach(id => {
+    ['productTargetSection', 'kikiTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'standardTargetSection'].forEach(id => {
       const sel = document.getElementById(id);
       if (sel) sel.value = val;
     });
     if (currentCat === 'product')        execProductAdd();
+    else if (currentCat === 'kiki')      execKikiAdd();
     else if (currentCat === 'kanzai')    execMaterialAdd('kanzai');
     else if (currentCat === 'denzai')    execMaterialAdd('denzai');
     else if (currentCat === 'standard')  execStandardAdd();
@@ -1825,7 +1945,7 @@ const app = (() => {
 
   /** 追加先セクションセレクトを更新（セクション追加・削除時に呼ぶ） */
   function updateTargetSectionSelect() {
-    ['standardTargetSection', 'productTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'commonTargetSection'].forEach(id => {
+    ['standardTargetSection', 'productTargetSection', 'kikiTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'commonTargetSection'].forEach(id => {
       const sel = document.getElementById(id);
       if (!sel) return;
       const cur = sel.value;
@@ -3246,6 +3366,15 @@ const app = (() => {
     if (dairiRateEl) {
       const rateVal = dairiRateEl.value.trim();
       item.dairiRate = rateVal !== '' ? Number(rateVal) : null;
+    }
+
+    // 掛率変更時: 代理店単価欄を再計算して即時更新（手動上書きなしの場合のみ）
+    if (e.target === dairiRateEl && item.dairiUnitPrice == null) {
+      const dairiUnitElR = row.querySelector('.item-dairi-unit');
+      if (dairiUnitElR) {
+        const newUnit = effectiveDairiUnit(item);
+        dairiUnitElR.value = newUnit != null ? Number(newUnit).toLocaleString('ja-JP') : '';
+      }
     }
 
     // 代理店単価（手動入力時は item.dairiUnitPrice にセット）
@@ -5682,9 +5811,11 @@ const app = (() => {
     // 商品検索
     searchProducts,
     selectProduct,
-    // 管材・電材検索
+    // 管材・電材・機器検索
     searchKanzai,
     searchDenzai,
+    searchKiki,
+    execKikiAdd,
     execMaterialAdd,
     // 採番
     autoNumber,
