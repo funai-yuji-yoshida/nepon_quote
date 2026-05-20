@@ -1036,7 +1036,7 @@ const app = (() => {
     state.submitDate     = quote.field64 ? new Date(quote.field64) : null; // 見積提出日
     state.projectName2   = quote.field8  || '';  // 件名2行目
     state.projectName3   = quote.field7  || '';  // 件名3行目
-    state.mainRate    = quote.main_rate    != null ? Number(quote.main_rate)    : null;
+    state.mainRate    = quote.main_rate    != null ? Number(quote.main_rate)    : ((state.quoteCategory || '').includes('工事') ? 1.0 : null);
     state.itemRate    = quote.item_rate    != null ? Number(quote.item_rate)    : null;
     state.partsRate   = quote.parts_rate   != null ? Number(quote.parts_rate)   : null;
     state.purchaseRate = quote.purchase_rate != null ? Number(quote.purchase_rate) : null;
@@ -1047,6 +1047,14 @@ const app = (() => {
       try {
         const parsed = JSON.parse(savedJson);
         state.sections      = parsed.sections     || [];
+        // 工事カテゴリ: 代理店掛率が空欄の既存行に 1.0 を補正
+        if ((state.quoteCategory || '').includes('工事')) {
+          state.sections.forEach(sec => {
+            (sec.items || []).forEach(item => {
+              if (item.dairiRate == null) item.dairiRate = 1.0;
+            });
+          });
+        }
         state.deliveryPrice = parsed.deliveryPrice || state.deliveryPrice;
         state.laborCost     = parsed.laborCost     || null;
         state.anzenCost     = parsed.anzenCost     || 0;
@@ -3068,7 +3076,7 @@ const app = (() => {
       id: state.nextItemId++, productId: null, model: '',
       name: '', spec: '', qty: 1, unit: '式', unitPrice: null, amount: 0,
       includeInLabor: false,  // 労務費に含めるか（null=auto: ④工事費なら true）
-      dairiRate: null,       // null = グローバル main_rate を使用
+      dairiRate: (state.quoteCategory || '').includes('工事') ? 1.0 : null, // 工事は1.0固定、その他はグローバル main_rate を使用
       dairiUnitPrice: null,  // null = 自動計算（unitPrice × rate）、数値 = 手動上書き
       finalDairiUnit: null,  // null = 自動（代理店単価と同じ）、数値 = 手動上書き
       buhanDiscount: null,   // 値引き（物販のみ、行合計）
@@ -3120,6 +3128,12 @@ const app = (() => {
     updateSectionSubtotal(block);
     updateOutput();
     showToast(`掛率 ${rate} を適用しました`);
+  }
+
+  function onMainRateInput(val) {
+    const v = parseFloat(val);
+    state.mainRate = (!isNaN(v) && v > 0) ? v : null;
+    updateOutput();
   }
 
   function applyGlobalRate() {
@@ -5807,6 +5821,7 @@ const app = (() => {
     selectMachineSpecModel,
     addMachineSpecItem,
     _selectMachineSpecChip,
+    onMainRateInput,
     applyGlobalRate,
     // 商品検索
     searchProducts,
