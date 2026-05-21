@@ -551,13 +551,14 @@ const QuotationPDF = (() => {
     });
 
     // 空白行（行数が少ない場合ほど多めに挿入してページを埋める）
-    // ※ emptyTarget は見積外工事・備考の占有領域(~100pt)を考慮した安全値
+    // 備考の行数が多いと1ページを超えるため、追加行数分を差し引く
+    const remarksExtraLines = data.remarks ? Math.max(0, data.remarks.split('\n').length - 1) : 0;
     const emptyTarget = mirrorRowCount <= 5  ? 10 :
                         mirrorRowCount <= 8  ? 13 :
                         mirrorRowCount <= 11 ? 16 :
-                        mirrorRowCount <= 18 ? 20 :
+                        mirrorRowCount <= 18 ? 18 :
                         mirrorRowCount <= 26 ? 26 : 10;
-    const emptyRows = Math.max(0, emptyTarget - mirrorRowCount);
+    const emptyRows = Math.max(0, emptyTarget - mirrorRowCount - remarksExtraLines);
     for (let i = 0; i < emptyRows; i++) {
       const er = Array.from({ length: COLS }, () => ({ text: ' ', fontSize: itemFs }));
       tableRows.push(er);
