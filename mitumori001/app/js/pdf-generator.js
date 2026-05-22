@@ -91,6 +91,17 @@ const QuotationPDF = (() => {
     }
   }
 
+  /** Date → 西暦文字列（例: 2026年5月21日） */
+  function toSeikiDate(date) {
+    const d = date instanceof Date ? date : new Date(date);
+    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  }
+
+  /** dateFormat に応じて日付文字列を返す */
+  function formatDate(date, dateFormat) {
+    return dateFormat === 'seireki' ? toSeikiDate(date) : toJpDate(date);
+  }
+
   /** ArrayBuffer → base64 */
   function arrayBufferToBase64(buffer) {
     const bytes = new Uint8Array(buffer);
@@ -183,7 +194,7 @@ const QuotationPDF = (() => {
       return s + p * (Number(i.qty) || 1);
     }, 0);
 
-    const dateStr    = toJpDate(data.date || new Date());
+    const dateStr    = data.date ? formatDate(data.date, data.dateFormat) : '';
     const quoteNoStr = data.quoteNoStr || (data.seqNo ? `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}` : '');
 
     // セクション小計の計算
@@ -2057,7 +2068,7 @@ const QuotationPDF = (() => {
 
   function buildSummaryDocDefinition(data) {
     const font      = fontLoaded ? 'NotoSansJP' : 'Roboto';
-    const dateStr   = toJpDate(data.date || new Date());
+    const dateStr   = data.date ? formatDate(data.date, data.dateFormat) : '';
     const quoteNoStr = data.quoteNoStr || (data.seqNo ? `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}` : '');
     const sections  = data.sections || [];
     const showDairi = data.summaryShowDairi && data.mainRate != null;

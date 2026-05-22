@@ -86,6 +86,7 @@
         <div class="form-row">
           <label>見積提出日</label>
           <input type="date" id="quoteDate" class="input-date">
+          <button type="button" onclick="document.getElementById('quoteDate').value=''; app.updateOutput();" style="margin-left:4px;font-size:11px;padding:2px 6px;cursor:pointer;" title="日付をクリア">× クリア</button>
         </div>
       </div>
 
@@ -587,6 +588,15 @@
             </label>
           </div>
 
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              日付形式：
+              <select id="dateFormat" onchange="app.updateOutput()" style="margin-left:4px">
+                <option value="wareki">和暦（令和）</option>
+                <option value="seireki">西暦</option>
+              </select>
+            </label>
+          </div>
 
           <div id="pdfPriceModeGroupKouji" class="pdf-price-mode-group" style="display:none">
             <div class="pdf-price-mode-label">印刷価格モード:</div>

@@ -4911,9 +4911,11 @@ const app = (() => {
       if (footerDairiWrap) {
         if (dairiTotal != null) {
           const isBuhanFooter = isBuhanCalc && buhanDiscTotal > 0;
-          setText('footerDairi', '¥' + (isBuhanFooter ? deliveryPrice : dairiTotal).toLocaleString('ja-JP'));
+          const isSagyoFooter = !isBuhanCalc && discount > 0;
+          const showDelivery  = isBuhanFooter || isSagyoFooter;
+          setText('footerDairi', '¥' + (showDelivery ? deliveryPrice : dairiTotal).toLocaleString('ja-JP'));
           const footerLabelEl = document.getElementById('footerDairiLabel');
-          if (footerLabelEl) footerLabelEl.textContent = isBuhanFooter ? '販売価格' : '代理店';
+          if (footerLabelEl) footerLabelEl.textContent = isBuhanFooter ? '販売価格' : (isSagyoFooter ? '貴社お渡し' : '代理店');
           footerDairiWrap.style.display = '';
         } else {
           footerDairiWrap.style.display = 'none';
@@ -5041,7 +5043,7 @@ const app = (() => {
     state.branchKey      = getValue('branchSelect');
     const dateVal = getValue('quoteDate');
     state.submitDate = dateVal ? new Date(dateVal) : null;
-    state.date = state.submitDate || new Date();
+    state.date = state.submitDate || null;
   }
 
   // ── PDF 生成 ─────────────────────────────────────────────────
@@ -5105,7 +5107,7 @@ const app = (() => {
       seqNo:           state.seqNo,
       quoteNoStr:      state.seqNo || '',
       revision:        state.revision,
-      date:            state.submitDate || state.date,
+      date:            state.submitDate || state.date || null,
       customerName:    state.customerName,
       projectName:     state.projectName,
       projectName2:    state.projectName2 || undefined,
@@ -5185,6 +5187,7 @@ const app = (() => {
       frpMode:   state.frpMode  || false,
       frpAB:     state.frpAB    || 'A',
       frpItems:  state.frpMode ? (state.frpItems || []) : undefined,
+      dateFormat: getValue('dateFormat') || 'wareki',
     };
   }
 
