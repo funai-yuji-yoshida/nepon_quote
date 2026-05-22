@@ -14,6 +14,7 @@ const app = (() => {
     { col: 'col-name',          label: '品名',      always: true },
     { col: 'col-calc-cat',      label: 'カテゴリ',  def: true,  buhanDef: false },
     { col: 'col-spec',          label: '型番・規格', def: true  },
+    { col: 'col-product-code', label: '商品コード', def: false },
     { col: 'col-qty',           label: '数量',      always: true },
     { col: 'col-unit',          label: '単位',      always: true },
     { col: 'col-price',         label: '単価',      def: true  },
@@ -2024,6 +2025,7 @@ const app = (() => {
       item.productId   = product.id;
       item.name        = product.name;
       item.spec        = product.code;
+      item.productCode = product.code;
       item.model       = product.model || '';
       item.productSpec = product.specContent || '';
       item.unit        = product.unit || '式';
@@ -3074,7 +3076,7 @@ const app = (() => {
   function createItem() {
     return {
       id: state.nextItemId++, productId: null, model: '',
-      name: '', spec: '', qty: 1, unit: '式', unitPrice: null, amount: 0,
+      name: '', spec: '', productCode: '', qty: 1, unit: '式', unitPrice: null, amount: 0,
       includeInLabor: false,  // 労務費に含めるか（null=auto: ④工事費なら true）
       dairiRate: (state.quoteCategory || '').includes('工事') ? 1.0 : null, // 工事は1.0固定、その他はグローバル main_rate を使用
       dairiUnitPrice: null,  // null = 自動計算（unitPrice × rate）、数値 = 手動上書き
@@ -3807,6 +3809,8 @@ const app = (() => {
       if (![...row.querySelectorAll('input,select')].some(el => el === document.activeElement)) {
         row.querySelector('.item-name').value   = item.name;
         row.querySelector('.item-spec').value   = item.spec;
+        const productCodeEl = row.querySelector('.item-product-code');
+        if (productCodeEl) productCodeEl.textContent = item.productCode || '';
         row.querySelector('.item-qty').value    = item.qty;
         row.querySelector('.item-unit').value   = item.unit || '';
         row.querySelector('.item-price').value  = item.unitPrice != null ? Number(item.unitPrice).toLocaleString('ja-JP') : '';
