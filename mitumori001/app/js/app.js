@@ -5354,6 +5354,7 @@ const app = (() => {
         field61: saveDiscount,      // 値引き額（0も明示的に送信）
         field62: saveDeliveryPrice, // 貴社お渡し価格
         field64: state.submitDate ? formatDateInput(state.submitDate) : undefined, // 見積提出日
+        field63: state.quoteCategory || undefined, // 見積区分
         field8:  state.projectName2 || undefined, // 件名2行目
         field7:  state.projectName3 || undefined, // 件名3行目
         // サブフォームは後続の処理で deleteRecord + updateRecord で個別処理
