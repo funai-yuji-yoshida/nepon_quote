@@ -818,9 +818,11 @@ const app = (() => {
     frpItems:    [],      // FRP行リスト
     nextFrpId:   1,       // FRP行ID連番
     roundingEnabled: false, // 切り上げ表示モード
+    _thresholdSide: null,  // 閾値判定キャッシュ（'over'|'under'|null）
   };
 
   let isDirty = false;
+  let _skipThresholdCheck = false; // onMainRateInput 中はカテゴリ閾値チェックをスキップ
 
   let _machineSpecSectionId     = null;
   let _machineSpecModel         = null;
@@ -981,6 +983,7 @@ const app = (() => {
     state.projectName     = quote.Subject || '';
     state.ownerName       = quote.Owner?.name || '';
     state.quoteCategory   = quote.field63 || '';
+    state._thresholdSide  = null; // カテゴリ変更ダイアログを初回ロード時に出さない
     state.shoka           = quote.field15?.name || (typeof quote.field15 === 'string' ? quote.field15 : '') || '';
     state.deliveryPrice = Number(quote.Grand_Total) || 0;
 
@@ -3135,6 +3138,9 @@ const app = (() => {
   function onMainRateInput(val) {
     const v = parseFloat(val);
     state.mainRate = (!isNaN(v) && v > 0) ? v : null;
+    // 中途入力（"0" や "0." など）でも閾値チェックを抑制し続ける。
+    // 解除は applyGlobalRate 内でのみ行う。
+    _skipThresholdCheck = true;
     updateOutput();
   }
 
@@ -3145,6 +3151,7 @@ const app = (() => {
     const purchaseRateVal= parseFloat(document.getElementById('ratePurchase')?.value);
 
     if (isNaN(mainRateVal) || mainRateVal <= 0) {
+      _skipThresholdCheck = false;
       showToast('代理店掛率を入力してください', 'warn');
       return;
     }
@@ -3172,6 +3179,7 @@ const app = (() => {
       }
     });
 
+    _skipThresholdCheck = false; // 反映ボタン押下時に閾値チェックを再有効化
     updateOutput();
     showToast(`代理店掛率 ${mainRateVal} を全明細に反映しました`);
   }
@@ -4881,6 +4889,9 @@ const app = (() => {
       : null;
     state.dairiTotal = dairiTotal;
 
+    // 作業↔工事 カテゴリ閾値チェック（100万円、仕切価格基準）
+    checkCategoryThreshold(dairiTotal != null ? dairiTotal : grandTotal);
+
     // 値引き額（物販は明細値引き合計、作業はチェックボックス制御、その他は手入力）
     const buhanDiscTotal = isBuhanCalc
       ? sections.reduce((sum, s) => {
@@ -5017,6 +5028,77 @@ const app = (() => {
     setText('grandTotalDisplay', '¥' + grandTotal.toLocaleString('ja-JP'));
 
     updateQuoteNoBadge();
+  }
+
+  // ── 作業↔工事 カテゴリ閾値チェック ──────────────────────────────
+
+  let _pendingCategoryChange = null;
+
+  function checkCategoryThreshold(grandTotal) {
+    if (_skipThresholdCheck) return;
+    const cat = state.quoteCategory || '';
+    const isSagyo = cat.includes('作業');
+    const isKouji = cat.includes('工事');
+    if (!isSagyo && !isKouji) { state._thresholdSide = null; return; }
+
+    const currentSide = grandTotal >= 1_000_000 ? 'over' : 'under';
+    if (state._thresholdSide === null) {
+      state._thresholdSide = currentSide; // 初回は通知せずに初期化
+      return;
+    }
+    if (state._thresholdSide === currentSide) return;
+    state._thresholdSide = currentSide;
+
+    if (isSagyo && currentSide === 'over') {
+      showCategoryChangeDialog('工事（100万超）', grandTotal);
+    } else if (isKouji && currentSide === 'under') {
+      showCategoryChangeDialog('作業（100万以下）', grandTotal);
+    }
+  }
+
+  function showCategoryChangeDialog(newCategory, grandTotal) {
+    _pendingCategoryChange = newCategory;
+    const msgEl = document.getElementById('categoryChangeModalMsg');
+    if (msgEl) {
+      msgEl.innerHTML =
+        `見積金額が <strong>¥${grandTotal.toLocaleString('ja-JP')}</strong> になりました。<br>` +
+        `見積区分を「<strong>${state.quoteCategory}</strong>」から` +
+        `「<strong>${newCategory}</strong>」に変更しますか？`;
+    }
+    const seqNoteEl = document.getElementById('categoryChangeSeqNote');
+    if (seqNoteEl) {
+      seqNoteEl.textContent = state.seqNo
+        ? `採番「${state.seqNo}」はクリアされます。`
+        : '';
+    }
+    const modal = document.getElementById('categoryChangeModal');
+    if (modal) modal.style.display = 'flex';
+  }
+
+  function confirmCategoryChange() {
+    const newCategory = _pendingCategoryChange;
+    if (!newCategory) return;
+    _pendingCategoryChange = null;
+    const modal = document.getElementById('categoryChangeModal');
+    if (modal) modal.style.display = 'none';
+
+    state.quoteCategory  = newCategory;
+    state.seqNo          = '';
+    state.koujiCategory  = '';
+    state._thresholdSide = null; // 次回 updateOutput() で再初期化
+
+    const catEl = document.getElementById('quoteCategoryDisplay');
+    if (catEl) catEl.textContent = state.quoteCategory;
+    initColVisibility();
+    applyStateToForm(); // 採番UI・カテゴリ依存UIを一括更新
+    updateOutput();
+  }
+
+  function declineCategoryChange() {
+    _pendingCategoryChange = null;
+    const modal = document.getElementById('categoryChangeModal');
+    if (modal) modal.style.display = 'none';
+    // _thresholdSide は変更済みのため、同じ側に留まる限り再表示しない
   }
 
   function updateQuoteNoBadge() {
@@ -5891,6 +5973,9 @@ const app = (() => {
     toggleGensuiSummary: () => {
       document.getElementById('gensuiSummary')?.classList.toggle('is-collapsed');
     },
+    // カテゴリ変更確認ダイアログ
+    confirmCategoryChange,
+    declineCategoryChange,
     // CRM保存
     saveToCRM,
     // FRPモード
