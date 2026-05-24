@@ -301,11 +301,11 @@ const QuotationPDF = (() => {
             ? buildFrpDetailPages({ quoteNoStr, frpItems, frpAB, frpPriceTotal, frpShikiriTotal })
             : quoteCategory.includes('工事')
               ? (data.printMode === 'simple'
-                  ? buildKoujiSummaryDetailPages({ sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, roundingEnabled: data.roundingEnabled })
-                  : buildKoujiDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, showSubtotalBoth: data.showSubtotalBoth, roundingEnabled: data.roundingEnabled }))
+                  ? buildKoujiSummaryDetailPages({ sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, roundingEnabled: data.roundingEnabled, showProductCode: data.showProductCode })
+                  : buildKoujiDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, showSubtotalBoth: data.showSubtotalBoth, roundingEnabled: data.roundingEnabled, showProductCode: data.showProductCode }))
               : (data.printMode === 'simple'
-                  ? buildBuppanSagyoSummaryDetailPages({ sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, roundingEnabled: data.roundingEnabled })
-                  : buildBuppanSagyoDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, showSubtotalBoth: data.showSubtotalBoth, roundingEnabled: data.roundingEnabled }))
+                  ? buildBuppanSagyoSummaryDetailPages({ sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, roundingEnabled: data.roundingEnabled, showProductCode: data.showProductCode, quoteCategory })
+                  : buildBuppanSagyoDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, showSubtotalBoth: data.showSubtotalBoth, roundingEnabled: data.roundingEnabled, showProductCode: data.showProductCode, quoteCategory }))
           ),
         ] : []),
       ],
@@ -361,7 +361,7 @@ const QuotationPDF = (() => {
     // ヘッダー行
     tableRows.push(useDairi ? [
       { text: 'No.', style: 'tableHeader' },
-      { text: '項　　　目', style: 'tableHeader' },
+      { text: '品　　　名', style: 'tableHeader' },
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '単　価', style: 'tableHeader' },
@@ -370,14 +370,14 @@ const QuotationPDF = (() => {
       { text: '仕切合計', style: 'tableHeader' },
     ] : isShikiOnly ? [
       { text: 'No.', style: 'tableHeader' },
-      { text: '項　　　目', style: 'tableHeader' },
+      { text: '品　　　名', style: 'tableHeader' },
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '仕切単価', style: 'tableHeader' },
       { text: '仕切合計', style: 'tableHeader' },
     ] : [
       { text: 'No.', style: 'tableHeader' },
-      { text: '項　　　目', style: 'tableHeader' },
+      { text: '品　　　名', style: 'tableHeader' },
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '単　価', style: 'tableHeader' },
@@ -1208,7 +1208,7 @@ const QuotationPDF = (() => {
 
   // ── 2ページ目以降（見積まとめモード・工事）────────────────────
 
-  function buildKoujiSummaryDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, roundingEnabled }) {
+  function buildKoujiSummaryDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, roundingEnabled, showProductCode }) {
     const useDairi    = pdfPriceMode === 'dairi'      && (mainRate != null || dairiTotal != null);
     const isBulk      = pdfPriceMode === 'dairi-bulk' && (mainRate != null || dairiTotal != null);
     const isShikiOnly = pdfPriceMode === 'dairi-only' && (mainRate != null || dairiTotal != null);
@@ -1228,14 +1228,17 @@ const QuotationPDF = (() => {
       if (roundingEnabled && item.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
       return Math.round((Number(item.amount) || 0) * rate);
     };
-    const COL_WIDTHS = useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58];
-    const COLS = useDairi ? 8 : 6;
+    const COL_WIDTHS = showProductCode
+      ? (useDairi ? [20, '*', 58, 22, 30, 52, 58, 52, 58] : [22, '*', 58, 36, 30, 58, 58])
+      : (useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58]);
+    const COLS = useDairi ? (showProductCode ? 9 : 8) : (showProductCode ? 7 : 6);
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
 
     const makeHeaderRow = () => useDairi ? [
       { text: 'No.', style: 'tableHeader' },
       { text: '項　　　目', style: 'tableHeader' },
+      ...(showProductCode ? [{ text: '品番', style: 'tableHeader' }] : []),
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '単　価', style: 'tableHeader' },
@@ -1245,6 +1248,7 @@ const QuotationPDF = (() => {
     ] : isShikiOnly ? [
       { text: 'No.', style: 'tableHeader' },
       { text: '項　　　目', style: 'tableHeader' },
+      ...(showProductCode ? [{ text: '品番', style: 'tableHeader' }] : []),
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '仕切単価', style: 'tableHeader' },
@@ -1252,6 +1256,7 @@ const QuotationPDF = (() => {
     ] : [
       { text: 'No.', style: 'tableHeader' },
       { text: '項　　　目', style: 'tableHeader' },
+      ...(showProductCode ? [{ text: '品番', style: 'tableHeader' }] : []),
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '単　価', style: 'tableHeader' },
@@ -1289,6 +1294,7 @@ const QuotationPDF = (() => {
           rows.push([
             noCell,
             { text: item.name || '' },
+            ...(showProductCode ? [{ text: item.productCode || '', noWrap: true }] : []),
             { text: item.qty != null && item.qty !== '' ? String(item.qty) : '', alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
             { text: item.unitPrice ? fmt(item.unitPrice) : '', alignment: 'right' },
@@ -1300,6 +1306,7 @@ const QuotationPDF = (() => {
           rows.push([
             noCell,
             { text: item.name || '' },
+            ...(showProductCode ? [{ text: item.productCode || '', noWrap: true }] : []),
             { text: item.qty != null && item.qty !== '' ? String(item.qty) : '', alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
             { text: isShikiOnly ? (dairiItemUnit(item) != null ? fmt(dairiItemUnit(item)) : '') : (item.unitPrice ? fmt(item.unitPrice) : ''), alignment: 'right' },
@@ -1317,6 +1324,7 @@ const QuotationPDF = (() => {
           rows.push([
             noCell,
             { text: CALC_CATEGORY_LABELS[prefix].slice(1) },
+            ...(showProductCode ? [{ text: '' }] : []),
             { text: '1', alignment: 'right' },
             { text: '式', alignment: 'center' },
             { text: '', alignment: 'right' },
@@ -1328,6 +1336,7 @@ const QuotationPDF = (() => {
           rows.push([
             noCell,
             { text: CALC_CATEGORY_LABELS[prefix].slice(1) },
+            ...(showProductCode ? [{ text: '' }] : []),
             { text: '1', alignment: 'right' },
             { text: '式', alignment: 'center' },
             { text: '', alignment: 'right' },
@@ -1347,6 +1356,7 @@ const QuotationPDF = (() => {
           { text: '', border: [false, false, true, false] },
         ];
         if (useDairi) er.splice(5, 0, { text: '', border: [false, false, false, false] }, { text: '', border: [false, false, false, false] });
+        if (showProductCode) er.splice(2, 0, { text: '', border: [false, false, false, false] });
         rows.push(er);
       }
 
@@ -1416,7 +1426,7 @@ const QuotationPDF = (() => {
 
   // ── 2ページ目以降（見積まとめモード・物販/作業）────────────────
 
-  function buildBuppanSagyoSummaryDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, roundingEnabled }) {
+  function buildBuppanSagyoSummaryDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, roundingEnabled, showProductCode, quoteCategory }) {
     const useDairi = (pdfPriceMode === 'dairi' || pdfPriceMode === 'dairi-kouji') && (mainRate != null || dairiTotal != null);
     const isBulk = pdfPriceMode === 'dairi-bulk' && (mainRate != null || dairiTotal != null);
     const isShikiOnly = pdfPriceMode === 'dairi-only' && (mainRate != null || dairiTotal != null);
@@ -1436,14 +1446,18 @@ const QuotationPDF = (() => {
       if (roundingEnabled && item.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
       return Math.round((Number(item.amount) || 0) * rate);
     };
-    const COL_WIDTHS = useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58];
-    const COLS = useDairi ? 8 : 6;
+    const COL_WIDTHS = showProductCode
+      ? (useDairi ? [20, '*', 58, 22, 30, 52, 58, 52, 58] : [22, '*', 58, 36, 30, 58, 58])
+      : (useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58]);
+    const COLS = useDairi ? (showProductCode ? 9 : 8) : (showProductCode ? 7 : 6);
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
 
+    const nameHeader = (quoteCategory || '').includes('物販') ? '品　　　名' : '項　　　目';
     const makeHeaderRow = () => useDairi ? [
       { text: 'No.', style: 'tableHeader' },
-      { text: '項　　　目', style: 'tableHeader' },
+      { text: nameHeader, style: 'tableHeader' },
+      ...(showProductCode ? [{ text: '品番', style: 'tableHeader' }] : []),
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '単　価', style: 'tableHeader' },
@@ -1452,14 +1466,16 @@ const QuotationPDF = (() => {
       { text: '仕切合計', style: 'tableHeader' },
     ] : isShikiOnly ? [
       { text: 'No.', style: 'tableHeader' },
-      { text: '項　　　目', style: 'tableHeader' },
+      { text: nameHeader, style: 'tableHeader' },
+      ...(showProductCode ? [{ text: '品番', style: 'tableHeader' }] : []),
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '仕切単価', style: 'tableHeader' },
       { text: '仕切合計', style: 'tableHeader' },
     ] : [
       { text: 'No.', style: 'tableHeader' },
-      { text: '項　　　目', style: 'tableHeader' },
+      { text: nameHeader, style: 'tableHeader' },
+      ...(showProductCode ? [{ text: '品番', style: 'tableHeader' }] : []),
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '単　価', style: 'tableHeader' },
@@ -1496,6 +1512,7 @@ const QuotationPDF = (() => {
           rows.push([
             noCell,
             { text: item.name || '' },
+            ...(showProductCode ? [{ text: item.productCode || '', noWrap: true }] : []),
             { text: item.qty != null && item.qty !== '' ? String(item.qty) : '', alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
             { text: item.unitPrice ? fmt(item.unitPrice) : '', alignment: 'right' },
@@ -1507,6 +1524,7 @@ const QuotationPDF = (() => {
           rows.push([
             noCell,
             { text: item.name || '' },
+            ...(showProductCode ? [{ text: item.productCode || '', noWrap: true }] : []),
             { text: item.qty != null && item.qty !== '' ? String(item.qty) : '', alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
             { text: isShikiOnly ? (dairiItemUnit(item) != null ? fmt(dairiItemUnit(item)) : '') : (item.unitPrice ? fmt(item.unitPrice) : ''), alignment: 'right' },
@@ -1530,6 +1548,7 @@ const QuotationPDF = (() => {
           rows.push([
             { text: '' },
             { text: CALC_CATEGORY_LABELS[prefix].slice(1) },
+            ...(showProductCode ? [{ text: '' }] : []),
             { text: '1', alignment: 'right' },
             { text: '式', alignment: 'center' },
             { text: '', alignment: 'right' },
@@ -1541,6 +1560,7 @@ const QuotationPDF = (() => {
           rows.push([
             { text: '' },
             { text: CALC_CATEGORY_LABELS[prefix].slice(1) },
+            ...(showProductCode ? [{ text: '' }] : []),
             { text: '1', alignment: 'right' },
             { text: '式', alignment: 'center' },
             { text: '', alignment: 'right' },
@@ -1561,6 +1581,7 @@ const QuotationPDF = (() => {
           { text: ' ', border: [false, tb, true, false] },
         ];
         if (useDairi) er.splice(5, 0, { text: ' ', border: [false, tb, false, false] }, { text: ' ', border: [false, tb, false, false] });
+        if (showProductCode) er.splice(2, 0, { text: ' ', border: [false, tb, false, false] });
         rows.push(er);
       }
 
@@ -1627,7 +1648,7 @@ const QuotationPDF = (() => {
 
   // ── 2ページ目以降（明細書・工事）────────────────────────────
 
-  function buildKoujiDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, showSubtotalBoth, roundingEnabled }) {
+  function buildKoujiDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, showSubtotalBoth, roundingEnabled, showProductCode }) {
     const useDairi    = pdfPriceMode === 'dairi'      && (mainRate != null || dairiTotal != null);
     const isBulk      = pdfPriceMode === 'dairi-bulk' && (mainRate != null || dairiTotal != null);
     const isShikiOnly = pdfPriceMode === 'dairi-only' && (mainRate != null || dairiTotal != null);
@@ -1659,14 +1680,17 @@ const QuotationPDF = (() => {
       const qty = Number(item.qty) || 1;
       return Math.round(dairiItemAmt(item) / qty);
     };
-    const COL_WIDTHS = useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58];
-    const COLS = useDairi ? 8 : 6;
+    const COL_WIDTHS = showProductCode
+      ? (useDairi ? [20, '*', 58, 22, 30, 52, 58, 52, 58] : [22, '*', 58, 36, 30, 58, 58])
+      : (useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58]);
+    const COLS = useDairi ? (showProductCode ? 9 : 8) : (showProductCode ? 7 : 6);
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
 
     const makeHeaderRow = () => useDairi ? [
       { text: 'No.', style: 'tableHeader' },
       { text: '項　　　目', style: 'tableHeader' },
+      ...(showProductCode ? [{ text: '品番', style: 'tableHeader' }] : []),
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '単　価', style: 'tableHeader' },
@@ -1676,6 +1700,7 @@ const QuotationPDF = (() => {
     ] : isShikiOnly ? [
       { text: 'No.', style: 'tableHeader' },
       { text: '項　　　目', style: 'tableHeader' },
+      ...(showProductCode ? [{ text: '品番', style: 'tableHeader' }] : []),
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '仕切単価', style: 'tableHeader' },
@@ -1683,6 +1708,7 @@ const QuotationPDF = (() => {
     ] : [
       { text: 'No.', style: 'tableHeader' },
       { text: '項　　　目', style: 'tableHeader' },
+      ...(showProductCode ? [{ text: '品番', style: 'tableHeader' }] : []),
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '単　価', style: 'tableHeader' },
@@ -1710,6 +1736,7 @@ const QuotationPDF = (() => {
           rows.push([
             noCell,
             { text: item.name || '' },
+            ...(showProductCode ? [{ text: item.productCode || '', noWrap: true }] : []),
             { text: qtyStr, alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
             { text: fmt(effectiveUnitPrice(item)), alignment: 'right' },
@@ -1721,6 +1748,7 @@ const QuotationPDF = (() => {
           rows.push([
             noCell,
             { text: item.name || '' },
+            ...(showProductCode ? [{ text: item.productCode || '', noWrap: true }] : []),
             { text: qtyStr, alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
             { text: (isBulk || isShikiOnly) ? (dairiItemUnit(item) != null ? fmt(dairiItemUnit(item)) : '') : fmt(effectiveUnitPrice(item)), alignment: 'right' },
@@ -1748,6 +1776,7 @@ const QuotationPDF = (() => {
           { text: '', border: [false, false, true, false] },
         ];
         if (useDairi) er.splice(5, 0, { text: '', border: [false, false, false, false] }, { text: '', border: [false, false, false, false] });
+        if (showProductCode) er.splice(2, 0, { text: '', border: [false, false, false, false] });
         rows.push(er);
       }
 
@@ -1844,7 +1873,7 @@ const QuotationPDF = (() => {
 
   // ── 2ページ目以降（明細書・物販/作業）──────────────────────────
 
-  function buildBuppanSagyoDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, showSubtotalBoth, roundingEnabled }) {
+  function buildBuppanSagyoDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, showSubtotalBoth, roundingEnabled, showProductCode, quoteCategory }) {
     const useDairi = (pdfPriceMode === 'dairi' || pdfPriceMode === 'dairi-kouji') && (mainRate != null || dairiTotal != null);
     const isBulk = pdfPriceMode === 'dairi-bulk' && (mainRate != null || dairiTotal != null);
     const isShikiOnly = pdfPriceMode === 'dairi-only' && (mainRate != null || dairiTotal != null);
@@ -1876,14 +1905,18 @@ const QuotationPDF = (() => {
       const qty = Number(item.qty) || 1;
       return Math.round(dairiItemAmt(item) / qty);
     };
-    const COL_WIDTHS = useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58];
-    const COLS = useDairi ? 8 : 6;
+    const COL_WIDTHS = showProductCode
+      ? (useDairi ? [20, '*', 58, 22, 30, 52, 58, 52, 58] : [22, '*', 58, 36, 30, 58, 58])
+      : (useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58]);
+    const COLS = useDairi ? (showProductCode ? 9 : 8) : (showProductCode ? 7 : 6);
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
 
+    const nameHeader = (quoteCategory || '').includes('物販') ? '品　　　名' : '項　　　目';
     const makeHeaderRow = () => useDairi ? [
       { text: 'No.', style: 'tableHeader' },
-      { text: '項　　　目', style: 'tableHeader' },
+      { text: nameHeader, style: 'tableHeader' },
+      ...(showProductCode ? [{ text: '品番', style: 'tableHeader' }] : []),
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '単　価', style: 'tableHeader' },
@@ -1892,14 +1925,16 @@ const QuotationPDF = (() => {
       { text: '仕切合計', style: 'tableHeader' },
     ] : isShikiOnly ? [
       { text: 'No.', style: 'tableHeader' },
-      { text: '項　　　目', style: 'tableHeader' },
+      { text: nameHeader, style: 'tableHeader' },
+      ...(showProductCode ? [{ text: '品番', style: 'tableHeader' }] : []),
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '仕切単価', style: 'tableHeader' },
       { text: '仕切合計', style: 'tableHeader' },
     ] : [
       { text: 'No.', style: 'tableHeader' },
-      { text: '項　　　目', style: 'tableHeader' },
+      { text: nameHeader, style: 'tableHeader' },
+      ...(showProductCode ? [{ text: '品番', style: 'tableHeader' }] : []),
       { text: '数量', style: 'tableHeader' },
       { text: '単位', style: 'tableHeader' },
       { text: '単　価', style: 'tableHeader' },
@@ -1924,6 +1959,7 @@ const QuotationPDF = (() => {
           rows.push([
             noCell,
             { text: item.name || '' },
+            ...(showProductCode ? [{ text: item.productCode || '', noWrap: true }] : []),
             { text: qtyStr, alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
             { text: fmt(effectiveUnitPrice(item)), alignment: 'right' },
@@ -1935,6 +1971,7 @@ const QuotationPDF = (() => {
           rows.push([
             noCell,
             { text: item.name || '' },
+            ...(showProductCode ? [{ text: item.productCode || '', noWrap: true }] : []),
             { text: qtyStr, alignment: 'right' },
             { text: item.unit || '', alignment: 'center' },
             { text: (isBulk || isShikiOnly) ? (dairiItemUnit(item) != null ? fmt(dairiItemUnit(item)) : '') : fmt(effectiveUnitPrice(item)), alignment: 'right' },
@@ -1968,6 +2005,7 @@ const QuotationPDF = (() => {
           { text: ' ', border: [false, tb, true, false] },
         ];
         if (useDairi) er.splice(5, 0, { text: ' ', border: [false, tb, false, false] }, { text: ' ', border: [false, tb, false, false] });
+        if (showProductCode) er.splice(2, 0, { text: ' ', border: [false, tb, false, false] });
         rows.push(er);
       }
 
@@ -2109,8 +2147,8 @@ const QuotationPDF = (() => {
 
     const hdr = (text) => ({ text, style: 'tableHeader', alignment: 'center' });
     const headerRow = showDairi
-      ? [hdr('No.'), hdr('項　　　目'), hdr('数量'), hdr('単位'), hdr('単　価'), hdr('金　　額'), hdr('代理店単価'), hdr('代理店価格')]
-      : [hdr('No.'), hdr('項　　　目'), hdr('数量'), hdr('単位'), hdr('単　価'), hdr('金　　額')];
+      ? [hdr('No.'), hdr('品　　　名'), hdr('数量'), hdr('単位'), hdr('単　価'), hdr('金　　額'), hdr('代理店単価'), hdr('代理店価格')]
+      : [hdr('No.'), hdr('品　　　名'), hdr('数量'), hdr('単位'), hdr('単　価'), hdr('金　　額')];
 
     const tableRows = [headerRow];
     const empties = (n) => Array.from({ length: n }, () => ({ text: '' }));

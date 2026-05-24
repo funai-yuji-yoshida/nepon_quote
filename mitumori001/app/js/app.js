@@ -5274,6 +5274,10 @@ const app = (() => {
       frpAB:     state.frpAB    || 'A',
       frpItems:  state.frpMode ? (state.frpItems || []) : undefined,
       dateFormat: getValue('dateFormat') || 'wareki',
+      showProductCode: (() => {
+        const cb = document.getElementById('printProductCode');
+        return cb ? cb.checked : false;
+      })(),
     };
   }
 
