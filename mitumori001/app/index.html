@@ -108,6 +108,14 @@
               <span class="suffix">御中</span>
             </div>
             <div class="form-row">
+              <label>顧客担当者</label>
+              <input type="text" id="contactName" placeholder="担当者名" class="input-wide">
+              <select id="contactHonorific">
+                <option value="様">様</option>
+                <option value="殿">殿</option>
+              </select>
+            </div>
+            <div class="form-row">
               <label>工事名</label>
               <input type="text" id="projectName" placeholder="〇〇設備工事" class="input-wide">
             </div>
@@ -585,6 +593,13 @@
             <label class="print-detail-label">
               <input type="checkbox" id="printNaiyaku" checked>
               鏡に内訳（資材費・労務費・法定）を印刷する
+            </label>
+          </div>
+
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printContactName">
+              顧客担当者を印刷する
             </label>
           </div>
 

@@ -911,6 +911,12 @@ const QuotationPDF = (() => {
                   { text: '　御中', fontSize: midFs },
                 ],
               },
+              // 顧客担当者
+              ...(data.showContactName && data.contactName ? [{
+                margin: [25, 2, 0, 0],
+                text: (data.contactName || '') + '　' + (data.contactHonorific || '様'),
+                fontSize: 9,
+              }] : []),
               // 工事名 / 件名
               {
                 margin: [25, compact ? 4 : 8, 0, 0],

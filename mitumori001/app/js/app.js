@@ -768,6 +768,8 @@ const app = (() => {
     seqNumber:      0,    // 連番（整数）
     edaban:         '1',    // 枝番
     customerName:   '',
+    contactName:    '',  // 顧客担当者（Contact_Name）
+    contactHonorific: '様', // 連絡先敬称（field3）
     projectName:    '',
     projectName2:   '',  // 件名2行目（field8）
     projectName3:   '',  // 件名3行目（field7）
@@ -980,6 +982,8 @@ const app = (() => {
     // 基本情報
     state.quoteNumber     = quote.Quote_Number || null;
     state.customerName    = quote.Account_Name?.name || quote.Account_Name || '';
+    state.contactName     = quote.Contact_Name?.name || quote.Contact_Name || '';
+    state.contactHonorific = quote.field3 || '様';
     state.projectName     = quote.Subject || '';
     state.ownerName       = quote.Owner?.name || '';
     state.quoteCategory   = quote.field63 || '';
@@ -1130,6 +1134,8 @@ const app = (() => {
   /** 状態をフォームへ反映 */
   function applyStateToForm() {
     setValue('customerName',    state.customerName);
+    setValue('contactName',     state.contactName);
+    setValue('contactHonorific', state.contactHonorific || '様');
     setValue('projectName',     state.projectName);
     setValue('projectName2',    state.projectName2);
     setValue('projectName3',    state.projectName3);
@@ -5113,6 +5119,8 @@ const app = (() => {
   function readFormToState() {
     // seqNo は採番ボタンで確定するため readFormToState では読まない
     state.customerName   = getValue('customerName');
+    state.contactName    = getValue('contactName') || '';
+    state.contactHonorific = getValue('contactHonorific') || '様';
     state.projectName    = getValue('projectName');
     state.projectName2   = getValue('projectName2') || '';
     state.projectName3   = getValue('projectName3') || '';
@@ -5195,6 +5203,12 @@ const app = (() => {
       revision:        state.revision,
       date:            state.submitDate || state.date || null,
       customerName:    state.customerName,
+      contactName:     state.contactName || undefined,
+      contactHonorific: state.contactHonorific || '様',
+      showContactName: (() => {
+        const cb = document.getElementById('printContactName');
+        return cb ? cb.checked : false;
+      })(),
       projectName:     state.projectName,
       projectName2:    state.projectName2 || undefined,
       projectName3:    state.projectName3 || undefined,
