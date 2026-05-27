@@ -908,7 +908,9 @@ const QuotationPDF = (() => {
                 margin: [25, topMargin, 0, 0],
                 text: [
                   { text: (data.customerName || ''), fontSize: custFs, bold: true },
-                  { text: '　御中', fontSize: midFs },
+                  ...(data.customerHonorific && data.customerHonorific !== 'ー'
+                    ? [{ text: '　' + data.customerHonorific, fontSize: midFs }]
+                    : []),
                 ],
               },
               // 顧客担当者

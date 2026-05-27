@@ -768,6 +768,7 @@ const app = (() => {
     seqNumber:      0,    // 連番（整数）
     edaban:         '1',    // 枝番
     customerName:   '',
+    customerHonorific: '御中', // 取引先敬称（field4）
     contactName:    '',  // 顧客担当者（Contact_Name）
     contactHonorific: '様', // 連絡先敬称（field3）
     projectName:    '',
@@ -982,6 +983,7 @@ const app = (() => {
     // 基本情報
     state.quoteNumber     = quote.Quote_Number || null;
     state.customerName    = quote.Account_Name?.name || quote.Account_Name || '';
+    state.customerHonorific = quote.field4 || '御中';
     state.contactName     = quote.Contact_Name?.name || quote.Contact_Name || '';
     state.contactHonorific = quote.field3 || '様';
     state.projectName     = quote.Subject || '';
@@ -1134,6 +1136,7 @@ const app = (() => {
   /** 状態をフォームへ反映 */
   function applyStateToForm() {
     setValue('customerName',    state.customerName);
+    setValue('customerHonorific', state.customerHonorific || '御中');
     setValue('contactName',     state.contactName);
     setValue('contactHonorific', state.contactHonorific || '様');
     setValue('projectName',     state.projectName);
@@ -5119,6 +5122,7 @@ const app = (() => {
   function readFormToState() {
     // seqNo は採番ボタンで確定するため readFormToState では読まない
     state.customerName   = getValue('customerName');
+    state.customerHonorific = getValue('customerHonorific') || '御中';
     state.contactName    = getValue('contactName') || '';
     state.contactHonorific = getValue('contactHonorific') || '様';
     state.projectName    = getValue('projectName');
@@ -5203,6 +5207,7 @@ const app = (() => {
       revision:        state.revision,
       date:            state.submitDate || state.date || null,
       customerName:    state.customerName,
+      customerHonorific: state.customerHonorific || '御中',
       contactName:     state.contactName || undefined,
       contactHonorific: state.contactHonorific || '様',
       showContactName: (() => {
