@@ -5292,7 +5292,7 @@ const app = (() => {
       frpMode:   state.frpMode  || false,
       frpAB:     state.frpAB    || 'A',
       frpItems:  state.frpMode ? (state.frpItems || []) : undefined,
-      dateFormat: getValue('dateFormat') || 'wareki',
+      dateFormat: getValue('dateFormat') || 'seireki',
       showProductCode: (() => {
         const cb = document.getElementById('printProductCode');
         return cb ? cb.checked : false;
