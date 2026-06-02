@@ -1196,6 +1196,9 @@ const app = (() => {
     const isSagyo = (state.quoteCategory || '').includes('作業');
     const naiyakuGrp = document.getElementById('naiyakuPrintGroup');
     if (naiyakuGrp) naiyakuGrp.style.display = (isKouji || isSagyo) ? '' : 'none';
+    // 鏡に品目コードを印刷する: 工事は非表示（工事の鏡は品目行がないため）
+    const pcCoverGrp = document.getElementById('printProductCodeCover')?.closest('.print-detail-option');
+    if (pcCoverGrp) pcCoverGrp.style.display = isKouji ? 'none' : '';
     // カテゴリ別デフォルト印刷モード設定
     // 物販: 鏡のみ  作業: 鏡のみ＋内訳チェックON  工事: 鏡＋明細（HTML既定値）
     const radioCover  = document.getElementById('printCoverPage');
