@@ -1605,6 +1605,7 @@ const app = (() => {
         gensuiA:      parseFloat(k.A)  || 0,      // 減衰係数A
         gensuiB:      parseFloat(k.B)  || 0,      // 減衰係数B
         kojiCategory: k.field18 || '',            // 工事カテゴリー名
+        kikoShiyou:   k.field19 || '',            // 機器仕様（field19）
         source:       'koujihi',
       }));
       console.log(`工事費マスタ ${state.koujihi.length} 件読み込み`);
@@ -1780,7 +1781,7 @@ const app = (() => {
   }
 
   /** 工事費1件をセクションに追加する共通処理 */
-  function addKoujihiItem(section, k) {
+  function addKoujihiItem(section, k, includeSpecLines = false) {
     const item = createItem();
     item.productId    = null;
     item.name         = k.name;
@@ -1800,6 +1801,9 @@ const app = (() => {
     item.gensuiA      = k.gensuiA      || 0;
     item.gensuiB      = k.gensuiB      || 0;
     item.kojiCategory = k.kojiCategory || '';
+    item.specLines    = (includeSpecLines && k.kikoShiyou)
+      ? k.kikoShiyou.split('\n').map(l => l.trim()).filter(l => l)
+      : [];
     section.items.push(item);
   }
 
@@ -1873,7 +1877,7 @@ const app = (() => {
       return;
     }
 
-    matched.forEach(k => addKoujihiItem(targetSection, k));
+    matched.forEach((k, idx) => addKoujihiItem(targetSection, k, idx === 0));
     markDirty();
     renderSections();
     updateOutput();
@@ -5295,6 +5299,10 @@ const app = (() => {
       dateFormat: getValue('dateFormat') || 'seireki',
       showProductCode: (() => {
         const cb = document.getElementById('printProductCode');
+        return cb ? cb.checked : false;
+      })(),
+      showProductCodeCover: (() => {
+        const cb = document.getElementById('printProductCodeCover');
         return cb ? cb.checked : false;
       })(),
     };
