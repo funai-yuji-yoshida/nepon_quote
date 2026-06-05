@@ -775,6 +775,7 @@ const app = (() => {
     projectName2:   '',  // 件名2行目（field8）
     projectName3:   '',  // 件名3行目（field7）
     ownerName:      '',
+    updaterName:    '',  // 更新者（field68）
     quoteCategory:  '',  // 見積区分（field63）: 物販 / 作業（100万以下） / 工事（100万超）
     date:         new Date(),
     submitDate:   null,  // 見積提出日（field64）
@@ -988,6 +989,7 @@ const app = (() => {
     state.contactHonorific = quote.field3 || '様';
     state.projectName     = quote.Subject || '';
     state.ownerName       = quote.Owner?.name || '';
+    state.updaterName     = quote.field68?.name || quote.field68 || '';
     state.quoteCategory   = quote.field63 || '';
     state._thresholdSide  = null; // カテゴリ変更ダイアログを初回ロード時に出さない
     state.shoka           = quote.field15?.name || (typeof quote.field15 === 'string' ? quote.field15 : '') || '';
@@ -1152,6 +1154,7 @@ const app = (() => {
       setValue('quoteDate', formatDateInput(state.submitDate));
     }
     setValue('ownerName',       state.ownerName);
+    setValue('updaterName',     state.updaterName);
     // 掛率パネルを更新（input に値をセット）
     const setRateEl = (id, v) => {
       const el = document.getElementById(id);
@@ -5136,6 +5139,7 @@ const app = (() => {
     state.projectName2   = getValue('projectName2') || '';
     state.projectName3   = getValue('projectName3') || '';
     state.ownerName      = getValue('ownerName');
+    state.updaterName    = getValue('updaterName') || '';
     state.deliveryTerm   = getValue('deliveryTerm');
     state.deliveryMethod = getValue('deliveryMethod');
     state.paymentTerm    = getValue('paymentTerm');
@@ -5225,6 +5229,11 @@ const app = (() => {
       projectName2:    state.projectName2 || undefined,
       projectName3:    state.projectName3 || undefined,
       ownerName:       state.ownerName,
+      updaterName:     state.updaterName || undefined,
+      showOwnerName: (() => {
+        const cb = document.getElementById('printOwnerName');
+        return cb ? cb.checked : false;
+      })(),
       deliveryTerm:    state.deliveryTerm,
       deliveryMethod:  state.deliveryMethod,
       paymentTerm:     state.paymentTerm,
