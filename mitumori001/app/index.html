@@ -446,21 +446,20 @@
         <button id="btnStandardAdd" style="display:none"></button>
       </div>
 
-      <!-- FRP見積コンテナ（frpMode時のみ表示） -->
+      <!-- FRP見積コンテナー（frpMode時のみ表示） -->
       <div id="frpContainer" style="display:none">
         <div class="frp-header">
           <div class="frp-ab-toggle">
             <span class="frp-ab-label">価格モード：</span>
             <button class="btn-ab active" id="btnFrpA" onclick="app.setFrpAB('A')">A価</button>
-            <button class="btn-ab" id="btnFrpB" onclick="app.setFrpAB('B')">B価</button>
+            <button class="btn-ab"        id="btnFrpB" onclick="app.setFrpAB('B')">B価</button>
+          </div>
+          <div class="frp-add-buttons">
+            <button class="btn-frp-add" onclick="app.openFrpWizard('product')">＋ 製品を追加</button>
+            <button class="btn-frp-add" onclick="app.openFrpWizard('option')">＋ オプション部品</button>
+            <button class="btn-frp-settings" onclick="app.openFrpSettings()">⚙ 設定</button>
           </div>
           <button class="btn-frp-back" onclick="app.switchFrpMode()">← 通常モードに戻す</button>
-        </div>
-
-        <div class="frp-search-area">
-          <input type="text" id="frpSearchInput" class="frp-search-input"
-                 placeholder="品名・型式で検索..." autocomplete="off">
-          <div id="frpSearchDropdown" class="frp-search-dropdown" style="display:none"></div>
         </div>
 
         <table class="frp-table">
@@ -481,10 +480,21 @@
         </table>
 
         <div class="frp-footer">
-          <span class="frp-footer-label">定価合計：</span>
-          <strong id="frpPriceTotal">¥0</strong>
-          <span class="frp-footer-label frp-footer-label-right">仕切合計：</span>
-          <strong id="frpShikiriTotal">¥0</strong>
+          <div class="frp-totals-row">
+            <span class="frp-footer-label">定価合計：</span>
+            <strong id="frpPriceTotal">¥0</strong>
+            <span class="frp-footer-label frp-footer-label-right">仕切合計：</span>
+            <strong id="frpShikiriTotal">¥0</strong>
+          </div>
+          <div class="frp-discount-row">
+            <span class="frp-footer-label">出精値引き：</span>
+            <input type="number" id="frpDiscountInput" class="frp-discount-input" value="0" min="0">
+            <span class="frp-footer-label">円</span>
+          </div>
+          <div class="frp-grand-row">
+            <span class="frp-footer-label">御見積金額（税別）：</span>
+            <strong id="frpGrandTotal">¥0</strong>
+          </div>
         </div>
       </div>
 
@@ -972,6 +982,50 @@
     </div>
   </div>
 
+  <!-- FRP型式選択ウィザードモーダル -->
+  <div id="frpWizardModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog frp-wizard-dialog">
+      <div class="modal-header">
+        <span id="frpWizardTitle">製品を選択</span>
+        <button class="modal-close"
+                onclick="document.getElementById('frpWizardModal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body" id="frpWizardBody" style="min-height:200px"></div>
+      <div class="modal-footer" id="frpWizardFooter"></div>
+    </div>
+  </div>
+
+  <!-- FRP設定モーダル -->
+  <div id="frpSettingsModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog" style="max-width:540px">
+      <div class="modal-header">
+        <span>FRP設定</span>
+        <button class="modal-close"
+                onclick="document.getElementById('frpSettingsModal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-form-row">
+          <label style="min-width:100px">Hz初期値</label>
+          <label><input type="radio" name="frpSettingsHz" value="50Hz"> 50Hz</label>
+          <label style="margin-left:12px"><input type="radio" name="frpSettingsHz" value="60Hz"> 60Hz</label>
+          <label style="margin-left:12px"><input type="radio" name="frpSettingsHz" value="共通"> 共通</label>
+        </div>
+        <div class="modal-form-row">
+          <label style="min-width:100px">図番を印刷する</label>
+          <input type="checkbox" id="frpSettingsZuban" checked>
+        </div>
+        <div class="modal-form-row" style="flex-direction:column;align-items:stretch;gap:6px">
+          <label>枠外文言</label>
+          <textarea id="frpSettingsFooter" class="frp-footer-textarea" rows="14"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary"
+                onclick="document.getElementById('frpSettingsModal').style.display='none'">キャンセル</button>
+        <button class="btn-primary" onclick="app.saveFrpSettings()">💾 保存</button>
+      </div>
+    </div>
+  </div>
 
   <script src="js/pdf-generator.js"></script>
   <script src="js/app.js"></script>
