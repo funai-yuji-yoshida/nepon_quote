@@ -434,6 +434,25 @@
           </div>
         </div>
 
+        <!-- 行2: 熱機標準項 -->
+        <div class="toolbar-main" style="margin-top:3px;">
+          <!-- 行1のグループ1と同幅を確保するファントム（非表示） -->
+          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
+            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
+          </div>
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;">熱機</button></div>
+            <select id="buppanStdCategorySelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onBuppanCatChange(this.value)">
+              <option value="">― カテゴリを選択 ―</option>
+            </select>
+            <select id="buppanStdModelSelect" class="input-search" style="height:30px;flex:1;min-width:0;">
+              <option value="">― 型式を選択 ―</option>
+            </select>
+            <select id="netsukiTargetSection" class="input-standard cat-target-sel"></select>
+            <button class="btn-cat-add" onclick="app.execBuppanStandardAdd()">追加</button>
+          </div>
+        </div>
+
         <!-- 既存関数との互換用（非表示） -->
         <select id="productTargetSection" style="display:none"></select>
         <select id="kikiTargetSection" style="display:none"></select>

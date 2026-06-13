@@ -433,9 +433,11 @@ const QuotationPDF = (() => {
           (s.items || []).forEach((item, idx) => {
             if (!item.name || !item.name.trim()) return;
             mirrorEntries.push({ type: 'item', item, idx });
-            (item.specLines || []).filter(l => l.trim()).forEach(line => {
-              mirrorEntries.push({ type: 'specLine', text: line });
-            });
+            const _specLines = (item.specLines || []).filter(l => l.trim());
+            if (_specLines.length > 0) {
+              mirrorEntries.push({ type: 'specLinesHeader' });
+              _specLines.forEach(line => mirrorEntries.push({ type: 'specLine', text: line }));
+            }
             if (item.machineSpec) {
               mirrorEntries.push({ type: 'machineSpecModel', model: item.machineSpec.model });
               mirrorEntries.push({ type: 'machineSpecHeader' });
@@ -566,11 +568,22 @@ const QuotationPDF = (() => {
         ];
         if (useDairi) { row.push({ text: '', fontSize: itemFs }); row.push({ text: '', fontSize: itemFs }); }
         tableRows.push(row);
+      } else if (entry.type === 'specLinesHeader') {
+        const specFs = Math.max(5.5, itemFs - 0.5);
+        const row = [
+          { text: '', fontSize: specFs },
+          { text: '　＜仕様＞', fontSize: specFs, bold: true },
+          ...emptyPc(specFs),
+          { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
+          { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
+        ];
+        if (useDairi) { row.push({ text: '', fontSize: specFs }); row.push({ text: '', fontSize: specFs }); }
+        tableRows.push(row);
       } else if (entry.type === 'specLine') {
         const specFs = Math.max(5.5, itemFs - 0.5);
         const row = [
           { text: '', fontSize: specFs },
-          { text: `　${entry.text}`, fontSize: specFs, color: '#444' },
+          { text: `　　${entry.text}`, fontSize: specFs, color: '#444' },
           ...emptyPc(specFs),
           { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
           { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
@@ -1975,13 +1988,11 @@ const QuotationPDF = (() => {
           ]);
         }
         // 仕様行
-        (item.specLines || []).filter(l => (l || '').trim()).forEach(line => {
-          rows.push([
-            { text: '' },
-            { text: `　${line}`, fontSize: 7.5, color: '#444' },
-            ...emp(COLS - 2),
-          ]);
-        });
+        const _sl1 = (item.specLines || []).filter(l => (l || '').trim());
+        if (_sl1.length > 0) {
+          rows.push([{ text: '' }, { text: '　＜仕様＞', fontSize: 7.5, bold: true }, ...emp(COLS - 2)]);
+          _sl1.forEach(line => rows.push([{ text: '' }, { text: `　　${line}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]));
+        }
       });
 
       // 空白行（最低2行）
@@ -2216,13 +2227,11 @@ const QuotationPDF = (() => {
             { text: (isBulk || isShikiOnly) ? fmt(dairiItemAmt(item)) : fmt(item.amount), alignment: 'right' },
           ]);
         }
-        (item.specLines || []).filter(l => (l || '').trim()).forEach(line => {
-          rows.push([
-            { text: '' },
-            { text: `　${line}`, fontSize: 7.5, color: '#444' },
-            ...emp(COLS - 2),
-          ]);
-        });
+        const _sl2 = (item.specLines || []).filter(l => (l || '').trim());
+        if (_sl2.length > 0) {
+          rows.push([{ text: '' }, { text: '　＜仕様＞', fontSize: 7.5, bold: true }, ...emp(COLS - 2)]);
+          _sl2.forEach(line => rows.push([{ text: '' }, { text: `　　${line}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]));
+        }
         if (item.machineSpec) {
           rows.push([{ text: '' }, { text: `　型式　${item.machineSpec.model}`, fontSize: 8 }, ...emp(COLS - 2)]);
           rows.push([{ text: '' }, { text: '　＜標準仕様＞', fontSize: 8, bold: true }, ...emp(COLS - 2)]);

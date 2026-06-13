@@ -805,6 +805,7 @@ const app = (() => {
     koujihi:        [],       // 工事費マスタ（CustomModule1 から取得）
     kanzai:         [],       // 管材マスタ（CustomModule18 から取得）
     denzai:         [],       // 電材マスタ（CustomModule19 から取得）
+    buppanStandard: [],       // 物販標準項マスタ（CustomModule26 から取得）
     kiki:           [],       // 工事用機器リスト（CustomModule23 から取得）
     pendingKanzai:  null,     // 管材選択済み・追加待ち
     pendingDenzai:  null,     // 電材選択済み・追加待ち
@@ -1117,6 +1118,7 @@ const app = (() => {
     loadKoujihi();
     loadKanzai();
     loadDenzai();
+    loadBuppanStandard();
     loadKiki();
     loadCurrentUser();
 
@@ -1670,6 +1672,120 @@ const app = (() => {
     }
   }
 
+  // ── 物販標準項マスタ（CustomModule26）────────────────────────────
+
+  async function loadBuppanStandard() {
+    if (!zohoReady) return;
+    try {
+      const data = await fetchAllRecords('CustomModule26', 'Name');
+      state.buppanStandard = data.map(r => ({
+        id:       r.id,
+        category: r.field6 || '',
+        model:    r.field  || '',
+        name:     r.field1 || '',
+        hinban:   r.field2 || '',
+        qty:      Number(r.field4) || 1,
+        unit:     r.field3 || '式',
+        order:    Number(r.field5) || 99,
+        teika:    Number(r.field8) || 0,
+        shikiri:  Number(r.field7) || 0,
+      }));
+      console.log(`物販標準項マスタ ${state.buppanStandard.length} 件読み込み`);
+      buildBuppanCategorySelect();
+    } catch (e) {
+      console.warn('物販標準項マスタ取得失敗:', e);
+    }
+  }
+
+  function buildBuppanCategorySelect() {
+    const catSel = document.getElementById('buppanStdCategorySelect');
+    if (!catSel) return;
+    const cats = [...new Set(state.buppanStandard.map(r => r.category).filter(Boolean))];
+    while (catSel.options.length > 1) catSel.remove(1);
+    cats.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      catSel.appendChild(opt);
+    });
+  }
+
+  function onBuppanCatChange(cat) {
+    const modelSel = document.getElementById('buppanStdModelSelect');
+    if (!modelSel) return;
+    while (modelSel.options.length > 1) modelSel.remove(1);
+    const models = [...new Set(
+      state.buppanStandard
+        .filter(r => r.category === cat)
+        .map(r => r.model)
+        .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b, 'ja'));
+    models.forEach(model => {
+      const opt = document.createElement('option');
+      opt.value = model;
+      opt.textContent = model;
+      modelSel.appendChild(opt);
+    });
+    modelSel.value = '';
+  }
+
+  function execBuppanStandardAdd() {
+    const model = document.getElementById('buppanStdModelSelect')?.value || '';
+    if (!model) { showToast('型式を選択してください', 'warn'); return; }
+
+    if (state.sections.length === 0) addSection();
+
+    const targetVal = document.getElementById('netsukiTargetSection')?.value || 'last';
+    let targetSection;
+    if (targetVal === 'last') {
+      targetSection = state.sections[state.sections.length - 1];
+    } else {
+      const targetId = Number(targetVal);
+      targetSection = state.sections.find(s => s.id === targetId) || state.sections[state.sections.length - 1];
+    }
+
+    const lastItem = targetSection.items[targetSection.items.length - 1];
+    if (lastItem && !lastItem.name && !lastItem.spec && !lastItem.unitPrice && !lastItem.amount) {
+      targetSection.items.pop();
+    }
+
+    const matched = state.buppanStandard
+      .filter(r => r.model === model)
+      .sort((a, b) => a.order - b.order);
+
+    if (matched.length === 0) {
+      showToast(`型式「${model}」の標準項が見つかりません`, 'warn');
+      return;
+    }
+
+    let mainItem = null;
+    matched.forEach(r => {
+      if (r.order === 1) {
+        // 本機 → 価格あり明細行
+        const item = createItem();
+        item.name           = r.name;
+        item.spec           = r.hinban;
+        item.qty            = r.qty;
+        item.unit           = r.unit;
+        item.unitPrice      = r.teika  || null;
+        item.amount         = (r.teika || 0) * r.qty;
+        item.genka          = r.shikiri;
+        item.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
+        mainItem = item;
+        targetSection.items.push(item);
+      } else if (mainItem) {
+        // 仕様投入より下 → 本機の仕様行（価格・計算なし）
+        mainItem.specLines = mainItem.specLines || [];
+        mainItem.specLines.push(`${r.name}（${r.qty}${r.unit}）`);
+      }
+    });
+
+    markDirty();
+    renderSections();
+    updateOutput();
+    showToast(`No.${targetSection.no} に ${model} を追加しました`);
+  }
+
   // ── 工事用機器リスト（CustomModule23）────────────────────────────
 
   async function loadKiki() {
@@ -1979,7 +2095,7 @@ const app = (() => {
 
   /** 追加先セクションセレクトを更新（セクション追加・削除時に呼ぶ） */
   function updateTargetSectionSelect() {
-    ['standardTargetSection', 'productTargetSection', 'kikiTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'commonTargetSection'].forEach(id => {
+    ['standardTargetSection', 'productTargetSection', 'kikiTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'commonTargetSection', 'netsukiTargetSection'].forEach(id => {
       const sel = document.getElementById(id);
       if (!sel) return;
       const cur = sel.value;
@@ -6444,6 +6560,8 @@ const app = (() => {
     // 標準項
     execStandardAdd,
     execProductAdd,
+    onBuppanCatChange,
+    execBuppanStandardAdd,
     // 見積外工事
     onExclusionChange,
     updateExclusionCount,
