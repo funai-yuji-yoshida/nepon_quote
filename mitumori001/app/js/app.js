@@ -2625,7 +2625,9 @@ const app = (() => {
   }
 
   const FRP_SORYO_NOTES = {
-    1: '', 2: '', 3: '',
+    1: '※現場直送不可　現場直送希望の場合は別途チャーター便手配が必要となります。',
+    2: '※現場直送不可　現場直送希望の場合は別途チャーター便手配が必要となります。',
+    3: '※現場直送不可　現場直送希望の場合は別途チャーター便手配が必要となります。',
     4: '',
     40: '※現場直送不可　現場直送希望の場合は別途チャーター便手配が必要となります。',
     44: '※現場直送不可　現場直送希望の場合は別途チャーター便手配が必要となります（混載便への切替可）。',
@@ -2640,6 +2642,85 @@ const app = (() => {
 
   function calcSoryoNote(kubun) {
     return FRP_SORYO_NOTES[Number(kubun)] ?? '';
+  }
+
+  // 混載便 固定送料（全国共通、区分別）
+  const FRP_SORYO_KONZAI = {
+    1:  11000,
+    2:  17000,
+    3:  22000,
+    44: 28000,
+  };
+
+  // チャーター便 地域別・車種別金額
+  const FRP_SORYO_CHARTER = {
+    'さいたま営業所': { '4t': 118000, '6t': 133000, '10t': 157000 },
+    '南関東営業所':   { '4t': 125000, '6t': 142000, '10t': 164000 },
+    '新潟営業所':     { '4t':  98000, '6t': 114000, '10t': 134000 },
+    '松本営業所':     { '4t': 110000, '6t': 126000, '10t': 148000 },
+    '静岡営業所':     { '4t': 107000, '6t': 122000, '10t': 144000 },
+    '名古屋営業所':   { '4t': 107000, '6t': 121000, '10t': 142000 },
+  };
+
+  // 所課名 → 都道府県名（チャーター送料文言用）
+  const FRP_SORYO_PREF = {
+    'さいたま営業所': '埼玉',
+    '南関東営業所':   '千葉',
+    '新潟営業所':     '新潟',
+    '松本営業所':     '長野',
+    '静岡営業所':     '静岡',
+    '名古屋営業所':   '愛知',
+  };
+
+  // 送料区分 → 車種名
+  function frpSoryoVehicle(kubun) {
+    if (kubun === 60)  return '6tユニック車';
+    if (kubun === 100) return '10t平車';
+    return '4tユニック車';
+  }
+
+  // 送料行オブジェクトを生成する（製品追加時に自動追加）
+  function makeFrpSoryoItem(soryoKubun) {
+    const shoka   = state.shoka || '';
+    const isKonzai = [1, 2, 3].includes(soryoKubun);
+    const pref     = FRP_SORYO_PREF[shoka] || '';
+
+    let price   = 0;
+    let itemnum = '';
+    let note    = '';
+
+    if (isKonzai) {
+      price   = FRP_SORYO_KONZAI[soryoKubun] || 0;
+      const prefStr = pref ? `(${pref}県内送り) ` : '';
+      itemnum = `混載便／1台あたり${prefStr}※時間指定不可`;
+      note    = '※現場直送不可　現場直送希望の場合は別途チャーター便手配が必要となります。';
+    } else if ([4, 40, 44, 60, 100].includes(soryoKubun)) {
+      const vehicle = frpSoryoVehicle(soryoKubun);
+      const vKey    = vehicle.includes('6t') ? '6t' : vehicle.includes('10t') ? '10t' : '4t';
+      const prefStr = pref ? `${pref}県内送り` : '送り先要確認';
+      const charter = FRP_SORYO_CHARTER[shoka];
+      price   = charter ? (charter[vKey] || 0) : 0;
+      itemnum = `チャーター便【${vehicle}】${prefStr}`;
+    }
+
+    return {
+      id:        state.nextFrpId++,
+      type:      'soryo',
+      shubetsu:  '送料',
+      chubunrui: '',
+      kashira:   '',
+      hinmei:    '送料',
+      itemnum,
+      zuban:     '',
+      qty:       1,
+      unit:      '式',
+      price,
+      priceA:    price,
+      priceB:    price,
+      soryoKubun,
+      soryoNote: note,
+      specs:     [],
+    };
   }
 
   let _frpWizard = {
@@ -3095,6 +3176,12 @@ const app = (() => {
       specs,
     };
     state.frpItems.push(item);
+
+    // 製品アイテムの場合のみ送料行を自動追加（soryoKubun が設定されている場合）
+    if (item.type === 'product' && item.soryoKubun) {
+      state.frpItems.push(makeFrpSoryoItem(item.soryoKubun));
+    }
+
     markDirty();
     renderFrpItems();
     updateFrpTotals();
@@ -3192,7 +3279,7 @@ const app = (() => {
     const priceTotal   = state.frpItems.reduce((s, i) => s + i.price * (Number(i.qty) || 1), 0);
     const shikiriTotal = state.frpItems.reduce((s, i) => s + (i[shikiriKey] || 0) * (Number(i.qty) || 1), 0);
     const discount     = state.frpDiscount || 0;
-    const grandTotal   = Math.max(0, priceTotal - discount);
+    const grandTotal   = Math.max(0, shikiriTotal - discount);
 
     const ptEl = document.getElementById('frpPriceTotal');
     const stEl = document.getElementById('frpShikiriTotal');
