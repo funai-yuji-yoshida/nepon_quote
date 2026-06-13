@@ -767,6 +767,7 @@ const app = (() => {
     kikaShita:      '80', // 期下二桁
     seqNumber:      0,    // 連番（整数）
     edaban:         '1',    // 枝番
+    seqNoHistory:   [],   // 採番undoスタック（保存前のみ有効）
     customerName:   '',
     customerHonorific: '御中', // 取引先敬称（field4）
     contactName:    '',  // 顧客担当者（Contact_Name）
@@ -1002,8 +1003,9 @@ const app = (() => {
     state.deliveryPrice = Number(quote.Grand_Total) || 0;
 
     // カスタムフィールドから読み込み
-    state.seqNo    = quote.field55 || '';
-    state.revision = Number(quote.field56) || 1;
+    state.seqNo        = quote.field55 || '';
+    state.revision     = Number(quote.field56) || 1;
+    state.seqNoHistory = [];
     // 採番コンポーネントを seqNo から復元
     if (state.seqNo && state.seqNo.includes('-')) {
       const parts = state.seqNo.split('-');
@@ -1261,6 +1263,7 @@ const app = (() => {
       if (btnClearEl) btnClearEl.style.display = locked ? '' : 'none';
     }
     updateQuoteNoBadge();
+    updateUndoSeqBtn();
     // 値引き額チェックボックス反映（作業時）
     const chkDiscEl2 = document.getElementById('chkDiscountEnabled');
     const discAmtEl2 = document.getElementById('discountAmount');
@@ -3476,6 +3479,7 @@ const app = (() => {
       const seqStr  = String(newSeq).padStart(4, '0');
       const quoteNo = `${category}${createCode}${siteCode}-${kikaShita}${seqStr}${edaban}`;
 
+      state.seqNoHistory.push({ seqNo: state.seqNo, seqNumber: state.seqNumber, edaban: state.edaban });
       state.seqNo          = quoteNo;
       state.seqNumber      = newSeq;
       state.koujiCategory  = category;
@@ -3496,6 +3500,7 @@ const app = (() => {
       if (btnIncrEl2)  btnIncrEl2.style.display  = '';
       if (btnResetEl2) btnResetEl2.style.display = '';
       if (btnClearEl2) btnClearEl2.style.display = '';
+      updateUndoSeqBtn();
     } catch (e) {
       const msg = e?.message || JSON.stringify(e);
       showToast('採番に失敗しました: ' + msg, 'err');
@@ -3529,10 +3534,12 @@ const app = (() => {
       }
     }
     if (!newSeqNo) return;
+    state.seqNoHistory.push({ seqNo: state.seqNo, seqNumber: state.seqNumber, edaban: state.edaban });
     state.seqNo = newSeqNo;
     const edabanEl = document.getElementById('edaban');
     if (edabanEl) edabanEl.value = state.edaban;
     updateQuoteNoBadge();
+    updateUndoSeqBtn();
   }
 
   function incrementEdaban() {
@@ -3554,29 +3561,52 @@ const app = (() => {
       }
     }
     if (!newSeqNo) return;
+    state.seqNoHistory.push({ seqNo: state.seqNo, seqNumber: state.seqNumber, edaban: state.edaban });
     state.seqNo = newSeqNo;
     const edabanEl = document.getElementById('edaban');
     if (edabanEl) edabanEl.value = state.edaban;
     updateQuoteNoBadge();
+    updateUndoSeqBtn();
   }
 
   function resetSeqNo() {
     if (!confirm('採番をクリアします。よろしいですか？')) return;
-    state.seqNo  = '';
-    state.edaban = '1';
+    state.seqNo        = '';
+    state.edaban       = '1';
+    state.seqNoHistory = [];
     const btnAutoEl  = document.getElementById('btnAutoNumber');
     const btnIncrEl  = document.getElementById('btnIncrSeqNo');
     const btnResetEl = document.getElementById('btnResetSeqNo');
     const btnClearEl = document.getElementById('btnClearSeqNo');
+    const btnUndoEl  = document.getElementById('btnUndoSeqNo');
     const displayEl  = document.getElementById('quoteNoDisplay');
     const edabanEl   = document.getElementById('edaban');
     if (btnAutoEl)  { btnAutoEl.disabled = false; btnAutoEl.textContent = '🔢 採番する'; }
     if (btnIncrEl)  btnIncrEl.style.display  = 'none';
     if (btnResetEl) { btnResetEl.style.display = 'none'; btnResetEl.disabled = false; }
     if (btnClearEl) btnClearEl.style.display = 'none';
+    if (btnUndoEl)  btnUndoEl.style.display  = 'none';
     if (displayEl)  displayEl.textContent = '（未採番）';
     if (edabanEl)   edabanEl.value = '1';
     updateQuoteNoBadge();
+  }
+
+  function updateUndoSeqBtn() {
+    const btn = document.getElementById('btnUndoSeqNo');
+    if (btn) btn.style.display = state.seqNoHistory.length > 0 ? '' : 'none';
+  }
+
+  function undoSeqNo() {
+    if (!state.seqNoHistory.length) return;
+    const prev = state.seqNoHistory.pop();
+    state.seqNo     = prev.seqNo;
+    state.seqNumber = prev.seqNumber;
+    state.edaban    = prev.edaban;
+    const edabanEl = document.getElementById('edaban');
+    if (edabanEl) edabanEl.value = state.edaban;
+    applyStateToForm();
+    updateUndoSeqBtn();
+    showToast(state.seqNo ? `戻しました: ${state.seqNo}` : '採番前の状態に戻しました');
   }
 
   // ── セクション操作 ────────────────────────────────────────────
@@ -6555,6 +6585,7 @@ const app = (() => {
     incrementSeqNo,
     incrementEdaban,
     resetSeqNo,
+    undoSeqNo,
     // 営業所
     onBranchChange,
     // 標準項
