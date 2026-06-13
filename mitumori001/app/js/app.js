@@ -3451,29 +3451,37 @@ const app = (() => {
       let newSeq = 1;
 
       if (zohoReady) {
-        // 既存の見積レコード(field55)から同一期・カテゴリ・作成所課の最大連番を取得
-        // 新形式: CD3232-8000011
-        const searchPrefix = `${category}${createCode}`;
-        const qRes = await ZOHO.CRM.API.searchRecord({
-          Entity: 'Quotes',
+        // 採番管理モジュール（CustomModule27）からカウンターを取得・更新
+        const counterKey = `${category}${createCode}-${kikaShita}`;
+        const cRes = await ZOHO.CRM.API.searchRecord({
+          Entity: 'CustomModule27',
           Type:   'criteria',
-          Query:  `(field55:starts_with:${searchPrefix})`,
+          Query:  `(Name:equals:${counterKey})`,
         });
-        const qRecords = qRes?.data || [];
-        let maxSeq = 0;
-        qRecords.forEach(r => {
-          const no = r.field55 || '';
-          const parts = no.split('-');
-          if (parts.length === 2) {
-            // 新形式: prefix-suffix (e.g. CD3232-8000011)
-            const suffix = parts[1];
-            if (suffix.substring(0, 2) === kikaShita) {
-              const seq = parseInt(suffix.substring(2, 6)) || 0;
-              if (seq > maxSeq) maxSeq = seq;
-            }
-          }
-        });
-        newSeq = maxSeq + 1;
+        const cRecords = cRes?.data || [];
+
+        if (cRecords.length === 0) {
+          // 初回: レコードを新規作成（現在値=1）
+          await ZOHO.CRM.API.insertRecord({
+            Entity:  'CustomModule27',
+            APIData: {
+              Name:   counterKey,
+              field:  createCode,  // 所課コード
+              field1: category,    // カテゴリ
+              field2: 1,           // 現在値
+              field3: kikaShita,   // 期下
+            },
+          });
+          newSeq = 1;
+        } else {
+          // 既存: 現在値+1 で更新
+          const rec = cRecords[0];
+          newSeq = (Number(rec.field2) || 0) + 1;
+          await ZOHO.CRM.API.updateRecord({
+            Entity:  'CustomModule27',
+            APIData: { id: rec.id, field2: newSeq },
+          });
+        }
       }
 
       const seqStr  = String(newSeq).padStart(4, '0');
@@ -3509,27 +3517,30 @@ const app = (() => {
     }
   }
 
-  function incrementSeqNo() {
+  async function incrementSeqNo() {
     if (!state.seqNo) return;
     let newSeqNo = '';
+    let newSeq   = 0;
+    let newKikaShita = '';
     if (state.seqNo.includes('-')) {
       const parts = state.seqNo.split('-');
       if (parts.length >= 6) {
         // 旧形式: CD-32-32-80-0001-1
-        const seq = (parseInt(parts[4]) || 0) + 1;
-        parts[4] = String(seq).padStart(4, '0');
+        newSeq = (parseInt(parts[4]) || 0) + 1;
+        parts[4] = String(newSeq).padStart(4, '0');
         parts[5] = '1';
         newSeqNo = parts.join('-');
-        state.seqNumber = seq;
+        newKikaShita = parts[3] || '';
+        state.seqNumber = newSeq;
         state.edaban    = '1';
       } else if (parts.length === 2) {
         // 新形式: CQ7700-8000021
         const suffix = parts[1];
-        const kikaShita = suffix.substring(0, 2);
-        const seq       = (parseInt(suffix.substring(2, 6)) || 0) + 1;
-        const edaban    = '1';
-        newSeqNo = `${parts[0]}-${kikaShita}${String(seq).padStart(4, '0')}${edaban}`;
-        state.seqNumber = seq;
+        newKikaShita = suffix.substring(0, 2);
+        newSeq       = (parseInt(suffix.substring(2, 6)) || 0) + 1;
+        const edaban = '1';
+        newSeqNo = `${parts[0]}-${newKikaShita}${String(newSeq).padStart(4, '0')}${edaban}`;
+        state.seqNumber = newSeq;
         state.edaban    = edaban;
       }
     }
@@ -3540,6 +3551,44 @@ const app = (() => {
     if (edabanEl) edabanEl.value = state.edaban;
     updateQuoteNoBadge();
     updateUndoSeqBtn();
+
+    // CustomModule27 のカウンターを新しい連番値に更新
+    if (zohoReady && newSeq > 0 && newKikaShita) {
+      try {
+        const category   = state.koujiCategory  || document.getElementById('koujiCategory')?.value  || '';
+        const createCode = state.createDeptCode || document.getElementById('createDept')?.value     || '';
+        const counterKey = `${category}${createCode}-${newKikaShita}`;
+        const cRes = await ZOHO.CRM.API.searchRecord({
+          Entity: 'CustomModule27',
+          Type:   'criteria',
+          Query:  `(Name:equals:${counterKey})`,
+        });
+        const cRecords = cRes?.data || [];
+        if (cRecords.length === 0) {
+          await ZOHO.CRM.API.insertRecord({
+            Entity:  'CustomModule27',
+            APIData: {
+              Name:   counterKey,
+              field:  createCode,
+              field1: category,
+              field2: newSeq,
+              field3: newKikaShita,
+            },
+          });
+        } else {
+          const rec = cRecords[0];
+          // 現在値より大きい場合のみ更新（逆戻り防止）
+          if (newSeq > (Number(rec.field2) || 0)) {
+            await ZOHO.CRM.API.updateRecord({
+              Entity:  'CustomModule27',
+              APIData: { id: rec.id, field2: newSeq },
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('採番管理の更新に失敗:', e);
+      }
+    }
   }
 
   function incrementEdaban() {
@@ -5855,7 +5904,8 @@ const app = (() => {
         const cat = state.quoteCategory || '';
         const modeName = (!state.frpMode && cat.includes('工事')) ? 'pdfPriceModeKouji' : 'pdfPriceMode';
         const modeVal = ([...document.getElementsByName(modeName)].find(r => r.checked)?.value || 'teika');
-        const useTeikaForKouji = ['teika', 'dairi-discount', 'dairi'].includes(modeVal);
+        // 'dairi'（定価+仕切併記）は仕切りベースで労務費を計算する
+        const useTeikaForKouji = ['teika', 'dairi-discount'].includes(modeVal);
         const koujihi = state.sections.reduce((sum, s) =>
           sum + s.items.reduce((ss, i) => {
             if (!i.includeInLabor) return ss;

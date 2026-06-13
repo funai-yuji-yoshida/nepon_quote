@@ -225,7 +225,8 @@ const QuotationPDF = (() => {
     const laborCost     = Number(data.laborCost) || 0;
     const legalWelfare  = Math.round(laborCost * legalRate);
     const anzenCost     = Number(data.anzenCost) || 0;
-    const uchiwakeBase  = ['teika', 'dairi-discount', 'dairi'].includes(data.pdfPriceMode) ? grandTotal : deliveryPrice;
+    // 'dairi'（定価+仕切併記）は仕切りベースで内訳計算する
+    const uchiwakeBase  = ['teika', 'dairi-discount'].includes(data.pdfPriceMode) ? grandTotal : deliveryPrice;
     const materialCost  = uchiwakeBase - laborCost - legalWelfare - anzenCost;
     const showUchiwake   = data.showUchiwake !== false;
 
