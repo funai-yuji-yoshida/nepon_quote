@@ -1685,6 +1685,16 @@ input.item-gensui-b::-webkit-inner-spin-button {
   border-color: #e6a817 !important;
   color: #b87800;
 }
+.item-price-rank {
+  font-size: 11px;
+  padding: 1px 2px;
+  border: 1px solid #bbb;
+  border-radius: 3px;
+  background: #f5f5ff;
+  color: #333;
+  width: 38px;
+  flex-shrink: 0;
+}
 .btn-dairi-unit-lock {
   background: none;
   border: none;

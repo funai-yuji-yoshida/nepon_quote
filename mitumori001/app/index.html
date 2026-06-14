@@ -878,6 +878,13 @@
       <td class="col-dairi-rate"><input type="text" inputmode="decimal" class="item-dairi-rate" placeholder=""></td>
       <td class="col-dairi-unit">
         <div class="dairi-unit-wrap">
+          <select class="item-price-rank" style="display:none" onchange="app.onPriceRankChange(this)" title="SABC価格ランク">
+            <option value="">―</option>
+            <option value="S">S</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+          </select>
           <input type="text" inputmode="numeric" class="item-dairi-unit" placeholder="">
           <button class="btn-dairi-unit-lock" onclick="app.clearDairiUnitPrice(this)" title="手動入力をクリアして自動計算に戻す" style="display:none">🔒</button>
         </div>

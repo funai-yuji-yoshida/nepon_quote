@@ -1570,6 +1570,10 @@ const app = (() => {
           price:  Number(p.Unit_Price) || 0,
           cost:   Number(p.field1)     || 0,   // 標準原価（field1）
           houdan: parseFloat(p.field12) || 0,  // 歩単（field12）
+          priceS: Number(p.mp_PRICES)  || 0,   // S価格
+          priceA: Number(p.mp_PRICEA)  || 0,   // A価格
+          priceB: Number(p.mp_PRICEB)  || 0,   // B価格
+          priceC: Number(p.mp_PRICEC)  || 0,   // C価格
           hasSpec:     !!(p.field13 && String(p.field13).trim()),
           specContent: p.field13 || '',
           source: 'product',
@@ -2184,6 +2188,14 @@ const app = (() => {
       item.amount    = product.price;
       item.genka     = product.cost   || 0; // 標準原価（field1）
       item.houdan    = product.houdan || 0; // 歩単（field12）
+      item.priceS    = product.priceS || 0;
+      item.priceA    = product.priceA || 0;
+      item.priceB    = product.priceB || 0;
+      item.priceC    = product.priceC || 0;
+      if (item.priceA > 0 || item.priceB > 0 || item.priceC > 0 || item.priceS > 0) {
+        item.priceRank = 'A';
+        if (item.priceA > 0) item.dairiUnitPrice = item.priceA;
+      }
       targetSection.items.push(item);
 
       if (product.code) {
@@ -4529,6 +4541,13 @@ const app = (() => {
         dairiRateEl.value       = item.dairiRate != null ? item.dairiRate : '';
         dairiRateEl.placeholder = state.mainRate != null ? String(state.mainRate) : '掛率';
       }
+      // SABCランクセレクタの反映
+      const rankEl = row.querySelector('.item-price-rank');
+      if (rankEl && rankEl !== document.activeElement) {
+        const hasSabc = (item.priceS > 0 || item.priceA > 0 || item.priceB > 0 || item.priceC > 0);
+        rankEl.style.display = hasSabc ? '' : 'none';
+        rankEl.value = item.priceRank || '';
+      }
       // 代理店単価の反映
       const dairiUnitEl   = row.querySelector('.item-dairi-unit');
       const dairiUnitLock = row.querySelector('.btn-dairi-unit-lock');
@@ -6559,6 +6578,22 @@ const app = (() => {
 
 
   // 代理店単価の手動上書きをクリアして自動計算に戻す
+  function onPriceRankChange(el) {
+    const row = el.closest('tr');
+    if (!row) return;
+    const block = row.closest('.section-block');
+    const sec   = state.sections.find(s => s.id === Number(block?.dataset.sectionId));
+    const item  = sec?.items.find(i => i.id === Number(row.dataset.itemId));
+    if (!item) return;
+    item.priceRank = el.value;
+    const prices = { S: item.priceS || 0, A: item.priceA || 0, B: item.priceB || 0, C: item.priceC || 0 };
+    const selected = el.value ? prices[el.value] : 0;
+    item.dairiUnitPrice = selected > 0 ? selected : (item.unitPrice || null);
+    markDirty();
+    if (block) renderSection(sec, block);
+    updateOutput();
+  }
+
   function clearDairiUnitPrice(btn) {
     const row = btn.closest('tr');
     if (!row) return;
@@ -6567,6 +6602,9 @@ const app = (() => {
     const item  = sec?.items.find(i => i.id === Number(row.dataset.itemId));
     if (!item) return;
     item.dairiUnitPrice = null;
+    item.priceRank = '';
+    const rankEl = row.querySelector('.item-price-rank');
+    if (rankEl) rankEl.value = '';
     const dairiUnitEl = row.querySelector('.item-dairi-unit');
     if (dairiUnitEl) {
       const effectiveRate = item.dairiRate ?? state.mainRate;
@@ -6761,7 +6799,8 @@ const app = (() => {
     _frpWizardSelect,
     openFrpSettings,
     saveFrpSettings,
-    // 代理店単価ロック解除
+    // 代理店単価ロック解除・SABCランク選択
+    onPriceRankChange,
     clearDairiUnitPrice,
     clearFinalDairiUnit,
     // 切り上げ表示
