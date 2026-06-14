@@ -1685,15 +1685,17 @@ input.item-gensui-b::-webkit-inner-spin-button {
   border-color: #e6a817 !important;
   color: #b87800;
 }
+/* SABC価格ランク列 */
+.col-price-rank { width: 62px; min-width: 62px; text-align: center; }
 .item-price-rank {
   font-size: 11px;
-  padding: 1px 2px;
+  padding: 2px 4px;
   border: 1px solid #bbb;
   border-radius: 3px;
   background: #f5f5ff;
   color: #333;
-  width: 38px;
-  flex-shrink: 0;
+  width: 56px;
+  cursor: pointer;
 }
 .btn-dairi-unit-lock {
   background: none;

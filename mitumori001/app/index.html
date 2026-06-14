@@ -804,6 +804,7 @@
             <th class="col-amount">金額</th>
             <th class="col-labor-check" title="労務費に含める">労務</th>
             <th class="col-dairi-rate">掛率</th>
+            <th class="col-price-rank">SABC価格</th>
             <th class="col-dairi-unit">代理店単価</th>
             <th class="col-final-dairi">最終代理店単価</th>
             <th class="col-dairi">代理店価格</th>
@@ -876,15 +877,17 @@
       <td class="col-amount"><input type="text" inputmode="numeric" class="item-amount" placeholder="0"></td>
       <td class="col-labor-check"><input type="checkbox" class="item-labor-check" title="労務費に含める"></td>
       <td class="col-dairi-rate"><input type="text" inputmode="decimal" class="item-dairi-rate" placeholder=""></td>
+      <td class="col-price-rank">
+        <select class="item-price-rank" onchange="app.onPriceRankChange(this)" title="SABC価格ランク">
+          <option value="">―</option>
+          <option value="S">S</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+        </select>
+      </td>
       <td class="col-dairi-unit">
         <div class="dairi-unit-wrap">
-          <select class="item-price-rank" style="display:none" onchange="app.onPriceRankChange(this)" title="SABC価格ランク">
-            <option value="">―</option>
-            <option value="S">S</option>
-            <option value="A">A</option>
-            <option value="B">B</option>
-            <option value="C">C</option>
-          </select>
           <input type="text" inputmode="numeric" class="item-dairi-unit" placeholder="">
           <button class="btn-dairi-unit-lock" onclick="app.clearDairiUnitPrice(this)" title="手動入力をクリアして自動計算に戻す" style="display:none">🔒</button>
         </div>

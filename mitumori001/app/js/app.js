@@ -21,6 +21,7 @@ const app = (() => {
     { col: 'col-amount',        label: '金額',      always: true },
     { col: 'col-labor-check',   label: '労務',      def: true,  buhanDef: false },
     { col: 'col-dairi-rate',    label: '掛率',        def: false, buhanDef: true },
+    { col: 'col-price-rank',    label: 'SABC価格',    def: false, buhanDef: true },
     { col: 'col-dairi-unit',    label: '代理店単価',  def: false, buhanDef: true },
     { col: 'col-final-dairi',    label: '最終代理店単価', def: false, sagyo: true },
     { col: 'col-dairi',          label: '代理店価格',  def: false, buhanDef: true },
@@ -4544,8 +4545,6 @@ const app = (() => {
       // SABCランクセレクタの反映
       const rankEl = row.querySelector('.item-price-rank');
       if (rankEl && rankEl !== document.activeElement) {
-        const hasSabc = (item.priceS > 0 || item.priceA > 0 || item.priceB > 0 || item.priceC > 0);
-        rankEl.style.display = hasSabc ? '' : 'none';
         rankEl.value = item.priceRank || '';
       }
       // 代理店単価の反映
