@@ -964,12 +964,16 @@ const app = (() => {
       el.className = 'font-status ok';
       const s = document.getElementById('btnSimplePDF'); if (s) s.disabled = false;
       const d = document.getElementById('btnDetailPDF'); if (d) d.disabled = false;
+      const ps = document.getElementById('btnPreviewSimplePDF'); if (ps) ps.disabled = false;
+      const pd = document.getElementById('btnPreviewDetailPDF'); if (pd) pd.disabled = false;
     } else {
       el.innerHTML = '⚠️ フォント読み込み失敗 - <a href="https://fonts.google.com/noto/specimen/Noto+Sans+JP" target="_blank">NotoSansJP-Regular.ttf</a> を widget/fonts/ に配置してください';
       el.className = 'font-status err';
       // フォントなしでも生成を許可（英数字は表示される）
       const s = document.getElementById('btnSimplePDF'); if (s) s.disabled = false;
       const d = document.getElementById('btnDetailPDF'); if (d) d.disabled = false;
+      const ps = document.getElementById('btnPreviewSimplePDF'); if (ps) ps.disabled = false;
+      const pd = document.getElementById('btnPreviewDetailPDF'); if (pd) pd.disabled = false;
     }
   }
 
@@ -5870,6 +5874,45 @@ const app = (() => {
     }
   }
 
+  let _pdfPreviewObjectUrl = null;
+
+  async function previewPDF(mode = 'detail') {
+    readFormToState();
+    const modal   = document.getElementById('pdfPreviewModal');
+    const frame   = document.getElementById('pdfPreviewFrame');
+    const loading = document.getElementById('pdfPreviewLoading');
+    if (!modal || !frame || !loading) return;
+
+    modal.style.display = 'flex';
+    loading.style.display = 'flex';
+    frame.style.display  = 'none';
+    frame.src = '';
+
+    if (_pdfPreviewObjectUrl) { URL.revokeObjectURL(_pdfPreviewObjectUrl); _pdfPreviewObjectUrl = null; }
+
+    try {
+      const data = buildPdfData(mode);
+      const blob = await QuotationPDF.getBlob(data);
+      _pdfPreviewObjectUrl = URL.createObjectURL(blob);
+      frame.src = _pdfPreviewObjectUrl;
+      loading.style.display = 'none';
+      frame.style.display   = 'block';
+    } catch (e) {
+      console.error('PDF プレビューエラー:', e);
+      loading.textContent = '❌ PDF生成失敗: ' + e.message;
+    }
+  }
+
+  function closePdfPreview() {
+    const modal = document.getElementById('pdfPreviewModal');
+    const frame = document.getElementById('pdfPreviewFrame');
+    const loading = document.getElementById('pdfPreviewLoading');
+    if (modal)   modal.style.display = 'none';
+    if (frame)   { frame.src = ''; frame.style.display = 'none'; }
+    if (loading) { loading.style.display = 'flex'; loading.textContent = '⏳ PDF生成中...'; }
+    if (_pdfPreviewObjectUrl) { URL.revokeObjectURL(_pdfPreviewObjectUrl); _pdfPreviewObjectUrl = null; }
+  }
+
   /** PDF 生成用データオブジェクトを組み立てる */
   function buildPdfData(mode = 'detail') {
     collectExclusions();
@@ -6649,6 +6692,8 @@ const app = (() => {
     applyExclusionPreset,
     // PDF
     generatePDF,
+    previewPDF,
+    closePdfPreview,
     generateSummaryPDF,
     updatePdfModeDesc,
     updateOutput,

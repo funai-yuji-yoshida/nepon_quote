@@ -375,8 +375,8 @@ const QuotationPDF = (() => {
         { text: '品　　　名', style: 'tableHeader' },
         { text: '数量',     style: 'tableHeader' },
         { text: '単位',     style: 'tableHeader' },
-        { text: '定価単価', style: 'tableHeader' },
-        { text: '定価合計', style: 'tableHeader' },
+        { text: '希望小売単価', style: 'tableHeader' },
+        { text: '希望小売合計', style: 'tableHeader' },
         { text: '仕切単価', style: 'tableHeader' },
         { text: '仕切合計', style: 'tableHeader' },
       ]);
@@ -1265,8 +1265,8 @@ const QuotationPDF = (() => {
       { text: '品名',        style: 'tableHeader' },
       { text: '数量',        style: 'tableHeader' },
       { text: '単位',        style: 'tableHeader' },
-      { text: '定価単価',    style: 'tableHeader' },
-      { text: '定価合計',    style: 'tableHeader' },
+      { text: '希望小売単価', style: 'tableHeader' },
+      { text: '希望小売合計', style: 'tableHeader' },
       { text: shikiriLabel,  style: 'tableHeader' },
       { text: shikiriTLabel, style: 'tableHeader' },
     ];
