@@ -424,9 +424,11 @@ const QuotationPDF = (() => {
     const mirrorEntries = [];
     if (!frpMode) {
       sectionTotals.forEach(s => {
-        if (isKouji) {
+        if (isKouji || !isBuppan) {
+          // 工事・作業: 大項目のみ表示（鏡は概要のみ、明細は別ページ）
           mirrorEntries.push({ type: 'section', s });
         } else {
+          // 物販: 個別アイテムを表示
           if (s.name && s.name.trim()) {
             mirrorEntries.push({ type: 'sectionHeader', s });
           }
@@ -942,13 +944,15 @@ const QuotationPDF = (() => {
         ...emp(spanMid - 1),
         { text: fmt(legalWelfare), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
       ]);
-      // 内訳 4) 安全衛生経費 ※後日実装予定のため一時非表示
-      // tableRows.push([
-      //   { text: '', border: [true, false, false, true] },
-      //   { text: '4）安全衛生経費', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, true] },
-      //   ...emp(spanMid - 1),
-      //   { text: fmt(anzenCost), alignment: 'right', fontSize: itemFs, border: [false, false, true, true] },
-      // ]);
+      // 内訳 4) 安全衛生経費
+      if (anzenCost > 0) {
+        tableRows.push([
+          { text: '', border: [true, false, false, false] },
+          { text: '4）安全衛生経費', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
+          ...emp(spanMid - 1),
+          { text: fmt(anzenCost), alignment: 'right', fontSize: itemFs, border: [false, false, true, false] },
+        ]);
+      }
     }
 
     // ── 見積外工事リスト（選択なしの場合は非表示）──────────────
@@ -956,8 +960,8 @@ const QuotationPDF = (() => {
     const leftCol  = exclusions.slice(0, half);
     const rightCol = exclusions.slice(half);
     const exRows   = leftCol.map((item, i) => [
-      { text: `${i + 1}. ${item}`, fontSize: itemFs, border: [false, false, false, false] },
-      { text: rightCol[i] ? `${i + half + 1}. ${rightCol[i]}` : '', fontSize: itemFs, border: [false, false, false, false] },
+      { text: `${i + 1}. ${item}は含みません。`, fontSize: itemFs, border: [false, false, false, false] },
+      { text: rightCol[i] ? `${i + half + 1}. ${rightCol[i]}は含みません。` : '', fontSize: itemFs, border: [false, false, false, false] },
     ]);
 
     // ── スタンプボックス（2行×2列 = 4ボックス） ─────────────────
@@ -1127,6 +1131,17 @@ const QuotationPDF = (() => {
                   },
                 ],
               },
+              // 希望小売合計（定価合計）を teika以外のモードで表示
+              ...(() => {
+                const _teikaTotal = frpMode ? frpPriceTotal : grandTotal;
+                const _showTeika  = !isTeika && _teikaTotal > 0 && _teikaTotal !== displayPrice;
+                return _showTeika ? [{
+                  columns: [
+                    { width: 75, text: '希望小売合計', fontSize: 8, margin: [0, 2, 0, 0] },
+                    { width: '*', text: `¥${fmt(_teikaTotal)}`, fontSize: 8, margin: [0, 2, 0, 0] },
+                  ],
+                }] : [];
+              })(),
               {
                 margin: [0, amountMgn, 0, 0],
                 table: {
@@ -1988,6 +2003,10 @@ const QuotationPDF = (() => {
             { text: (isBulk || isShikiOnly) ? fmt(dairiItemAmt(item)) : fmt(item.amount), alignment: 'right' },
           ]);
         }
+        // 型式行
+        if (item.model) {
+          rows.push([{ text: '' }, { text: `　型式：${item.model}`, fontSize: 7.5, color: '#333' }, ...emp(COLS - 2)]);
+        }
         // 仕様行
         const _sl1 = (item.specLines || []).filter(l => (l || '').trim());
         if (_sl1.length > 0) {
@@ -2227,6 +2246,10 @@ const QuotationPDF = (() => {
             { text: (isBulk || isShikiOnly) ? (dairiItemUnit(item) != null ? fmt(dairiItemUnit(item)) : '') : fmt(effectiveUnitPrice(item)), alignment: 'right' },
             { text: (isBulk || isShikiOnly) ? fmt(dairiItemAmt(item)) : fmt(item.amount), alignment: 'right' },
           ]);
+        }
+        // 型式行（商品マスタの型式）
+        if (item.model && !item.machineSpec) {
+          rows.push([{ text: '' }, { text: `　型式：${item.model}`, fontSize: 7.5, color: '#333' }, ...emp(COLS - 2)]);
         }
         const _sl2 = (item.specLines || []).filter(l => (l || '').trim());
         if (_sl2.length > 0) {

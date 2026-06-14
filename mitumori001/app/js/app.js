@@ -1152,6 +1152,9 @@ const app = (() => {
     setValue('customerHonorific', state.customerHonorific || '御中');
     setValue('contactName',     state.contactName);
     setValue('contactHonorific', state.contactHonorific || '様');
+    // 担当者名がある場合はデフォルトでチェックON
+    const printContactNameEl = document.getElementById('printContactName');
+    if (printContactNameEl && state.contactName) printContactNameEl.checked = true;
     setValue('projectName',     state.projectName);
     setValue('projectName2',    state.projectName2);
     setValue('projectName3',    state.projectName3);
