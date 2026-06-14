@@ -662,7 +662,7 @@ const app = (() => {
 
   // ── 単位ピッカー（シングルトン floating dropdown） ───────────
   const _unitPicker = (() => {
-    const UNITS = ['式','個','本','m','㎡','㎥','台','基','セット','組','ユニット','ダース','巻','缶','リットル','袋','kg','トン','a','ha','面'];
+    const UNITS = ['式','個','本','m','㎡','㎥','台','基','セット','組','ユニット','ダース','巻','缶','リットル','袋','kg','トン','a','ha','面','車'];
     const dd = document.createElement('div');
     dd.className = 'unit-picker-dd';
     document.body.appendChild(dd);
@@ -6043,6 +6043,15 @@ const app = (() => {
 
     try {
       readFormToState();
+      // 作成所課（部門）の未入力チェック
+      const _deptEl = document.getElementById('createDept');
+      if (_deptEl && _deptEl.value) state.createDeptCode = _deptEl.value;
+      if (!state.createDeptCode) {
+        showToast('部門（作成所課）を選択してください', 'err');
+        statusEl.textContent = '⚠️ 部門が未入力です';
+        btn.disabled = false;
+        return;
+      }
 
       // 同一見積番号の重複チェック
       if (state.seqNo && zohoReady) {
@@ -6754,6 +6763,21 @@ const app = (() => {
     clearFinalDairiUnit,
     // 切り上げ表示
     toggleRounding,
+    // デバッグ・テスト用
+    _state: state,
+    _renderFrpItems: renderFrpItems,
+    _updateOutput: updateOutput,
+    injectFrpTest(frpItems, options = {}) {
+      state.frpMode     = true;
+      state.frpAB       = options.frpAB       ?? 'A';
+      state.frpDiscount = options.frpDiscount  ?? 0;
+      state.frpItems    = frpItems;
+      state.nextFrpId   = frpItems.length > 0 ? Math.max(...frpItems.map(i => i.id)) + 1 : 1;
+      applyFrpModeUI();
+      renderFrpItems();
+      updateOutput();
+      console.log('[injectFrpTest] 完了:', frpItems.length + '件');
+    },
   };
 
 })();
