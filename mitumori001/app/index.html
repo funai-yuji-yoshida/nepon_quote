@@ -135,12 +135,16 @@
               <input type="text" id="projectName3" class="input-wide">
             </div>
             <div class="form-row">
-              <label>担当者</label>
+              <label>担当者（営業）</label>
               <input type="text" id="ownerName" placeholder="担当者名" class="input-medium">
             </div>
             <div class="form-row">
-              <label>更新者</label>
+              <label>更新者（事務）</label>
               <input type="text" id="updaterName" class="input-medium">
+            </div>
+            <div class="form-row">
+              <label>所長</label>
+              <input type="text" id="shochoName" placeholder="所長名" class="input-medium">
             </div>
             <div class="form-row">
               <label>見積区分</label>
@@ -644,7 +648,14 @@
           <div class="print-detail-option">
             <label class="print-detail-label">
               <input type="checkbox" id="printOwnerName">
-              担当者を印刷する
+              担当者（営業/事務）を印刷する
+            </label>
+          </div>
+
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printShocho">
+              所長を印刷する
             </label>
           </div>
 

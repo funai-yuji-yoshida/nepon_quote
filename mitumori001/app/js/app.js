@@ -778,6 +778,7 @@ const app = (() => {
     projectName3:   '',  // 件名3行目（field7）
     ownerName:      '',
     updaterName:    '',  // 更新者（field68）
+    shochoName:     '',  // 所長名（手動入力）
     quoteCategory:  '',  // 見積区分（field63）: 物販 / 作業（100万以下） / 工事（100万超）
     date:         new Date(),
     submitDate:   null,  // 見積提出日（field64）
@@ -1072,12 +1073,7 @@ const app = (() => {
       try {
         const parsed = JSON.parse(savedJson);
         state.sections      = parsed.sections     || [];
-        // 代理店掛率が空欄の既存行に 1.0 を補正（全カテゴリ）
-        state.sections.forEach(sec => {
-          (sec.items || []).forEach(item => {
-            if (item.dairiRate == null) item.dairiRate = 1.0;
-          });
-        });
+        // dairiRate=nullの既存行はmainRateを継承するため補正不要
         state.deliveryPrice = parsed.deliveryPrice || state.deliveryPrice;
         state.laborCost     = parsed.laborCost     || null;
         state.anzenCost     = parsed.anzenCost     || 0;
@@ -1093,6 +1089,8 @@ const app = (() => {
         state.roundingEnabled  = parsed.roundingEnabled  || false;
         // 値引き額チェックボックス復元（作業時のみ保存される）
         if (parsed.discountEnabled === false) state.discountEnabled = false;
+        // 所長名復元
+        if (parsed.shochoName) state.shochoName = parsed.shochoName;
         // FRPモード復元
         if (parsed.frpMode) {
           state.frpMode    = true;
@@ -1170,6 +1168,7 @@ const app = (() => {
     }
     setValue('ownerName',       state.ownerName);
     setValue('updaterName',     state.updaterName);
+    setValue('shochoName',      state.shochoName || '');
     // 掛率パネルを更新（input に値をセット）
     const setRateEl = (id, v) => {
       const el = document.getElementById(id);
@@ -1926,6 +1925,7 @@ const app = (() => {
     item.productId    = null;
     item.name         = k.name;
     item.spec         = k.model || '';
+    item.productCode  = k.code  || '';
     item.qty          = k.qty   || 1;
     item.unit         = k.unit  || '式';
     item.kouTanka     = k.price || 0;  // 工事商品単価を保存
@@ -3781,7 +3781,7 @@ const app = (() => {
       id: state.nextItemId++, productId: null, model: '',
       name: '', spec: '', productCode: '', qty: 1, unit: '式', unitPrice: null, amount: 0,
       includeInLabor: false,  // 労務費に含めるか（null=auto: ④工事費なら true）
-      dairiRate: (state.quoteCategory || '').includes('工事') ? 1.0 : null, // 工事は1.0固定、その他はグローバル main_rate を使用
+      dairiRate: state.mainRate ?? null, // null = グローバル main_rate を継承
       dairiUnitPrice: null,  // null = 自動計算（unitPrice × rate）、数値 = 手動上書き
       finalDairiUnit: null,  // null = 自動（代理店単価と同じ）、数値 = 手動上書き
       buhanDiscount: null,   // 値引き（物販のみ、行合計）
@@ -4061,6 +4061,14 @@ const app = (() => {
       if (amountEl) amountEl.value = item.amount.toLocaleString('ja-JP');
     } else if (e.target === amountEl) {
       item.amount = Number((amountEl?.value || '').replace(/,/g, '')) || 0;
+      // 金額から単価を逆算（数量2以上で単価が入らない不具合対応）
+      if (item.qty && item.amount) {
+        item.unitPrice = Math.round(item.amount / item.qty);
+        if (priceEl) priceEl.value = item.unitPrice.toLocaleString('ja-JP');
+      } else if (!item.amount) {
+        item.unitPrice = null;
+        if (priceEl) priceEl.value = '';
+      }
     }
 
     // 算出カテゴリ変更 → includeInLabor・gensuiEnabled表示を自動更新
@@ -5606,7 +5614,9 @@ const app = (() => {
       : 0;
     state.buhanDiscTotal = buhanDiscTotal;
     const discount      = isBuhanCalc ? 0 : (state.discountEnabled !== false ? (Number(getValue('discountAmount')) || 0) : 0);
-    const deliveryPrice = Math.max(0, (dairiTotal != null ? dairiTotal : grandTotal) - discount - buhanDiscTotal);
+    // 出精値引きは定価から引く: dairiTotal設定かつdiscount>0なら grandTotal - discount
+    const discountBase  = (dairiTotal != null && discount > 0) ? grandTotal : (dairiTotal != null ? dairiTotal : grandTotal);
+    const deliveryPrice = Math.max(0, discountBase - discount - buhanDiscTotal);
 
     // state に反映（saveToCRM/buildPdfData で使用）
     state.discount      = discount;
@@ -5683,7 +5693,11 @@ const app = (() => {
     if (pdfModeGrp) pdfModeGrp.style.display = (dairiTotal != null && !isKoujiCat) ? '' : 'none';
     updatePdfModeDesc();
     const subtotalBothGrp = document.getElementById('subtotalBothGroup');
-    if (subtotalBothGrp) subtotalBothGrp.style.display = dairiTotal != null ? '' : 'none';
+    if (subtotalBothGrp) {
+      const _sbModeN = (state.quoteCategory || '').includes('工事') ? 'pdfPriceModeKouji' : 'pdfPriceMode';
+      const _sbModeV = ([...document.getElementsByName(_sbModeN)].find(r => r.checked)?.value || 'teika');
+      subtotalBothGrp.style.display = (dairiTotal != null && _sbModeV === 'dairi') ? '' : 'none';
+    }
     const dpHidden = document.getElementById('deliveryPrice');
     if (dpHidden) dpHidden.value = deliveryPrice;
 
@@ -5826,6 +5840,7 @@ const app = (() => {
     state.projectName3   = getValue('projectName3') || '';
     state.ownerName      = getValue('ownerName');
     state.updaterName    = getValue('updaterName') || '';
+    state.shochoName     = getValue('shochoName')  || '';
     state.deliveryTerm   = getValue('deliveryTerm');
     state.deliveryMethod = getValue('deliveryMethod');
     state.paymentTerm    = getValue('paymentTerm');
@@ -6046,10 +6061,35 @@ const app = (() => {
         const cb = document.getElementById('printProductCodeCover');
         return cb ? cb.checked : false;
       })(),
+      shochoName: state.shochoName || '',
+      showShocho: (() => {
+        const cb = document.getElementById('printShocho');
+        return cb ? cb.checked : false;
+      })(),
     };
   }
 
   // ── CRM 保存 ─────────────────────────────────────────────────
+
+  // 1つ前の枝番の見積番号を返す（枝番=1なら null）
+  function buildPrevEdabanSeqNo(seqNo) {
+    if (!seqNo || !seqNo.includes('-')) return null;
+    const parts = seqNo.split('-');
+    if (parts.length >= 6) {
+      const edaban = parseInt(parts[5]) || 1;
+      if (edaban <= 1) return null;
+      const p = [...parts];
+      p[5] = String(edaban - 1);
+      return p.join('-');
+    } else if (parts.length === 2) {
+      const suffix = parts[1];
+      const base   = suffix.substring(0, 6);
+      const edaban = parseInt(suffix.substring(6)) || 1;
+      if (edaban <= 1) return null;
+      return `${parts[0]}-${base}${edaban - 1}`;
+    }
+    return null;
+  }
 
   async function saveToCRM() {
     const statusEl = document.getElementById('saveStatus');
@@ -6089,6 +6129,34 @@ const app = (() => {
           return;
         }
       }
+      // 見積提出日の時系列バリデーション（枝番>1の場合、前版より新しい日付か確認）
+      if (state.submitDate && state.seqNo && zohoReady) {
+        const prevSeqNo = buildPrevEdabanSeqNo(state.seqNo);
+        if (prevSeqNo) {
+          try {
+            const prevRes = await ZOHO.CRM.API.searchRecord({
+              Entity: 'Quotes',
+              Type:   'criteria',
+              Query:  `(field55:equals:${prevSeqNo})`,
+            });
+            const prevRecords = prevRes?.data || [];
+            if (prevRecords.length > 0 && prevRecords[0].field64) {
+              const prevDate = new Date(prevRecords[0].field64);
+              if (state.submitDate < prevDate) {
+                const prevDateStr = formatDateInput(prevDate);
+                const curDateStr  = formatDateInput(state.submitDate);
+                showToast(`見積提出日（${curDateStr}）が前版（${prevDateStr}）より前の日付です。日付を確認してください。`, 'err');
+                statusEl.textContent = '⚠️ 見積提出日の順序が不正です';
+                btn.disabled = false;
+                return;
+              }
+            }
+          } catch (e) {
+            console.warn('前版の日付チェックに失敗:', e);
+          }
+        }
+      }
+
       console.log('保存開始 quoteId:', state.quoteId, 'sections:', state.sections.length);
 
       collectExclusions();
@@ -6108,6 +6176,7 @@ const app = (() => {
         frpItems:       state.frpMode && state.frpItems.length ? state.frpItems : undefined,
         roundingEnabled:  state.roundingEnabled  || undefined,
         discountEnabled:  state.discountEnabled === false ? false : undefined,
+        shochoName:       state.shochoName       || undefined,
       });
 
       // field60/61/62 用に金額を再計算
@@ -6526,8 +6595,12 @@ const app = (() => {
   function effectiveDairiUnit(item) {
     if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
     const rate = item.dairiRate ?? state.mainRate;
-    if (rate == null || item.unitPrice == null) return null;
-    const auto = Math.round(item.unitPrice * rate);
+    if (rate == null) return null;
+    // unitPriceがnullのとき amount/qty から単価を逆算（qty≥2で金額のみ入力した場合の修正）
+    const baseUnit = item.unitPrice != null ? item.unitPrice
+      : (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
+    if (baseUnit == null) return null;
+    const auto = Math.round(baseUnit * rate);
     return state.roundingEnabled ? roundUp(auto) : auto;
   }
 

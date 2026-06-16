@@ -225,8 +225,10 @@ const QuotationPDF = (() => {
     const laborCost     = Number(data.laborCost) || 0;
     const legalWelfare  = Math.round(laborCost * legalRate);
     const anzenCost     = Number(data.anzenCost) || 0;
-    // 'dairi'（定価+仕切併記）は仕切りベースで内訳計算する
-    const uchiwakeBase  = ['teika', 'dairi-discount'].includes(data.pdfPriceMode) ? grandTotal : deliveryPrice;
+    // 内訳基準: teika=定価合計, dairi-discount=定価-出精値引き, それ以外=仕切(deliveryPrice)
+    const uchiwakeBase  = data.pdfPriceMode === 'teika' ? grandTotal
+      : data.pdfPriceMode === 'dairi-discount' ? Math.max(0, grandTotal - discount)
+      : deliveryPrice;
     const materialCost  = uchiwakeBase - laborCost - legalWelfare - anzenCost;
     const showUchiwake   = data.showUchiwake !== false;
 
@@ -333,8 +335,11 @@ const QuotationPDF = (() => {
       if (item?.finalDairiUnit != null) return item.finalDairiUnit;
       if (item?.dairiUnitPrice != null) return item.dairiUnitPrice;
       const rate = (item?.dairiRate ?? mainRate) ?? mainRate;
-      if (!item?.unitPrice || rate == null) return null;
-      const auto = Math.round(item.unitPrice * rate);
+      if (rate == null) return null;
+      const baseUnit = item?.unitPrice != null ? item.unitPrice
+        : (item?.amount != null ? Math.round(Number(item.amount) / (Number(item?.qty) || 1)) : null);
+      if (!baseUnit) return null;
+      const auto = Math.round(baseUnit * rate);
       return roundingEnabled ? roundUp(auto) : auto;
     };
     const dairi = (v, item) => {
@@ -629,7 +634,7 @@ const QuotationPDF = (() => {
       } else {
         const item = entry.item;
         const row = [
-          { text: String((entry.idx ?? 0) + 1), alignment: 'center', fontSize: itemFs },
+          { text: String(rowNo++), alignment: 'center', fontSize: itemFs },
           { text: item.name || '', fontSize: itemFs },
           ...(showProductCode ? [{ text: item.productCode || '', fontSize: itemFs, noWrap: true }] : []),
           { text: String(item.qty || 1), alignment: 'center', fontSize: itemFs },
@@ -1040,11 +1045,11 @@ const QuotationPDF = (() => {
                     : []),
                 ],
               },
-              // 顧客担当者
+              // 顧客担当者（会社名と同サイズ）
               ...(data.showContactName && data.contactName ? [{
                 margin: [25, 2, 0, 0],
                 text: (data.contactName || '') + '　' + (data.contactHonorific || '様'),
-                fontSize: 9,
+                fontSize: custFs,
               }] : []),
               // 工事名 / 件名
               {
@@ -1100,7 +1105,8 @@ const QuotationPDF = (() => {
               { text: branch.address, fontSize: 7.5, alignment: 'right' },
               { text: `TEL　${branch.tel}`, fontSize: 8, alignment: 'right' },
               { text: `FAX　${branch.fax}`, fontSize: 8, alignment: 'right' },
-              ...(data.showOwnerName && data.ownerName ? [{ text: `担当者：${data.ownerName}${data.updaterName ? `（${data.updaterName}）` : ''}`, fontSize: 8, alignment: 'right' }] : []),
+              ...(data.showOwnerName && data.ownerName ? [{ text: `担当者：${data.ownerName}（営業）${data.updaterName ? `　${data.updaterName}（事務）` : ''}`, fontSize: 8, alignment: 'right' }] : []),
+              ...(data.showShocho && data.shochoName ? [{ text: `所長　：${data.shochoName}`, fontSize: 8, alignment: 'right' }] : []),
               ...(data.branchNote ? [{ text: data.branchNote, fontSize: 8, alignment: 'right' }] : []),
             ],
           },
@@ -1435,8 +1441,10 @@ const QuotationPDF = (() => {
     const dairiItemUnit = (item) => {
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
       const rate = item.dairiRate ?? mainRate;
-      if (!item.unitPrice || rate == null) return null;
-      const auto = Math.round(item.unitPrice * rate);
+      if (rate == null) return null;
+      const baseUnit = item.unitPrice || (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
+      if (!baseUnit) return null;
+      const auto = Math.round(baseUnit * rate);
       return roundingEnabled ? roundUp(auto) : auto;
     };
     const dairiItemAmt = (item) => {
@@ -1641,6 +1649,12 @@ const QuotationPDF = (() => {
         if (discountAmt > 0) body.push(mkTotalRow('出精値引き', '▲ ' + fmt(discountAmt), false));
         body.push(mkTotalRow('貴社お渡し価格', fmt(Math.max(0, bulkDairi - discountAmt)), false));
         result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+      } else if (useDairi && discountEnabled && discount > 0) {
+        // 定価+仕切モード（dairi）で出精値引きがある場合: 定価合計 → 出精値引き → 貴社お渡し価格
+        const body = [mkTotalRow('合　　計', fmt(grandTotal), true)];
+        body.push(mkTotalRow('出精値引き', '▲ ' + fmt(discount), false));
+        body.push(mkTotalRow('貴社お渡し価格', fmt(Math.max(0, grandTotal - discount)), false));
+        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else {
         result.push({
           margin: [0, 0, 0, 0],
@@ -1670,8 +1684,10 @@ const QuotationPDF = (() => {
     const dairiItemUnit = (item) => {
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
       const rate = item.dairiRate ?? mainRate;
-      if (!item.unitPrice || rate == null) return null;
-      const auto = Math.round(item.unitPrice * rate);
+      if (rate == null) return null;
+      const baseUnit = item.unitPrice || (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
+      if (!baseUnit) return null;
+      const auto = Math.round(baseUnit * rate);
       return roundingEnabled ? roundUp(auto) : auto;
     };
     const dairiItemAmt = (item) => {
@@ -1904,8 +1920,10 @@ const QuotationPDF = (() => {
       if (item.finalDairiUnit != null) return item.finalDairiUnit;
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
       const rate = item.dairiRate ?? mainRate;
-      if (!item.unitPrice || rate == null) return null;
-      const auto = Math.round(item.unitPrice * rate);
+      if (rate == null) return null;
+      const baseUnit = item.unitPrice || (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
+      if (!baseUnit) return null;
+      const auto = Math.round(baseUnit * rate);
       return roundingEnabled ? roundUp(auto) : auto;
     };
     const dairiItemAmt = (item) => {
@@ -2003,8 +2021,8 @@ const QuotationPDF = (() => {
             { text: (isBulk || isShikiOnly) ? fmt(dairiItemAmt(item)) : fmt(item.amount), alignment: 'right' },
           ]);
         }
-        // 型式行
-        if (item.model) {
+        // 型式行（品目コード列表示時は重複を避けるため省略）
+        if (item.model && !showProductCode) {
           rows.push([{ text: '' }, { text: `　型式：${item.model}`, fontSize: 7.5, color: '#333' }, ...emp(COLS - 2)]);
         }
         // 仕様行
@@ -2125,6 +2143,12 @@ const QuotationPDF = (() => {
         if (discountAmt > 0) body.push(mkRow('出精値引き', '▲ ' + fmt(discountAmt), false));
         body.push(mkRow('貴社お渡し価格', fmt(Math.max(0, bulkDairi - discountAmt)), false));
         result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+      } else if (useDairi && discountEnabled && discount > 0) {
+        // 定価+仕切モード（dairi）で出精値引きがある場合: 定価合計 → 出精値引き → 貴社お渡し価格
+        const body = [mkRow('合　　計', fmt(grandTotal), true)];
+        body.push(mkRow('出精値引き', '▲ ' + fmt(discount), false));
+        body.push(mkRow('貴社お渡し価格', fmt(Math.max(0, grandTotal - discount)), false));
+        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else {
         result.push({
           margin: [0, 0, 0, 0],
@@ -2150,8 +2174,10 @@ const QuotationPDF = (() => {
       if (item.finalDairiUnit != null) return item.finalDairiUnit;
       if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
       const rate = item.dairiRate ?? mainRate;
-      if (!item.unitPrice || rate == null) return null;
-      const auto = Math.round(item.unitPrice * rate);
+      if (rate == null) return null;
+      const baseUnit = item.unitPrice || (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
+      if (!baseUnit) return null;
+      const auto = Math.round(baseUnit * rate);
       return roundingEnabled ? roundUp(auto) : auto;
     };
     const dairiItemAmt = (item) => {
@@ -2247,8 +2273,8 @@ const QuotationPDF = (() => {
             { text: (isBulk || isShikiOnly) ? fmt(dairiItemAmt(item)) : fmt(item.amount), alignment: 'right' },
           ]);
         }
-        // 型式行（商品マスタの型式）
-        if (item.model && !item.machineSpec) {
+        // 型式行（商品マスタの型式。品目コード列表示時は重複を避けるため省略）
+        if (item.model && !item.machineSpec && !showProductCode) {
           rows.push([{ text: '' }, { text: `　型式：${item.model}`, fontSize: 7.5, color: '#333' }, ...emp(COLS - 2)]);
         }
         const _sl2 = (item.specLines || []).filter(l => (l || '').trim());
