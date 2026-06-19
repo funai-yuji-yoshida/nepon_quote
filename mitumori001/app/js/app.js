@@ -788,6 +788,8 @@ const app = (() => {
     validDays:      '見積期限は60日限りです。期限後のご用命の節は一応ご照会願います。',
     remarks:        '',
     discount:        0,
+    adjustAmount:    0,
+    waribikiAmount:  0,
     discountEnabled: true,
     deliveryPrice:  0,
     laborCost:      null,   // null = 自動計算
@@ -1058,7 +1060,8 @@ const app = (() => {
     state.paymentTerm    = quote.field57 || state.paymentTerm;
     state.validDays      = quote.field58 || state.validDays;
     state.remarks        = quote.field59 || '';
-    state.discount       = Number(quote.field61) || 0;  // 値引き額
+    state.adjustAmount   = Number(quote.field61) || 0;  // 調整額
+    state.discount       = 0;  // 出精値引きは再計算
     state.submitDate     = quote.field64 ? new Date(quote.field64) : null; // 見積提出日
     state.projectName2   = quote.field8  || '';  // 件名2行目
     state.projectName3   = quote.field7  || '';  // 件名3行目
@@ -1079,7 +1082,8 @@ const app = (() => {
         state.anzenCost     = parsed.anzenCost     || 0;
         state.exclusions    = parsed.exclusions    || [];
         state.remarks       = parsed.remarks        || state.remarks;
-        state.discount      = parsed.discount       || state.discount;
+        state.adjustAmount  = parsed.adjustAmount ?? parsed.discount ?? state.adjustAmount;
+        state.discount      = 0;  // 出精値引きは再計算
         // JSONに保存済みのサブフォーム行IDを復元（保存時に③で書き直している）
         if (parsed.subformRowIds?.length) {
           state.subformRowIds = parsed.subformRowIds;
@@ -1189,7 +1193,7 @@ const app = (() => {
     if (!isKouji && currentCat === 'kiki') switchCatTab('product');
     const discountLabelEl = document.getElementById('discountLabel');
     if (discountLabelEl) {
-      discountLabelEl.textContent = isKouji ? '出精値引き' : '値引き額';
+      discountLabelEl.textContent = '調整額';
     }
     // ─── 印刷オプション表示ルール ───────────────────────────────
     // 【工事・物販・作業 共通】
@@ -1278,7 +1282,7 @@ const app = (() => {
       chkDiscEl2.checked = state.discountEnabled !== false;
       if (discAmtEl2) discAmtEl2.disabled = !chkDiscEl2.checked;
     }
-    setValue('discountAmount',  state.discountEnabled !== false ? (state.discount || '') : '');
+    setValue('discountAmount',  state.discountEnabled !== false ? (state.adjustAmount || '') : '');
     setValue('laborCost',       state.laborCost || '');
     setValue('anzenCost',       state.anzenCost || '');
     setValue('legalWelfareRate',state.legalWelfareRate);
@@ -5613,13 +5617,17 @@ const app = (() => {
         }, 0)
       : 0;
     state.buhanDiscTotal = buhanDiscTotal;
-    const discount      = isBuhanCalc ? 0 : (state.discountEnabled !== false ? (Number(getValue('discountAmount')) || 0) : 0);
-    // 出精値引きは定価から引く: dairiTotal設定かつdiscount>0なら grandTotal - discount
-    const discountBase  = (dairiTotal != null && discount > 0) ? grandTotal : (dairiTotal != null ? dairiTotal : grandTotal);
-    const deliveryPrice = Math.max(0, discountBase - discount - buhanDiscTotal);
+    const adjustAmount   = isBuhanCalc ? 0 : (state.discountEnabled !== false ? (Number(getValue('discountAmount')) || 0) : 0);
+    // 割引額 = 定価合計 - 代理店価格合計（代理店価格がある場合のみ）
+    const waribikiAmount = (dairiTotal != null && !isBuhanCalc) ? Math.max(0, grandTotal - dairiTotal) : 0;
+    // 出精値引き = 割引額 + 調整額
+    const discount       = waribikiAmount + adjustAmount;
+    const deliveryPrice  = Math.max(0, grandTotal - discount - buhanDiscTotal);
 
     // state に反映（saveToCRM/buildPdfData で使用）
-    state.discount      = discount;
+    state.discount       = discount;
+    state.adjustAmount   = adjustAmount;
+    state.waribikiAmount = waribikiAmount;
     state.deliveryPrice = deliveryPrice;
 
     // 原価合計
@@ -5675,6 +5683,14 @@ const app = (() => {
     const rowDairi = document.getElementById('rowDairiTotal');
     if (rowDairi) rowDairi.style.display = dairiTotal != null ? '' : 'none';
     setText('basicDairiTotal', dairiTotal != null ? dairiTotal.toLocaleString('ja-JP') : '0');
+    // 割引額行（代理店価格あり・非物販の場合のみ表示）
+    const rowWaribikiEl = document.getElementById('rowWaribiki');
+    if (rowWaribikiEl) rowWaribikiEl.style.display = (dairiTotal != null && !isBuhanCalc) ? '' : 'none';
+    setText('basicWaribikiAmount', waribikiAmount.toLocaleString('ja-JP'));
+    // 出精値引き合計行
+    const rowSesseiWabikiEl = document.getElementById('rowSesseiWabiki');
+    if (rowSesseiWabikiEl) rowSesseiWabikiEl.style.display = (dairiTotal != null && !isBuhanCalc) ? '' : 'none';
+    setText('basicSesseiWabiki', discount.toLocaleString('ja-JP'));
     // 物販: 値引き（明細計）行
     const rowBuhanDiscEl = document.getElementById('rowBuhanDiscount');
     if (rowBuhanDiscEl) {
@@ -5884,6 +5900,7 @@ const app = (() => {
     statusEl.textContent = '';
 
     try {
+      updateOutput();
       const data = buildPdfData(mode);
       const blob = await QuotationPDF.getBlob(data);
       const quoteNo  = data.quoteNoStr || data.seqNo || '未採番';
@@ -5927,6 +5944,7 @@ const app = (() => {
     if (_pdfPreviewObjectUrl) { URL.revokeObjectURL(_pdfPreviewObjectUrl); _pdfPreviewObjectUrl = null; }
 
     try {
+      updateOutput();
       const data = buildPdfData(mode);
       const blob = await QuotationPDF.getBlob(data);
       _pdfPreviewObjectUrl = URL.createObjectURL(blob);
@@ -6010,6 +6028,8 @@ const app = (() => {
       exclusions:      state.exclusions.length > 0 ? state.exclusions : undefined,
       remarks:         state.remarks || undefined,
       discount:        state.discountEnabled !== false ? (state.discount || undefined) : undefined,
+      adjustAmount:    state.adjustAmount || 0,
+      waribikiAmount:  state.waribikiAmount || 0,
       discountEnabled: state.discountEnabled !== false,
       buhanDiscTotal:  state.buhanDiscTotal || 0,
       quoteCategory:   state.quoteCategory || '',
@@ -6168,7 +6188,8 @@ const app = (() => {
         revision:      state.revision,
         exclusions:    state.exclusions,
         remarks:        state.remarks        || undefined,
-        discount:       state.discount       || undefined,
+        discount:       state.adjustAmount    || undefined,
+        adjustAmount:   state.adjustAmount   || undefined,
         subformRowIds:  state.subformRowIds?.length ? state.subformRowIds : undefined,
         // FRP
         frpMode:        state.frpMode  || undefined,
@@ -6182,9 +6203,9 @@ const app = (() => {
       // field60/61/62 用に金額を再計算
       const saveGrandTotal    = state.sections.reduce((sum, s) =>
         sum + s.items.reduce((ss, i) => ss + (Number(i.amount) || 0), 0), 0);
-      const saveDiscount      = state.discount || 0;
+      const saveDiscount      = state.adjustAmount || 0;  // field61 には調整額を保存
       const saveDairiTotal    = state.dairiTotal;
-      const saveDeliveryPrice = Math.max(0, (saveDairiTotal != null ? saveDairiTotal : saveGrandTotal) - saveDiscount);
+      const saveDeliveryPrice = state.deliveryPrice;
 
       const apiData = {
         id:      state.quoteId,

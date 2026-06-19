@@ -192,6 +192,13 @@
                 <span id="basicDairiTotal" class="display-price" style="color:#1a4d8f">0</span>
               </div>
             </div>
+            <div class="form-row" id="rowWaribiki" style="display:none">
+              <label>　割引額</label>
+              <div class="price-group">
+                <span class="currency-sign" style="color:#c0392b">▲</span>
+                <span id="basicWaribikiAmount" class="display-price" style="color:#c0392b">0</span>
+              </div>
+            </div>
             <div class="form-row" id="rowBuhanDiscount" style="display:none">
               <label>　値引き（明細計）</label>
               <div class="price-group">
@@ -200,11 +207,18 @@
               </div>
             </div>
             <div class="form-row" id="rowDiscount">
-              <label id="discountLabel">値引き額</label>
+              <label id="discountLabel">調整額</label>
               <input type="checkbox" id="chkDiscountEnabled" title="値引き額を印刷する" style="display:none" checked>
               <div class="price-group">
                 <span class="currency-sign">¥</span>
                 <input type="number" id="discountAmount" placeholder="0" min="0" class="input-price">
+              </div>
+            </div>
+            <div class="form-row" id="rowSesseiWabiki" style="display:none">
+              <label>出精値引き</label>
+              <div class="price-group">
+                <span class="currency-sign" style="color:#c0392b">▲</span>
+                <span id="basicSesseiWabiki" class="display-price" style="color:#c0392b">0</span>
               </div>
             </div>
             <div class="form-row row-delivery-calc">
