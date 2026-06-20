@@ -1885,6 +1885,7 @@ const app = (() => {
         order:    Number(r.field5) || 99,
         teika:    Number(r.field8) || 0,
         shikiri:  Number(r.field7) || 0,
+        spec:     r.field9 || '',        // 熱機仕様
       }));
       console.log(`物販標準項マスタ ${state.buppanStandard.length} 件読み込み`);
       buildBuppanCategorySelect();
@@ -1960,13 +1961,23 @@ const app = (() => {
         // 本機 → 価格あり明細行
         const item = createItem();
         item.name           = r.name;
-        item.spec           = r.hinban;
+        item.spec           = r.hinban || '';
         item.qty            = r.qty;
         item.unit           = r.unit;
         item.unitPrice      = r.teika  || null;
         item.amount         = (r.teika || 0) * r.qty;
         item.genka          = r.shikiri;
         item.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
+        if (r.spec) {
+          const cleanedSpec = r.spec.split('\n')
+            .map(l => l.split('\t').map(t => t.trim()).filter(t => t).join(''))
+            .filter(l => l).join('\n');
+          item.model              = r.model || '';
+          item.specMasterContent  = cleanedSpec;
+          item.specMasterLoaded   = true;
+          item.specMasterFromProducts = true;
+          _applySpecToMachineSpec(item);
+        }
         mainItem = item;
         targetSection.items.push(item);
       } else if (mainItem) {
