@@ -401,12 +401,7 @@
                     <div id="kikiDropdown" class="product-dropdown" style="display:none"></div>
                   </div>
                 </div>
-                <div class="cat-panel" id="catPanel-kanzai" style="display:none">
-                  <div class="product-search-group">
-                    <input type="text" id="kanzaiSearch" placeholder="管材名・型式で検索..." class="input-search" oninput="app.searchKanzai(this.value)">
-                    <div id="kanzaiDropdown" class="product-dropdown" style="display:none"></div>
-                  </div>
-                </div>
+                <div class="cat-panel" id="catPanel-kanzai" style="display:none"></div>
                 <div class="cat-panel" id="catPanel-denzai" style="display:none">
                   <div class="product-search-group">
                     <input type="text" id="denzaiSearch" placeholder="電材名・型式で検索..." class="input-search" oninput="app.searchDenzai(this.value)">
@@ -453,7 +448,25 @@
           </div>
         </div>
 
-        <!-- 行2: 熱機標準項 -->
+        <!-- 行2: 管材選択行（管材タブ選択時に表示） -->
+        <div class="toolbar-main" id="kanzaiRow" style="display:none;margin-top:3px;">
+          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
+            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
+          </div>
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;">管材</button></div>
+            <select id="kanzaiCatSel" class="input-search" style="height:30px;width:130px;flex-shrink:0;" onchange="app.onKanzaiCatChange(this.value)">
+              <option value="">― カテゴリ ―</option>
+            </select>
+            <select id="kanzaiItemSel" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onKanzaiItemChange(this.value)" disabled>
+              <option value="">― 品名・型式を選択 ―</option>
+            </select>
+            <select id="kanzaiRowTargetSection" class="input-standard cat-target-sel"></select>
+            <button class="btn-cat-add" onclick="app.execKanzaiRowAdd()">追加</button>
+          </div>
+        </div>
+
+        <!-- 行3: 熱機標準項 -->
         <div class="toolbar-main" style="margin-top:3px;">
           <!-- 行1のグループ1と同幅を確保するファントム（非表示） -->
           <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">

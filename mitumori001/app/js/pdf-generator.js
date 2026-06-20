@@ -721,14 +721,14 @@ const QuotationPDF = (() => {
       const dPh = showProductCode
         ? [{ text: '' }, { text: '' }, { text: '' }, { text: '' }]
         : [{ text: '' }, { text: '' }, { text: '' }];
-      // 定価合計行（合計行の上に表示、値は最右列＝仕切合計列に揃える）
+      // 定価合計行（合計行の上に表示、値は定価列）
       tableRows.push([
         { text: '', border: [true, true, false, false] },
         { text: '定価合計', alignment: 'center', fontSize: itemFs, colSpan: dColSpan, border: [false, true, false, false] },
         ...dPh,
+        { text: fmt(grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, false, false] },
         { text: '', border: [false, true, false, false] },
-        { text: '', border: [false, true, false, false] },
-        { text: fmt(grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
+        { text: '', border: [false, true, true, false] },
       ]);
       // 合計行（仕切合計）
       tableRows.push([
@@ -739,14 +739,14 @@ const QuotationPDF = (() => {
         { text: '', border: [false, false, false, false] },
         { text: fmt(dairiGrandTotal), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
       ]);
-      if (!isBuppan && discountEnabled && discount > 0) {
+      if (!isBuppan && discountEnabled && adjustAmount > 0) {
         tableRows.push([
           { text: '', border: [true, false, false, false] },
           { text: discountLabel, alignment: 'center', fontSize: itemFs, colSpan: dColSpan, border: [false, false, false, false] },
           ...dPh,
           { text: '', border: [false, false, false, false] },
           { text: '', border: [false, false, false, false] },
-          { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
+          { text: '▲ ' + fmt(adjustAmount), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
         ]);
       }
       if (isBuppan) {
@@ -787,14 +787,6 @@ const QuotationPDF = (() => {
         { text: fmt(grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
       ]);
       if (!isBuppan) {
-        if (discountEnabled && discount > 0) {
-          tableRows.push([
-            { text: '', border: [true, false, false, false] },
-            { text: discountLabel, alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
-            ...emp(spanMid - 1),
-            { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
-          ]);
-        }
         tableRows.push([
           { text: '', border: [true, false, false, false] },
           { text: '貴社お渡し価格', alignment: 'center', bold: true, fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
@@ -890,12 +882,12 @@ const QuotationPDF = (() => {
         ...emp(spanMid - 1),
         { text: fmt(dairiGrandTotal), alignment: 'right', fontSize: itemFs, bold: true, border: [false, true, true, false] },
       ]);
-      if (!isBuppan && discountEnabled && discount > 0) {
+      if (!isBuppan && discountEnabled && adjustAmount > 0) {
         tableRows.push([
           { text: '', border: [true, false, false, false] },
           { text: discountLabel, alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
           ...emp(spanMid - 1),
-          { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
+          { text: '▲ ' + fmt(adjustAmount), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
         ]);
       }
       if (isBuppan && buhanDiscTotal > 0) {
@@ -1655,11 +1647,11 @@ const QuotationPDF = (() => {
         { text: val, alignment: 'right', bold: true, border: [false, top, true, true], fillColor: '#e8f0f8' },
       ];
       if (isBulk) {
-        // 一括仕切モード: 定価合計 → 出精値引き → 貴社お渡し価格（grandTotal基準）
-        const discountAmt = discountEnabled ? discount : 0;
+        // 一括仕切モード: 合計(定価) → 貴社お渡し価格(仕切合計-調整額)
+        const bulkBase = dairiTotal != null ? dairiTotal : totalDairi;
+        const adjAmt = discountEnabled ? adjustAmount : 0;
         const body = [mkTotalRow('合　　計', fmt(grandTotal), true)];
-        if (discountAmt > 0) body.push(mkTotalRow('出精値引き', '▲ ' + fmt(discountAmt), false));
-        body.push(mkTotalRow('貴社お渡し価格', fmt(Math.max(0, grandTotal - discountAmt)), false));
+        body.push(mkTotalRow('貴社お渡し価格', fmt(Math.max(0, bulkBase - adjAmt)), false));
         result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else if (useDairi) {
         // 仕切表示モード: 定価合計 → 合計（仕切合計）→ [出精値引き → 貴社お渡し価格]
@@ -2151,11 +2143,11 @@ const QuotationPDF = (() => {
         body.push(mkRow('貴社お渡し価格', fmt(Math.max(0, grandTotal - discountAmt)), false));
         result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else if (isBulk) {
-        // 一括仕切モード: 定価合計 → 出精値引き → 貴社お渡し価格（grandTotal基準）
-        const discountAmt = discountEnabled ? discount : 0;
+        // 一括仕切モード: 合計(定価) → 貴社お渡し価格(仕切合計-調整額)
+        const bulkBase = dairiTotal != null ? dairiTotal : grandDairi;
+        const adjAmt = discountEnabled ? adjustAmount : 0;
         const body = [mkRow('合　　計', fmt(grandTotal), true)];
-        if (discountAmt > 0) body.push(mkRow('出精値引き', '▲ ' + fmt(discountAmt), false));
-        body.push(mkRow('貴社お渡し価格', fmt(Math.max(0, grandTotal - discountAmt)), false));
+        body.push(mkRow('貴社お渡し価格', fmt(Math.max(0, bulkBase - adjAmt)), false));
         result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else if (useDairi) {
         // 仕切表示モード: 定価合計 → 合計（仕切合計）→ [出精値引き → 貴社お渡し価格]
