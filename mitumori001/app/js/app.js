@@ -1128,6 +1128,7 @@ const app = (() => {
     loadKanzai();
     initKanzaiSelects();
     loadDenzai();
+    initDenzaiSelects();
     loadBuppanStandard();
     loadKiki();
     loadCurrentUser();
@@ -1694,6 +1695,47 @@ const app = (() => {
     }
   }
 
+  // ── 電材カテゴリ定義（依存ドロップダウン用）─────────────────────
+  const DENZAI_CATEGORIES = [
+    {
+      label: '1.複合環境制御・ｱｸﾞﾘﾈｯﾄ',
+      names: [
+        '温室環境制御盤', '統合環境制御盤',
+        '湿度ｾﾝｻｰｾｯﾄ', '温湿度ｾﾝｻｰｾｯﾄ', '室温ｾﾝｻｰｾｯﾄ', 'ｾﾝｻｰｶﾊﾞｰ',
+        'CO2ｾﾝｻｰ', '日射ｾﾝｻｰ', '雨ｾﾝｻｰ', '温度ｾﾝｻｰ',
+        '水温･地温ｾﾝｻｰ', '土壌水分ｾﾝｻｰ', '土壌水分+温度+ECｾﾝｻｰ',
+        '風速ｾﾝｻｰ', '風向+風速ｾﾝｻｰ',
+        '変換ｺﾈｸﾀA', '変換ｺﾈｸﾀB', '変換ｺﾈｸﾀC', '変換ｺﾈｸﾀD', '変換ｺﾈｸﾀE', '変換ｺﾈｸﾀF', '変換ｺﾈｸﾀJ',
+        '雨･風速・風向感知器', '雨･風速感知器', '雨感知器', '風速感知器', '避雷器',
+        'ANｱﾄﾞﾊﾞﾝｽ AN-BOX', 'ﾓﾆﾀﾘﾝｸﾞｾﾝｻｰ', 'AN-BOX用警報入力ﾕﾆｯﾄ', 'AN-BOX登録料',
+        'ANｱﾄﾞﾊﾞﾝｽ遠隔機器利用料', 'ANｱﾄﾞﾊﾞﾝｽﾓﾆﾀﾘﾝｸﾞ機器利用料', 'ANｱﾄﾞﾊﾞﾝｽ警報機器利用料',
+      ],
+    },
+    {
+      label: '2.天窓側窓関連',
+      names: [
+        '4段ｻｰﾓ', '多段ｻｰﾓ', 'CO2ｺﾝﾄﾛｰﾗ', 'ﾈﾎﾟﾝｻｰﾓ', 'ｷｬｽﾉｰﾙ',
+        'ﾎﾟﾝﾌﾟｺﾝﾄﾛｰﾗ', '感震器', '不完全燃焼警報器', 'ﾈﾎﾟﾝﾀｲﾏBOX',
+      ],
+    },
+    {
+      label: '3.周辺機器制御',
+      names: ['換気窓制御盤', '天窓減速機'],
+    },
+    {
+      label: '8.電線管（材工単価）',
+      names: ['電線管(露出)', 'ﾗｲﾆﾝｸﾞ鋼管(埋設)'],
+    },
+    {
+      label: '9.電線（材工単価）',
+      names: ['ﾋﾞﾆﾙｼｰｽｹｰﾌﾞﾙ', 'ｹｰﾌﾞﾙ(管内配線)', 'ｹｰﾌﾞﾙ(ﾗｯｸ配線)', 'ｼｰﾙﾄﾞ線', 'ﾋﾞﾆｰﾙｷｬﾌﾞﾀｲﾔｺｰﾄﾞ'],
+    },
+    {
+      label: '10.遮断器（材工単価）',
+      names: ['ｵｰﾄﾌﾞﾚｰｶ'],
+    },
+  ];
+
   // ── 電材マスタ（CustomModule19）────────────────────────────────
 
   async function loadDenzai() {
@@ -2070,6 +2112,8 @@ const app = (() => {
     });
     const kanzaiRow = document.getElementById('kanzaiRow');
     if (kanzaiRow) kanzaiRow.style.display = cat === 'kanzai' ? '' : 'none';
+    const denzaiRow = document.getElementById('denzaiRow');
+    if (denzaiRow) denzaiRow.style.display = cat === 'denzai' ? '' : 'none';
   }
 
   function onKoujiKubunChange(kubun) {
@@ -2143,7 +2187,7 @@ const app = (() => {
 
   /** 追加先セクションセレクトを更新（セクション追加・削除時に呼ぶ） */
   function updateTargetSectionSelect() {
-    ['standardTargetSection', 'productTargetSection', 'kikiTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'commonTargetSection', 'netsukiTargetSection', 'kanzaiRowTargetSection'].forEach(id => {
+    ['standardTargetSection', 'productTargetSection', 'kikiTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'commonTargetSection', 'netsukiTargetSection', 'kanzaiRowTargetSection', 'denzaiRowTargetSection'].forEach(id => {
       const sel = document.getElementById(id);
       if (!sel) return;
       const cur = sel.value;
@@ -2351,6 +2395,82 @@ const app = (() => {
     if (!isNaN(idx) && _kanzaiFilteredRecords[idx]) {
       state.pendingKanzai = _kanzaiFilteredRecords[idx];
     }
+  }
+
+  // ── 電材依存ドロップダウン ────────────────────────────────────
+
+  let _denzaiFilteredRecords = [];
+
+  function initDenzaiSelects() {
+    const catSel = document.getElementById('denzaiCatSel');
+    if (!catSel) return;
+    DENZAI_CATEGORIES.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat.label;
+      opt.textContent = cat.label;
+      catSel.appendChild(opt);
+    });
+  }
+
+  function onDenzaiCatChange(catLabel) {
+    const itemSel = document.getElementById('denzaiItemSel');
+    if (!itemSel) return;
+    itemSel.innerHTML = '<option value="">― 品名・型式を選択 ―</option>';
+    itemSel.disabled  = true;
+    _denzaiFilteredRecords = [];
+    state.pendingDenzai = null;
+    if (!catLabel) return;
+    const cat = DENZAI_CATEGORIES.find(c => c.label === catLabel);
+    if (!cat) return;
+    _denzaiFilteredRecords = cat.names.reduce((arr, name) => {
+      return arr.concat(state.denzai.filter(r => r.name === name));
+    }, []);
+    _denzaiFilteredRecords.forEach((r, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = (r.name || '') + (r.model ? '　' + r.model : '');
+      itemSel.appendChild(opt);
+    });
+    if (_denzaiFilteredRecords.length > 0) itemSel.disabled = false;
+  }
+
+  function onDenzaiItemChange(val) {
+    state.pendingDenzai = null;
+    if (val === '' || val === null || val === undefined) return;
+    const idx = parseInt(val, 10);
+    if (!isNaN(idx) && _denzaiFilteredRecords[idx]) {
+      state.pendingDenzai = _denzaiFilteredRecords[idx];
+    }
+  }
+
+  function execDenzaiRowAdd() {
+    const pending = state.pendingDenzai;
+    if (!pending) { showToast('品名・型式を選択してください', 'warn'); return; }
+    if (state.sections.length === 0) addSection();
+
+    const targetVal = document.getElementById('denzaiRowTargetSection')?.value || 'last';
+    let targetSection;
+    if (targetVal === 'last') {
+      targetSection = state.sections[state.sections.length - 1];
+    } else {
+      const id = Number(targetVal);
+      targetSection = state.sections.find(s => s.id === id) || state.sections[state.sections.length - 1];
+    }
+
+    const lastItem = targetSection.items[targetSection.items.length - 1];
+    if (lastItem && !lastItem.name && !lastItem.spec && !lastItem.unitPrice && !lastItem.amount) {
+      targetSection.items.pop();
+    }
+
+    addMaterialItem(targetSection, pending);
+    showToast(`No.${targetSection.no} に ${pending.name} を追加しました`);
+
+    state.pendingDenzai = null;
+    const itemSel = document.getElementById('denzaiItemSel');
+    if (itemSel) itemSel.value = '';
+    markDirty();
+    renderSections();
+    updateOutput();
   }
 
   function searchDenzai(query) {
@@ -6920,6 +7040,9 @@ const app = (() => {
     onKanzaiCatChange,
     onKanzaiItemChange,
     execKanzaiRowAdd,
+    onDenzaiCatChange,
+    onDenzaiItemChange,
+    execDenzaiRowAdd,
     searchDenzai,
     searchKiki,
     execKikiAdd,
