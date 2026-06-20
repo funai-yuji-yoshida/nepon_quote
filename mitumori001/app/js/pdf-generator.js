@@ -2004,6 +2004,13 @@ const QuotationPDF = (() => {
       let itemNo = 1;
       (section.items || []).forEach(item => {
         const qtyStr = item.qty != null && item.qty !== '' ? String(item.qty) : '';
+
+        // 熱機ヘッダー行（品名のみ、No.・数量・価格なし）
+        if (item.isNetsukiHeader) {
+          rows.push([{ text: '' }, { text: item.name || '' }, ...emp(COLS - 2)]);
+          return;
+        }
+
         const noCell = { text: String(itemNo++), alignment: 'right' };
         if (useDairi) {
           rows.push([
@@ -2028,15 +2035,26 @@ const QuotationPDF = (() => {
             { text: (isBulk || isShikiOnly) ? fmt(dairiItemAmt(item)) : fmt(item.amount), alignment: 'right' },
           ]);
         }
-        // 型式行（品目コード列表示時は重複を避けるため省略）
-        if (item.model && !showProductCode) {
+        // 型式行（熱機アイテムは品名が型式なので省略、品目コード列表示時も省略）
+        if (item.model && !showProductCode && !item.specMasterContent) {
           rows.push([{ text: '' }, { text: `　型式：${item.model}`, fontSize: 7.5, color: '#333' }, ...emp(COLS - 2)]);
         }
         // 仕様行
-        const _sl1 = (item.specLines || []).filter(l => (l || '').trim());
-        if (_sl1.length > 0) {
+        if (item.specMasterContent) {
+          // 熱機仕様：specMasterContentを行ごとに表示し、付属品リスト（specLines）を続けて表示
           rows.push([{ text: '' }, { text: '　＜仕様＞', fontSize: 7.5, bold: true }, ...emp(COLS - 2)]);
-          _sl1.forEach(line => rows.push([{ text: '' }, { text: `　　${line}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]));
+          item.specMasterContent.split('\n').filter(l => l.trim()).forEach(line => {
+            rows.push([{ text: '' }, { text: `　　${line}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]);
+          });
+          (item.specLines || []).filter(l => (l || '').trim()).forEach(line => {
+            rows.push([{ text: '' }, { text: `　　${line}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]);
+          });
+        } else {
+          const _sl1 = (item.specLines || []).filter(l => (l || '').trim());
+          if (_sl1.length > 0) {
+            rows.push([{ text: '' }, { text: '　＜仕様＞', fontSize: 7.5, bold: true }, ...emp(COLS - 2)]);
+            _sl1.forEach(line => rows.push([{ text: '' }, { text: `　　${line}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]));
+          }
         }
       });
 

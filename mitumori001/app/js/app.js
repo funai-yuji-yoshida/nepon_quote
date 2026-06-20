@@ -1955,35 +1955,67 @@ const app = (() => {
       return;
     }
 
+    // 熱機仕様(spec)がある行が存在すれば新構造（SBM系）: order=1=ヘッダー, order=2=本機
+    const isNetsukiStructure = matched.some(r => !!r.spec);
+
     let mainItem = null;
     matched.forEach(r => {
-      if (r.order === 1) {
-        // 本機 → 価格あり明細行
-        const item = createItem();
-        item.name           = r.name;
-        item.spec           = r.hinban || '';
-        item.qty            = r.qty;
-        item.unit           = r.unit;
-        item.unitPrice      = r.teika  || null;
-        item.amount         = (r.teika || 0) * r.qty;
-        item.genka          = r.shikiri;
-        item.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
-        if (r.spec) {
-          const cleanedSpec = r.spec.split('\n')
-            .map(l => l.split('\t').map(t => t.trim()).filter(t => t).join(''))
-            .filter(l => l).join('\n');
-          item.model              = r.model || '';
-          item.specMasterContent  = cleanedSpec;
-          item.specMasterLoaded   = true;
-          item.specMasterFromProducts = true;
-          _applySpecToMachineSpec(item);
+      if (isNetsukiStructure) {
+        // ── 新構造（SBM系）──
+        if (r.order === 1) {
+          // 品名ヘッダー行（価格なし）
+          const header = createItem();
+          header.name            = r.name;
+          header.isNetsukiHeader = true;
+          targetSection.items.push(header);
+        } else if (r.order === 2 && !mainItem) {
+          // 本機行（価格・仕様あり）
+          const item = createItem();
+          item.name           = r.name;
+          item.spec           = r.hinban || '';
+          item.qty            = r.qty;
+          item.unit           = r.unit;
+          item.unitPrice      = r.teika  || null;
+          item.amount         = (r.teika || 0) * r.qty;
+          item.genka          = r.shikiri;
+          item.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
+          if (r.spec) {
+            const cleanedSpec = r.spec.split('\n')
+              .map(l => l.split('\t').map(t => t.trim()).filter(t => t).join('　'))
+              .filter(l => l).join('\n');
+            item.model              = r.model || '';
+            item.specMasterContent  = cleanedSpec;
+            item.specMasterLoaded   = true;
+            item.specMasterFromProducts = true;
+            _applySpecToMachineSpec(item);
+          }
+          mainItem = item;
+          targetSection.items.push(item);
+        } else if (mainItem) {
+          // order=3+: 付属品行
+          mainItem.specLines = mainItem.specLines || [];
+          mainItem.specLines.push(`${r.name}（${r.qty}${r.unit}）`);
         }
-        mainItem = item;
-        targetSection.items.push(item);
-      } else if (mainItem) {
-        // 仕様投入より下 → 本機の仕様行（価格・計算なし）
-        mainItem.specLines = mainItem.specLines || [];
-        mainItem.specLines.push(`${r.name}（${r.qty}${r.unit}）`);
+      } else {
+        // ── 旧構造（非SBM）──
+        if (r.order === 1) {
+          // 本機行（価格あり）
+          const item = createItem();
+          item.name           = r.name;
+          item.spec           = r.hinban || '';
+          item.qty            = r.qty;
+          item.unit           = r.unit;
+          item.unitPrice      = r.teika  || null;
+          item.amount         = (r.teika || 0) * r.qty;
+          item.genka          = r.shikiri;
+          item.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
+          mainItem = item;
+          targetSection.items.push(item);
+        } else if (mainItem) {
+          // 付属品行
+          mainItem.specLines = mainItem.specLines || [];
+          mainItem.specLines.push(`${r.name}（${r.qty}${r.unit}）`);
+        }
       }
     });
 
