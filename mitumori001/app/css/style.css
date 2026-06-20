@@ -761,12 +761,27 @@ button {
 }
 
 .items-table th {
+  position: relative;
   padding: 6px 6px;
   text-align: center;
   border-bottom: 1px solid #e0e0e0;
   color: #555;
   font-weight: bold;
   white-space: nowrap;
+}
+.col-resizer {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  cursor: col-resize;
+  z-index: 10;
+  background: #bbb;
+}
+.col-resizer:hover, .col-resizer.is-resizing {
+  background: #1a4d8f;
+  border-left-color: #1a4d8f;
 }
 
 .items-table td {
@@ -782,7 +797,7 @@ button {
 .col-spec      { width: 16%; }
 .col-product-code { width: 9%; font-size: 11px; color: #555; }
 .col-qty    { width: 6%; }
-.col-unit   { width: 5%; }
+.col-unit   { width: 5%; min-width: 65px; }
 .col-price  { width: 10%; }
 .price-wrap { display: flex; align-items: center; gap: 2px; justify-content: flex-end; }
 .price-wrap .item-price { flex: 1; min-width: 0; }
@@ -1637,8 +1652,11 @@ input.item-gensui-b::-webkit-inner-spin-button {
 /* 代理店単価列 */
 .col-dairi-unit { width: 90px; min-width: 90px; text-align: right; }
 .dairi-unit-wrap { display: flex; align-items: center; gap: 2px; justify-content: flex-end; }
+.col-final-dairi { width: 90px; min-width: 90px; text-align: right; }
 .final-dairi-wrap { display: flex; align-items: center; gap: 2px; justify-content: flex-end; }
 .col-buhan-discount, .col-hanbaika { white-space: nowrap; text-align: right; }
+.col-buhan-discount { width: 75px; min-width: 75px; }
+.col-hanbaika       { width: 80px; min-width: 80px; }
 .item-buhan-discount {
   width: 68px; text-align: right; font-size: 11px;
   border: 1px solid #ccc !important; border-radius: 3px; padding: 1px 4px;

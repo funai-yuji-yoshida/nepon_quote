@@ -106,6 +106,114 @@ const app = (() => {
     applyColVisibility();
   }
 
+  // ── 列幅リサイズ ────────────────────────────────────────────────
+  const COL_RESIZE_KEY = 'nepon_col_widths';
+
+  function initColResize() {
+    const container = document.getElementById('sectionsContainer');
+    if (!container) return;
+
+    // テーブルが動的生成されるたびにハンドルを追加
+    const observer = new MutationObserver(() => {
+      document.querySelectorAll('.items-table thead th').forEach(th => {
+        if (th.querySelector('.col-resizer')) return;
+        const colClass = Array.from(th.classList).find(c => c.startsWith('col-'));
+        if (!colClass) return;
+        const handle = document.createElement('div');
+        handle.className = 'col-resizer';
+        th.appendChild(handle);
+      });
+    });
+    observer.observe(container, { childList: true, subtree: true });
+
+    // イベント委譲でドラッグ開始
+    container.addEventListener('mousedown', e => {
+      if (!e.target.classList.contains('col-resizer')) return;
+      const th = e.target.parentElement;
+      const colClass = Array.from(th.classList).find(c => c.startsWith('col-'));
+      if (!colClass) return;
+      _startColResize(e, th, colClass);
+    });
+
+    _loadColWidths();
+  }
+
+  function _startColResize(e, th, colClass) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = th.offsetWidth;
+    const handle = e.target;
+    handle.classList.add('is-resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(ev) {
+      const newW = Math.max(30, startW + (ev.clientX - startX));
+      _applyColWidth(colClass, newW);
+    }
+    function onUp() {
+      handle.classList.remove('is-resizing');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      _saveColWidths();
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
+  function _applyColWidth(colClass, width) {
+    let style = document.getElementById('colResizeStyle');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'colResizeStyle';
+      document.head.appendChild(style);
+    }
+    const rules = _parseResizeRules(style.textContent);
+    rules[colClass] = width;
+    style.textContent = Object.entries(rules)
+      .map(([cls, w]) => `.items-table .${cls} { width: ${w}px !important; min-width: ${w}px !important; }`)
+      .join('\n');
+  }
+
+  function _parseResizeRules(css) {
+    const rules = {};
+    const re = /\.items-table \.(col-[\w-]+)\s*\{[^}]*width:\s*(\d+)px/g;
+    let m;
+    while ((m = re.exec(css)) !== null) rules[m[1]] = parseInt(m[2]);
+    return rules;
+  }
+
+  function _saveColWidths() {
+    const style = document.getElementById('colResizeStyle');
+    if (!style) return;
+    localStorage.setItem(COL_RESIZE_KEY, JSON.stringify(_parseResizeRules(style.textContent)));
+  }
+
+  function _loadColWidths() {
+    const saved = localStorage.getItem(COL_RESIZE_KEY);
+    if (!saved) return;
+    try {
+      const rules = JSON.parse(saved);
+      let style = document.getElementById('colResizeStyle');
+      if (!style) {
+        style = document.createElement('style');
+        style.id = 'colResizeStyle';
+        document.head.appendChild(style);
+      }
+      style.textContent = Object.entries(rules)
+        .map(([cls, w]) => `.items-table .${cls} { width: ${w}px !important; min-width: ${w}px !important; }`)
+        .join('\n');
+    } catch(e) {}
+  }
+
+  function resetColWidths() {
+    localStorage.removeItem(COL_RESIZE_KEY);
+    const style = document.getElementById('colResizeStyle');
+    if (style) style.textContent = '';
+  }
+
   // ── 見積外工事マスタリスト ──────────────────────────────────────
   const EXCLUSION_MASTER = [
     'ポイラ室建屋工事',
@@ -862,6 +970,7 @@ const app = (() => {
 
   function init() {
     initColVisibility();
+    initColResize();
     // machine-specs.json を非同期で読み込み（商品検索の仕様アイコン用）
     fetch('data/machine-specs.json')
       .then(r => r.json())
@@ -7088,9 +7197,10 @@ const app = (() => {
     saveSpecMaster,
     resetToProductSpec,
     applyDeptSpec,
-    // 列表示
+    // 列表示・列幅
     toggleColDropdown,
     setColVisibility,
+    resetColWidths,
     // テンプレート
     showTemplateSaveDialog,
     execTemplateSave,
