@@ -3693,7 +3693,7 @@ const app = (() => {
       priceA:      Number(record.A)     || 0,
       priceB:      Number(record.B)     || 0,
       soryoKubun,
-      soryoNote:   calcSoryoNote(soryoKubun),
+      soryoNote:   '',
       specs,
     };
     state.frpItems.push(item);
