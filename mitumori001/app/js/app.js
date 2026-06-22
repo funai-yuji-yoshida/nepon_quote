@@ -1677,11 +1677,12 @@ const app = (() => {
           page: 1, per_page: 100,
         });
         products = (res?.data || []).map(p => ({
-          id:     p.id,
-          name:   p.Product_Name  || '',
-          code:   p.Product_Code  || '',
-          model:  p.field2        || '',
-          unit:   p.field4        || '',        // 単位（field4）
+          id:         p.id,
+          name:       p.Product_Name  || '',
+          denpyoName: p.field17       || '',   // 伝票名称（field17）
+          code:       p.Product_Code  || '',
+          model:      p.field2        || '',
+          unit:       p.field4        || '',        // 単位（field4）
           price:  Number(p.Unit_Price) || 0,
           cost:   Number(p.field1)     || 0,   // 標準原価（field1）
           houdan: parseFloat(p.field12) || 0,  // 歩単（field12）
@@ -1702,7 +1703,7 @@ const app = (() => {
             <div class="p-name">
               <span class="p-badge product">商品</span>${item.hasSpec ? '<span class="p-badge spec">仕様</span>' : ''}${escHtml(item.name)}
             </div>
-            <div class="p-code">${escHtml([item.model, item.code].filter(Boolean).join(' / '))}</div>
+            <div class="p-code">${escHtml([...new Set([item.model, item.code])].filter(Boolean).join(' / '))}</div>
           </div>
           <div class="p-price">¥${item.price.toLocaleString('ja-JP')}</div>
         </div>`).join('');
@@ -2409,6 +2410,7 @@ const app = (() => {
       const item = createItem();
       item.productId   = product.id;
       item.name        = product.name;
+      item.denpyoName  = product.denpyoName || '';  // 伝票名称（印刷用）
       item.spec        = product.code;
       item.productCode = product.code;
       item.model       = product.model || '';
@@ -3730,17 +3732,22 @@ const app = (() => {
       const priceTotal   = item.price * qty;
       const shikiriTotal = shikiri    * qty;
 
-      // 3段品名
-      const line1 = escHtml(item.hinmei || item.name || '');
-      const line2 = item.itemnum ? escHtml(item.itemnum) : '';
-      const line3 = (state.frpShowZuban && item.zuban)
-        ? `【図番:${escHtml(item.zuban)}】` : '';
-      const nameHtml = [line1, line2, line3].filter(Boolean).join('<br>');
+      // 品名・型式（編集可能）
+      const zubanHtml = (state.frpShowZuban && item.zuban)
+        ? `<div class="frp-zuban-text">【図番:${escHtml(item.zuban)}】</div>` : '';
 
       rows.push(`
         <tr class="frp-item-row" data-frp-id="${item.id}">
           <td class="frp-col-no" style="text-align:center">${idx + 1}</td>
-          <td class="frp-col-name frp-item-name">${nameHtml}</td>
+          <td class="frp-col-name">
+            <input type="text" class="frp-name-input frp-name-main"
+                   value="${escHtml(item.hinmei || '')}"
+                   data-frp-id="${item.id}" data-field="hinmei">
+            <input type="text" class="frp-name-input frp-name-sub"
+                   value="${escHtml(item.itemnum || '')}"
+                   data-frp-id="${item.id}" data-field="itemnum">
+            ${zubanHtml}
+          </td>
           <td class="frp-col-qty">
             <input type="number" class="frp-qty-input" value="${item.qty}"
                    min="0" step="any" data-frp-id="${item.id}">
@@ -3773,12 +3780,16 @@ const app = (() => {
         `);
       }
 
-      // 仕様補足行
-      (item.specs || []).forEach(spec => {
+      // 仕様補足行（編集可能）
+      (item.specs || []).forEach((spec, si) => {
         rows.push(`
           <tr class="frp-spec-row">
             <td></td>
-            <td colspan="8">${escHtml(spec)}</td>
+            <td colspan="8">
+              <input type="text" class="frp-spec-input"
+                     value="${escHtml(spec)}"
+                     data-frp-id="${item.id}" data-spec-idx="${si}">
+            </td>
           </tr>
         `);
       });
@@ -3825,6 +3836,32 @@ const app = (() => {
         markDirty();
       });
     });
+
+    // 品名・型式入力イベント
+    tbody.querySelectorAll('.frp-name-input').forEach(input => {
+      input.addEventListener('change', () => {
+        const id = Number(input.dataset.frpId);
+        const field = input.dataset.field;
+        const item = state.frpItems.find(i => i.id === id);
+        if (!item) return;
+        item[field] = input.value;
+        updateOutput();
+        markDirty();
+      });
+    });
+
+    // 仕様補足入力イベント
+    tbody.querySelectorAll('.frp-spec-input').forEach(input => {
+      input.addEventListener('change', () => {
+        const id = Number(input.dataset.frpId);
+        const idx = Number(input.dataset.specIdx);
+        const item = state.frpItems.find(i => i.id === id);
+        if (!item) return;
+        item.specs[idx] = input.value;
+        updateOutput();
+        markDirty();
+      });
+    });
   }
 
   function updateFrpTotals() {
@@ -3840,6 +3877,25 @@ const app = (() => {
     if (ptEl) ptEl.textContent = '¥' + priceTotal.toLocaleString('ja-JP');
     if (stEl) stEl.textContent = '¥' + shikiriTotal.toLocaleString('ja-JP');
     if (gtEl) gtEl.textContent = '¥' + grandTotal.toLocaleString('ja-JP');
+
+    // 底部フッターバーを FRP 合計で更新
+    setText('footerTotal', '¥' + priceTotal.toLocaleString('ja-JP'));
+    const footerDairiWrap = document.getElementById('footerDairiWrap');
+    if (footerDairiWrap) {
+      if (shikiriTotal > 0) {
+        setText('footerDairi', '¥' + shikiriTotal.toLocaleString('ja-JP'));
+        const labelEl = document.getElementById('footerDairiLabel');
+        if (labelEl) labelEl.textContent = '仕切';
+        footerDairiWrap.style.display = '';
+      } else {
+        footerDairiWrap.style.display = 'none';
+      }
+    }
+    // 粗利・粗利率（原価データなし = 0 のため 粗利 = 御見積金額）
+    const footerAraRi     = grandTotal;
+    const footerAraRiRate = grandTotal > 0 ? 100.0 : 0;
+    setText('footerAraRi',     '¥' + footerAraRi.toLocaleString('ja-JP'));
+    setText('footerAraRiRate', footerAraRiRate.toFixed(1) + '%');
   }
 
   function fmtFrp(n) {
@@ -3859,13 +3915,24 @@ const app = (() => {
     const kikaShitaEl  = document.getElementById('kikaShita');
     const edabanEl     = document.getElementById('edaban');
 
-    const category   = categoryEl?.value   || '';
     const createCode = createDeptEl?.value || '';
     const siteCode   = siteDeptEl?.value   || '';
     const kikaShita  = String(kikaShitaEl?.value || '80').padStart(2, '0');
     const edaban     = String(parseInt(edabanEl?.value) || 1);
 
     const isKouji = (state.quoteCategory || '').includes('工事');
+    // 工事: 工事カテゴリコード（CD/CE/…）、物販: BP、作業: SA
+    let category;
+    if (isKouji) {
+      category = categoryEl?.value || '';
+    } else if ((state.quoteCategory || '').includes('物販')) {
+      category = 'BP';
+    } else if ((state.quoteCategory || '').includes('作業')) {
+      category = 'SA';
+    } else {
+      category = '';
+    }
+
     if (isKouji) {
       if (!category || !createCode || !siteCode) {
         showToast('工事カテゴリ・作成所課・現場所課を選択してください', 'warn');
@@ -5870,12 +5937,15 @@ const app = (() => {
       state.deliveryPrice    = frpShikiriTotal;
       state.dairiTotal       = frpShikiriTotal;
 
+      const frpGrandTotal = Math.max(0, frpShikiriTotal - (state.frpDiscount || 0));
+      const frpAraRi     = frpGrandTotal; // 原価データなし = 0 のため 粗利 = 御見積金額
+      const frpAraRiRate = frpGrandTotal > 0 ? 100.0 : 0;
       setText('basicGrandTotal',   frpPriceTotal.toLocaleString('ja-JP'));
       setText('basicDairiTotal',   frpShikiriTotal.toLocaleString('ja-JP'));
-      setText('basicDeliveryPrice', frpShikiriTotal.toLocaleString('ja-JP'));
+      setText('basicDeliveryPrice', frpGrandTotal.toLocaleString('ja-JP'));
       setText('basicGenkaTotal',   '0');
-      setText('basicAraRi',        '0');
-      setText('basicAraRiRate',    '―');
+      setText('basicAraRi',        frpAraRi.toLocaleString('ja-JP'));
+      setText('basicAraRiRate',    frpAraRiRate.toFixed(1) + '%');
 
       const rowDairi = document.getElementById('rowDairiTotal');
       if (rowDairi) rowDairi.style.display = '';
@@ -6173,6 +6243,26 @@ const app = (() => {
     setText('grandTotalDisplay', '¥' + grandTotal.toLocaleString('ja-JP'));
 
     updateQuoteNoBadge();
+    checkMultipleRates();
+  }
+
+  // ── 掛率複数検知 ───────────────────────────────────────────────────
+  function checkMultipleRates() {
+    const warnEl = document.getElementById('multiRateWarn');
+    if (!warnEl) return;
+    const mainRate = state.mainRate;
+    if (state.frpMode || mainRate == null) { warnEl.style.display = 'none'; return; }
+    const rateSet = new Set([mainRate]);
+    state.sections.forEach(s => (s.items || []).forEach(i => {
+      if (i.dairiRate != null) rateSet.add(i.dairiRate);
+    }));
+    if (rateSet.size > 1) {
+      const list = [...rateSet].sort((a, b) => a - b).map(r => (r * 100).toFixed(1) + '%').join(' / ');
+      warnEl.textContent = `⚠ 掛率が複数設定されています（${list}）`;
+      warnEl.style.display = '';
+    } else {
+      warnEl.style.display = 'none';
+    }
   }
 
   // ── 作業↔工事 カテゴリ閾値チェック ──────────────────────────────

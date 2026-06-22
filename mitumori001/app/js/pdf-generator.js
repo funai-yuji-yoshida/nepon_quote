@@ -179,7 +179,7 @@ const QuotationPDF = (() => {
       name:  toZenkana(s.name  || ''),
       items: (s.items || []).map(i => ({
         ...i,
-        name: toZenkana(i.name || ''),
+        name: toZenkana(i.denpyoName || i.name || ''),
         unit: toZenkana(i.unit || ''),
       })),
     }));
@@ -555,18 +555,19 @@ const QuotationPDF = (() => {
           const rate = (i.dairiRate ?? mainRate) ?? mainRate;
           return sum + (rate != null ? Math.round((Number(i.amount) || 0) * rate) : 0);
         }, 0);
+        const secN = s.secQty || 1;
         const row = [
           { text: String(s.no || ''), alignment: 'center', fontSize: itemFs },
           { text: s.name || '', fontSize: itemFs },
           ...emptyPc(itemFs),
-          { text: String(s.secQty || 1), alignment: 'center', fontSize: itemFs },
+          { text: String(secN), alignment: 'center', fontSize: itemFs },
           { text: '式', alignment: 'center', fontSize: itemFs },
-          { text: '', fontSize: itemFs },
+          { text: secN > 1 ? fmt(s.subtotal) : '', alignment: 'right', fontSize: itemFs },
           { text: fmt(s.effectiveTotal), alignment: 'right', fontSize: itemFs },
         ];
         if (useDairi) {
-          row.push({ text: '', fontSize: itemFs });
-          row.push({ text: fmt(dairiSubtotal * (s.secQty || 1)), alignment: 'right', fontSize: itemFs });
+          row.push({ text: secN > 1 ? fmt(dairiSubtotal) : '', alignment: 'right', fontSize: itemFs });
+          row.push({ text: fmt(dairiSubtotal * secN), alignment: 'right', fontSize: itemFs });
         }
         tableRows.push(row);
       } else if (entry.type === 'sectionHeader') {
@@ -1602,14 +1603,27 @@ const QuotationPDF = (() => {
         { text: fmt((useDairi || isShikiOnly) ? dairiSub : section.subtotal), alignment: 'right', bold: true, border: [true, true, true, true], fillColor: '#f0f0f0' },
       ]);
 
-      // 合計N式行
+      // 合計N式行（1式単価を表示）
       if ((section.secQty || 1) > 1) {
-        rows.push([
-          { text: '', border: [true, false, true, true], fillColor: '#e8f0f8' },
-          { text: `${section.name || '合計'}　${section.secQty}式`, alignment: 'center', bold: true, colSpan: COLS - 2, border: [true, false, true, true], fillColor: '#e8f0f8' },
-          ...emp(COLS - 3),
-          { text: fmt((useDairi || isShikiOnly) ? dairiSub * (section.secQty || 1) : section.effectiveTotal), alignment: 'right', bold: true, border: [true, false, true, true], fillColor: '#e8f0f8' },
-        ]);
+        const secN = section.secQty || 1;
+        const spanCols = useDairi ? COLS - 5 : COLS - 3;
+        const b = [true, false, true, true];
+        const bg = '#e8f0f8';
+        const nRow = [
+          { text: '', border: b, fillColor: bg },
+          { text: `${section.name || '合計'}　${secN}式`, alignment: 'center', bold: true, colSpan: spanCols, border: b, fillColor: bg },
+          ...emp(spanCols - 1),
+        ];
+        if (useDairi) {
+          nRow.push({ text: fmt(section.subtotal),       alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(section.effectiveTotal), alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(dairiSub),               alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(dairiSub * secN),        alignment: 'right', bold: true, border: b, fillColor: bg });
+        } else {
+          nRow.push({ text: fmt(isShikiOnly ? dairiSub : section.subtotal),              alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(isShikiOnly ? dairiSub * secN : section.effectiveTotal), alignment: 'right', bold: true, border: b, fillColor: bg });
+        }
+        rows.push(nRow);
       }
 
       result.push({
@@ -1854,12 +1868,25 @@ const QuotationPDF = (() => {
       ]);
 
       if ((section.secQty || 1) > 1) {
-        rows.push([
-          { text: '', border: [true, false, true, true], fillColor: '#e8f0f8' },
-          { text: `${section.name || '合計'}　${section.secQty}式`, alignment: 'center', bold: true, colSpan: COLS - 2, border: [true, false, true, true], fillColor: '#e8f0f8' },
-          ...emp(COLS - 3),
-          { text: fmt((useDairi || isShikiOnly) ? dairiSub * (section.secQty || 1) : section.effectiveTotal), alignment: 'right', bold: true, border: [true, false, true, true], fillColor: '#e8f0f8' },
-        ]);
+        const secN = section.secQty || 1;
+        const spanCols = useDairi ? COLS - 5 : COLS - 3;
+        const b = [true, false, true, true];
+        const bg = '#e8f0f8';
+        const nRow = [
+          { text: '', border: b, fillColor: bg },
+          { text: `${section.name || '合計'}　${secN}式`, alignment: 'center', bold: true, colSpan: spanCols, border: b, fillColor: bg },
+          ...emp(spanCols - 1),
+        ];
+        if (useDairi) {
+          nRow.push({ text: fmt(section.subtotal),       alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(section.effectiveTotal), alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(dairiSub),               alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(dairiSub * secN),        alignment: 'right', bold: true, border: b, fillColor: bg });
+        } else {
+          nRow.push({ text: fmt(isShikiOnly ? dairiSub : section.subtotal),              alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(isShikiOnly ? dairiSub * secN : section.effectiveTotal), alignment: 'right', bold: true, border: b, fillColor: bg });
+        }
+        rows.push(nRow);
       }
 
       result.push({
@@ -2093,25 +2120,27 @@ const QuotationPDF = (() => {
         ]);
       }
 
-      // 合計 N式行（secQty > 1 のときのみ）
+      // 合計 N式行（secQty > 1 のときのみ、1式単価を表示）
       if ((section.secQty || 1) > 1) {
-        if (useDairi && showSubtotalBoth) {
-          rows.push([
-            { text: '', border: [true, false, true, true], fillColor: '#e8f0f8' },
-            { text: `${section.name || '合計'}　${section.secQty}式`, alignment: 'center', bold: true, colSpan: COLS - 4, border: [true, false, true, true], fillColor: '#e8f0f8' },
-            ...emp(COLS - 5),
-            { text: fmt(section.effectiveTotal), alignment: 'right', bold: true, border: [true, false, true, true], fillColor: '#e8f0f8' },
-            { text: '', border: [true, false, true, true], fillColor: '#e8f0f8' },
-            { text: fmt(dairiSub * (section.secQty || 1)), alignment: 'right', bold: true, border: [true, false, true, true], fillColor: '#e8f0f8' },
-          ]);
+        const secN = section.secQty || 1;
+        const spanCols = useDairi ? COLS - 5 : COLS - 3;
+        const b = [true, false, true, true];
+        const bg = '#e8f0f8';
+        const nRow = [
+          { text: '', border: b, fillColor: bg },
+          { text: `${section.name || '合計'}　${secN}式`, alignment: 'center', bold: true, colSpan: spanCols, border: b, fillColor: bg },
+          ...emp(spanCols - 1),
+        ];
+        if (useDairi) {
+          nRow.push({ text: fmt(section.subtotal),       alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(section.effectiveTotal), alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(dairiSub),               alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(dairiSub * secN),        alignment: 'right', bold: true, border: b, fillColor: bg });
         } else {
-          rows.push([
-            { text: '', border: [true, false, true, true], fillColor: '#e8f0f8' },
-            { text: `${section.name || '合計'}　${section.secQty}式`, alignment: 'center', bold: true, colSpan: COLS - 2, border: [true, false, true, true], fillColor: '#e8f0f8' },
-            ...emp(COLS - 3),
-            { text: fmt((useDairi || isShikiOnly) ? dairiSub * (section.secQty || 1) : section.effectiveTotal), alignment: 'right', bold: true, border: [true, false, true, true], fillColor: '#e8f0f8' },
-          ]);
+          nRow.push({ text: fmt(isShikiOnly ? dairiSub : section.subtotal),              alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(isShikiOnly ? dairiSub * secN : section.effectiveTotal), alignment: 'right', bold: true, border: b, fillColor: bg });
         }
+        rows.push(nRow);
       }
 
       result.push({
@@ -2353,23 +2382,25 @@ const QuotationPDF = (() => {
       }
 
       if ((section.secQty || 1) > 1) {
-        if (useDairi && showSubtotalBoth) {
-          rows.push([
-            { text: '', border: [true, false, true, true], fillColor: '#e8f0f8' },
-            { text: `${section.name || '合計'}　${section.secQty}式`, alignment: 'center', bold: true, colSpan: COLS - 4, border: [true, false, true, true], fillColor: '#e8f0f8' },
-            ...emp(COLS - 5),
-            { text: fmt(section.effectiveTotal), alignment: 'right', bold: true, border: [true, false, true, true], fillColor: '#e8f0f8' },
-            { text: '', border: [true, false, true, true], fillColor: '#e8f0f8' },
-            { text: fmt(dairiSub * (section.secQty || 1)), alignment: 'right', bold: true, border: [true, false, true, true], fillColor: '#e8f0f8' },
-          ]);
+        const secN = section.secQty || 1;
+        const spanCols = useDairi ? COLS - 5 : COLS - 3;
+        const b = [true, false, true, true];
+        const bg = '#e8f0f8';
+        const nRow = [
+          { text: '', border: b, fillColor: bg },
+          { text: `${section.name || '合計'}　${secN}式`, alignment: 'center', bold: true, colSpan: spanCols, border: b, fillColor: bg },
+          ...emp(spanCols - 1),
+        ];
+        if (useDairi) {
+          nRow.push({ text: fmt(section.subtotal),       alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(section.effectiveTotal), alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(dairiSub),               alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(dairiSub * secN),        alignment: 'right', bold: true, border: b, fillColor: bg });
         } else {
-          rows.push([
-            { text: '', border: [true, false, true, true], fillColor: '#e8f0f8' },
-            { text: `${section.name || '合計'}　${section.secQty}式`, alignment: 'center', bold: true, colSpan: COLS - 2, border: [true, false, true, true], fillColor: '#e8f0f8' },
-            ...emp(COLS - 3),
-            { text: fmt((useDairi || isShikiOnly) ? dairiSub * (section.secQty || 1) : section.effectiveTotal), alignment: 'right', bold: true, border: [true, false, true, true], fillColor: '#e8f0f8' },
-          ]);
+          nRow.push({ text: fmt(isShikiOnly ? dairiSub : section.subtotal),              alignment: 'right', bold: true, border: b, fillColor: bg });
+          nRow.push({ text: fmt(isShikiOnly ? dairiSub * secN : section.effectiveTotal), alignment: 'right', bold: true, border: b, fillColor: bg });
         }
+        rows.push(nRow);
       }
 
       result.push({

@@ -2040,8 +2040,23 @@ input.item-gensui-b::-webkit-inner-spin-button {
 .frp-col-shikiri, .frp-col-shikiri-total { width: 90px; text-align: right; }
 .frp-col-del   { width: 30px; text-align: center; }
 
-.frp-item-name {
+.frp-name-input {
+  width: 100%;
+  border: 1px solid #bbb;
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 13px;
   font-weight: bold;
+  box-sizing: border-box;
+}
+.frp-name-input.frp-name-sub {
+  font-weight: normal;
+  margin-top: 2px;
+}
+.frp-zuban-text {
+  font-size: 11px;
+  color: #666;
+  margin-top: 2px;
 }
 .frp-spec-row td {
   background: #fafafa;
@@ -2049,6 +2064,15 @@ input.item-gensui-b::-webkit-inner-spin-button {
   font-size: 12px;
   color: #555;
   border-top: none;
+}
+.frp-spec-input {
+  width: 100%;
+  border: 1px solid #bbb;
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 12px;
+  color: #555;
+  box-sizing: border-box;
 }
 .frp-qty-input {
   width: 50px;
@@ -2083,6 +2107,9 @@ input.item-gensui-b::-webkit-inner-spin-button {
   margin-left: 16px;
 }
 .tpl-load-mode label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+
+/* 掛率複数検知 警告バナー */
+.multi-rate-warn { background:#fff3cd; border:1px solid #ffc107; border-radius:4px; padding:5px 12px; font-size:12px; color:#7d5a00; margin:4px 0 0; }
 
 /* 見積明細フッター集計バー（作業のみ表示） */
 .items-footer-bar {
