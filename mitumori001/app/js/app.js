@@ -3746,9 +3746,15 @@ const app = (() => {
                    min="0" step="any" data-frp-id="${item.id}">
           </td>
           <td class="frp-col-unit" style="text-align:center">${escHtml(item.unit)}</td>
-          <td class="frp-col-price" style="text-align:right">${fmtFrp(item.price)}</td>
+          <td class="frp-col-price">
+            <input type="number" class="frp-price-input" value="${item.price || ''}"
+                   min="0" step="1" data-frp-id="${item.id}" data-field="price">
+          </td>
           <td class="frp-col-total" style="text-align:right">${fmtFrp(priceTotal)}</td>
-          <td class="frp-col-shikiri" style="text-align:right">${fmtFrp(shikiri)}</td>
+          <td class="frp-col-shikiri">
+            <input type="number" class="frp-price-input" value="${shikiri || ''}"
+                   min="0" step="1" data-frp-id="${item.id}" data-field="shikiri">
+          </td>
           <td class="frp-col-shikiri-total" style="text-align:right">${fmtFrp(shikiriTotal)}</td>
           <td class="frp-col-del">
             <button onclick="app.removeFrpItem(${item.id})"
@@ -3791,6 +3797,32 @@ const app = (() => {
           updateFrpTotals();
           updateOutput();
         }
+      });
+    });
+
+    // 価格入力イベント（確定時のみ更新）
+    tbody.querySelectorAll('.frp-price-input').forEach(input => {
+      input.addEventListener('change', () => {
+        const id = Number(input.dataset.frpId);
+        const field = input.dataset.field;
+        const item = state.frpItems.find(i => i.id === id);
+        if (!item) return;
+        const val = Number(input.value) || 0;
+        const qty = Number(item.qty) || 1;
+        const row = input.closest('tr');
+        if (field === 'price') {
+          item.price = val;
+          const totalCell = row.querySelector('.frp-col-total');
+          if (totalCell) totalCell.textContent = fmtFrp(val * qty);
+        } else {
+          if (state.frpAB === 'A') item.priceA = val;
+          else item.priceB = val;
+          const shikiriTotalCell = row.querySelector('.frp-col-shikiri-total');
+          if (shikiriTotalCell) shikiriTotalCell.textContent = fmtFrp(val * qty);
+        }
+        updateFrpTotals();
+        updateOutput();
+        markDirty();
       });
     });
   }

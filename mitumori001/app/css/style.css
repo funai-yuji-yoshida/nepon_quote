@@ -2058,6 +2058,14 @@ input.item-gensui-b::-webkit-inner-spin-button {
   text-align: right;
   font-size: 13px;
 }
+.frp-price-input {
+  width: 82px;
+  border: 1px solid #bbb;
+  border-radius: 3px;
+  padding: 3px 4px;
+  text-align: right;
+  font-size: 13px;
+}
 .frp-footer {
   padding: 10px 14px;
   text-align: right;
