@@ -3424,7 +3424,6 @@ const app = (() => {
       `;
       footerEl.innerHTML = `
         <button class="btn-secondary" onclick="app._frpWizardBack()">← 戻る</button>
-        <button class="btn-secondary" onclick="app._frpWizardSkip()">スキップ</button>
         <button class="btn-primary" onclick="app._frpWizardNext()" ${!w.shubetsu ? 'disabled' : ''}>次へ →</button>
       `;
 
