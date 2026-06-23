@@ -4018,11 +4018,6 @@ const app = (() => {
   async function fetchFrpDealerCode() {
     const accountId = state.customerAccountId;
     if (!accountId || !zohoReady) {
-      // API なし: 取引先名からのみ抽出を試みる
-      const fromName = _extractDealerCode(state.customerName);
-      if (fromName && FRP_AREA_RATES.some(r => r.code === fromName)) {
-        state.frpDealerCode = fromName;
-      }
       updateFrpAreaUI();
       return;
     }
@@ -4030,19 +4025,9 @@ const app = (() => {
       const res = await ZOHO.CRM.API.getRecord({ Entity: 'Accounts', RecordID: accountId });
       const record = res?.data?.[0];
 
-      // 1st: Account_Number フィールドの上4桁
-      const rawNum   = String(record?.Account_Number || '');
-      let candidate  = rawNum.slice(0, 4);
-
-      // 2nd: Account_Number が無効ならアカウント名から抽出
-      if (!FRP_AREA_RATES.some(r => r.code === candidate)) {
-        candidate = _extractDealerCode(record?.Account_Name) || '';
-      }
-
-      // 3rd: それでも無効なら見積側の取引先名から抽出
-      if (!FRP_AREA_RATES.some(r => r.code === candidate)) {
-        candidate = _extractDealerCode(state.customerName) || '';
-      }
+      // Accounts の "field" フィールドに代理店コード（例: Y1003122）が格納されている
+      const raw = String(record?.field || '');
+      const candidate = raw.slice(0, 4);
 
       state.frpDealerCode = FRP_AREA_RATES.some(r => r.code === candidate) ? candidate : null;
     } catch(e) {
