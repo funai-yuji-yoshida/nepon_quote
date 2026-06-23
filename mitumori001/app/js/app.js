@@ -3339,13 +3339,14 @@ const app = (() => {
   }
 
   let _frpWizard = {
-    mode:      'product',
-    hz:        null,
-    shubetsu:  null,
-    chubunrui: null,
-    kashira:   null,
-    step:      1,
-    _items:    null,
+    mode:        'product',
+    hz:          null,
+    shubetsu:    null,
+    chubunrui:   null,
+    kashira:     null,
+    step:        1,
+    step5Search: '',
+    _items:      null,
   };
 
   function openFrpWizard(mode) {
@@ -3355,12 +3356,13 @@ const app = (() => {
     }
     _frpWizard = {
       mode,
-      hz:        state.frpHz,
-      shubetsu:  null,
-      chubunrui: null,
-      kashira:   null,
-      step:      1,
-      _items:    null,
+      hz:          state.frpHz,
+      shubetsu:    null,
+      chubunrui:   null,
+      kashira:     null,
+      step:        1,
+      step5Search: '',
+      _items:      null,
     };
     const modal = document.getElementById('frpWizardModal');
     if (modal) modal.style.display = '';
@@ -3521,21 +3523,39 @@ const app = (() => {
         return;
       }
 
+      // 型式検索フィルタ（全角・半角正規化）
+      const searchRaw = w.step5Search || '';
+      const searchNorm = searchRaw.normalize('NFKC').toLowerCase();
+      const filteredItems = searchNorm
+        ? items.filter(r => (r.itemnum || '').normalize('NFKC').toLowerCase().includes(searchNorm))
+        : items;
+
+      const searchInputHtml = `
+        <div style="padding:6px 8px 4px">
+          <input type="text" id="frpStep5Search"
+                 style="width:100%;box-sizing:border-box;padding:4px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px"
+                 placeholder="型式で絞り込み（全角・半角可）"
+                 value="${escHtml(searchRaw)}"
+                 oninput="app._frpWizardSearchStep5(this.value)">
+        </div>`;
+
       if (familyCfg) {
         const subGroups = familyCfg.subGroups;
-        const cols = subGroups.map(sg => items.filter(r => r.field1 === sg));
+        const cols = subGroups.map(sg => filteredItems.filter(r => r.field1 === sg));
         const maxRows = Math.max(...cols.map(c => c.length), 0);
         const allItems = [];
         const colMeta = cols.map(col => { const s = allItems.length; allItems.push(...col); return s; });
         _frpWizard._items = allItems;
 
-        bodyEl.innerHTML = `
+        bodyEl.innerHTML = searchInputHtml + `
           <table class="frp-wizard-table frp-tpy-3col">
             <thead>
               <tr>${subGroups.map(sg => `<th colspan="2" class="frp-tpy-header">${escHtml(sg)}</th>`).join('')}</tr>
             </thead>
             <tbody>
-              ${Array.from({length: maxRows}, (_, ri) => `
+              ${maxRows === 0
+                ? `<tr><td colspan="${subGroups.length * 2}" style="color:#888;padding:12px;text-align:center">該当なし</td></tr>`
+                : Array.from({length: maxRows}, (_, ri) => `
                 <tr>${cols.map((col, ci) => {
                   const item = col[ri];
                   if (!item) return '<td></td><td></td>';
@@ -3549,17 +3569,21 @@ const app = (() => {
         `;
         footerEl.innerHTML = `<button class="btn-secondary" onclick="app._frpWizardBack()">← 戻る</button>`;
       } else {
-        bodyEl.innerHTML = `
+        _frpWizard._items = filteredItems;
+        bodyEl.innerHTML = searchInputHtml + `
           <table class="frp-wizard-table">
             <thead>
-              <tr><th>品名</th><th>型式</th><th>図番</th><th>定価</th><th></th></tr>
+              <tr><th>品名</th><th>型式</th><th>図番</th><th>品番</th><th>定価</th><th></th></tr>
             </thead>
             <tbody>
-              ${items.map((r, i) => `
+              ${filteredItems.length === 0
+                ? `<tr><td colspan="6" style="color:#888;padding:12px;text-align:center">該当なし</td></tr>`
+                : filteredItems.map((r, i) => `
                 <tr>
                   <td>${escHtml(r.field3 || '')}</td>
                   <td>${escHtml(r.itemnum || '')}</td>
-                  <td>${escHtml(r.field || '')}</td>
+                  <td>${escHtml(r.field  || '')}</td>
+                  <td>${escHtml(r.field5 || '')}</td>
                   <td style="text-align:right">${(Number(r.price) || 0).toLocaleString('ja-JP')}</td>
                   <td><button class="btn-primary btn-sm"
                               onclick="app._frpWizardSelect(${i})">選択</button></td>
@@ -3568,58 +3592,61 @@ const app = (() => {
             </tbody>
           </table>
         `;
-        _frpWizard._items = items;
         footerEl.innerHTML = `<button class="btn-secondary" onclick="app._frpWizardBack()">← 戻る</button>`;
       }
     }
   }
 
   function _frpWizardRenderOption(w, cache, titleEl, bodyEl, footerEl) {
-    const step = w.step;
-    if (step === 1) {
-      if (titleEl) titleEl.textContent = 'オプション部品 - 中分類を選択';
-      const types = [...new Set(cache
-        .filter(r => r.field3 === 'オプション部品' && r.field4)
-        .map(r => r.field4))].sort();
-      bodyEl.innerHTML = `
-        <div class="frp-wizard-choices">
-          ${types.map(t => `
-            <button class="frp-wizard-choice ${w.chubunrui === t ? 'selected' : ''}"
-                    data-val="${escHtml(t)}"
-                    onclick="app._frpWizardSetChubunrui(this.dataset.val)">${escHtml(t)}</button>
-          `).join('')}
-        </div>
-      `;
-      footerEl.innerHTML = `
-        <button class="btn-secondary" onclick="document.getElementById('frpWizardModal').style.display='none'">キャンセル</button>
-        <button class="btn-primary" onclick="app._frpWizardNext()" ${!w.chubunrui ? 'disabled' : ''}>次へ →</button>
-      `;
-    } else if (step === 2) {
-      if (titleEl) titleEl.textContent = 'オプション部品 - 品名を選択';
-      const items = cache.filter(r =>
-        r.field3 === 'オプション部品' && r.field4 === w.chubunrui
-      );
-      bodyEl.innerHTML = `
-        <table class="frp-wizard-table">
-          <thead>
-            <tr><th>品名</th><th>型式</th><th>定価</th><th></th></tr>
-          </thead>
-          <tbody>
-            ${items.map((r, i) => `
-              <tr>
-                <td>${escHtml(r.Name || '')}</td>
-                <td>${escHtml(r.itemnum || '')}</td>
-                <td style="text-align:right">${(Number(r.price) || 0).toLocaleString('ja-JP')}</td>
-                <td><button class="btn-primary btn-sm"
-                            onclick="app._frpWizardSelect(${i})">選択</button></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
-      _frpWizard._items = items;
-      footerEl.innerHTML = `<button class="btn-secondary" onclick="app._frpWizardBack()">← 戻る</button>`;
+    if (titleEl) titleEl.textContent = 'オプション部品を選択';
+
+    const FRP_OPT_ORDER = ['かさ上げ', '警報盤セット', 'フロートスイッチセット', '臭突管セット', '仮固定バンド', '片ユニオンスイングチャッキ'];
+    const allItems = cache.filter(r => r.field3 === 'オプション部品');
+    const groups = {};
+    const groupOrder = [];
+    allItems.forEach((r, idx) => {
+      const cat = r.field4 || '';
+      if (!groups[cat]) { groups[cat] = []; groupOrder.push(cat); }
+      groups[cat].push({ r, idx });
+    });
+    groupOrder.sort((a, b) => {
+      const ai = FRP_OPT_ORDER.indexOf(a);
+      const bi = FRP_OPT_ORDER.indexOf(b);
+      if (ai === -1 && bi === -1) return a.localeCompare(b, 'ja');
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+
+    let rows = '';
+    let rowCount = 0;
+    for (const cat of groupOrder) {
+      groups[cat].forEach(({ r, idx }, ci) => {
+        rows += `<tr>
+          <td class="frp-opt-l1">${rowCount === 0 ? 'オプション部品' : ''}</td>
+          <td class="frp-opt-l2">${ci === 0 ? escHtml(cat) : ''}</td>
+          <td><button class="frp-opt-name-btn" onclick="app._frpWizardSelect(${idx})">${escHtml(r.Name || r.itemnum || '')}</button></td>
+        </tr>`;
+        rowCount++;
+      });
     }
+
+    _frpWizard._items = allItems;
+    bodyEl.innerHTML = `
+      <table class="frp-wizard-table frp-opt-table">
+        <thead>
+          <tr>
+            <th>1段目</th>
+            <th>2段目（名称）</th>
+            <th>3段目（品名）</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+    footerEl.innerHTML = `
+      <button class="btn-secondary" onclick="document.getElementById('frpWizardModal').style.display='none'">キャンセル</button>
+    `;
   }
 
   function _frpWizardSetHz(hz)       { _frpWizard.hz = hz;        _frpWizardRender(); }
@@ -3629,14 +3656,21 @@ const app = (() => {
 
   function _frpWizardNext() {
     const maxStep = _frpWizard.mode === 'product' ? 5 : 2;
-    if (_frpWizard.step < maxStep) { _frpWizard.step++; _frpWizardRender(); }
+    if (_frpWizard.step < maxStep) { _frpWizard.step5Search = ''; _frpWizard.step++; _frpWizardRender(); }
   }
   function _frpWizardBack() {
-    if (_frpWizard.step > 1) { _frpWizard.step--; _frpWizardRender(); }
+    if (_frpWizard.step > 1) { _frpWizard.step5Search = ''; _frpWizard.step--; _frpWizardRender(); }
   }
   function _frpWizardSkip() {
+    _frpWizard.step5Search = '';
     _frpWizard.step++;
     _frpWizardRender();
+  }
+  function _frpWizardSearchStep5(val) {
+    _frpWizard.step5Search = val;
+    _frpWizardRender();
+    const el = document.getElementById('frpStep5Search');
+    if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
   }
   function _frpWizardSelect(idx) {
     const record = (_frpWizard._items || [])[idx];
@@ -3795,6 +3829,10 @@ const app = (() => {
     if (label) label.style.display = frpOn ? '' : 'none';
 
     if (frpOn) {
+      // FRPモードでは内訳印刷をデフォルトOFF
+      const chkNaiyaku = document.getElementById('printNaiyaku');
+      if (chkNaiyaku) chkNaiyaku.checked = false;
+
       fetchFrpDealerCode();
 
       const discountEl = document.getElementById('frpDiscountInput');
@@ -3837,15 +3875,18 @@ const app = (() => {
       if (v) specs.push(v);
     }
     const soryoKubun = Number(record.field2) || 0;
+    const isOpt = record.field3 === 'オプション部品';
     const item = {
       id:          state.nextFrpId++,
-      type:        record.field3 === 'オプション部品' ? 'option' : 'product',
+      type:        isOpt ? 'option' : 'product',
       shubetsu:    record.field3  || '',
       chubunrui:   record.field4  || '',
       kashira:     record.field1  || '',
       hinmei:      record.field3  || record.Name || '',
+      name3:       isOpt ? (record.Name || '') : '',
       itemnum:     record.itemnum || '',
-      zuban:       record.field   || '',
+      zuban:       record.field  || '',
+      hinban:      record.field5 || '',
       qty:         1,
       unit:        record.unit    || '',
       price:       Number(record.price) || 0,
@@ -3899,8 +3940,11 @@ const app = (() => {
       const shikiriTotal = shikiri    * qty;
 
       // 品名・型式（編集可能）
-      const zubanHtml = (state.frpShowZuban && item.zuban)
-        ? `<div class="frp-zuban-text">【図番:${escHtml(item.zuban)}】</div>` : '';
+      const zubanParts = [];
+      if (item.zuban)  zubanParts.push(`図番　${escHtml(item.zuban)}`);
+      if (item.hinban) zubanParts.push(`品番　${escHtml(item.hinban)}`);
+      const zubanHtml = (state.frpShowZuban && zubanParts.length)
+        ? `<div class="frp-zuban-text">${zubanParts.join('　')}</div>` : '';
 
       const hinshuOptionsHtml = FRP_HINSHU_OPTIONS.map(h =>
         `<option value="${h.key}" ${item.hinshu === h.key ? 'selected' : ''}>${escHtml(h.label)}</option>`
@@ -3913,10 +3957,19 @@ const app = (() => {
             <input type="text" class="frp-name-input frp-name-main"
                    value="${escHtml(item.hinmei || '')}"
                    data-frp-id="${item.id}" data-field="hinmei">
+            ${item.type === 'option' ? `
+            <input type="text" class="frp-name-input frp-name-sub"
+                   value="${escHtml(item.chubunrui || '')}"
+                   data-frp-id="${item.id}" data-field="chubunrui">
+            <input type="text" class="frp-name-input frp-name-sub"
+                   value="${escHtml(item.name3 || '')}"
+                   data-frp-id="${item.id}" data-field="name3">
+            ` : `
             <input type="text" class="frp-name-input frp-name-sub"
                    value="${escHtml(item.itemnum || '')}"
                    data-frp-id="${item.id}" data-field="itemnum">
             ${zubanHtml}
+            `}
           </td>
           <td class="frp-col-hinshu">
             ${item.type === 'soryo' ? '' : `<select class="frp-hinshu-sel" data-frp-id="${item.id}"><option value="">—</option>${hinshuOptionsHtml}</select>`}
@@ -3953,19 +4006,21 @@ const app = (() => {
         `);
       }
 
-      // 仕様補足行（編集可能）
-      (item.specs || []).forEach((spec, si) => {
-        rows.push(`
-          <tr class="frp-spec-row">
-            <td></td>
-            <td colspan="9">
-              <input type="text" class="frp-spec-input"
-                     value="${escHtml(spec)}"
-                     data-frp-id="${item.id}" data-spec-idx="${si}">
-            </td>
-          </tr>
-        `);
-      });
+      // 仕様補足行（オプション品は非表示）
+      if (item.type !== 'option') {
+        (item.specs || []).forEach((spec, si) => {
+          rows.push(`
+            <tr class="frp-spec-row">
+              <td></td>
+              <td colspan="9">
+                <input type="text" class="frp-spec-input"
+                       value="${escHtml(spec)}"
+                       data-frp-id="${item.id}" data-spec-idx="${si}">
+              </td>
+            </tr>
+          `);
+        });
+      }
     });
 
     tbody.innerHTML = rows.join('');

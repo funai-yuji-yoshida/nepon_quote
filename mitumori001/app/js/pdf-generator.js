@@ -461,13 +461,17 @@ const QuotationPDF = (() => {
       frpItems.forEach(item => {
         mirrorEntries.push({ type: 'frpItem', item });
         if (item.soryoNote) mirrorEntries.push({ type: 'frpNote', text: item.soryoNote });
-        (item.specs || []).forEach(spec => mirrorEntries.push({ type: 'frpSpec', text: spec }));
+        if (item.type !== 'option') {
+          (item.specs || []).forEach(spec => mirrorEntries.push({ type: 'frpSpec', text: spec }));
+        }
       });
     }
     // 見積外工事行・固定行も含めてトータル行数を算出
+    // FRPモードで枠外文言がある場合、その高さ相当の仮想行を加算してitemFsを縮小
     const showUchiwakeInCover = showUchiwake;
+    const footerVirtualRows = (frpMode && data.frpFooterText) ? 10 : 0;
     const mirrorRowCount = mirrorEntries.length + exRowCount +
-      (showUchiwakeInCover ? 8 : isTeika ? 1 : 3);
+      (showUchiwakeInCover ? 8 : isTeika ? 1 : 3) + footerVirtualRows;
 
     // 行数に応じてフォントサイズ・パディング・マージンを動的調整（1ページ収容のため）
     // 行数が少ない場合は拡大・多い場合は縮小の双方向スケーリング
@@ -507,10 +511,20 @@ const QuotationPDF = (() => {
         const priceTotal   = (Number(item.price) || 0) * qty;
         const shikiriTotal = shikiri * qty;
         const nameParts = [];
-        if (item.hinmei)  nameParts.push({ text: item.hinmei,  bold: true, fontSize: itemFs });
-        if (item.itemnum) nameParts.push({ text: item.itemnum, fontSize: Math.max(6, itemFs - 1), color: '#333' });
-        if (frpShowZuban && item.zuban)
-          nameParts.push({ text: `【図番:${item.zuban}】`, fontSize: Math.max(5.5, itemFs - 1.5), color: '#555' });
+        if (item.type === 'option') {
+          if (item.hinmei)    nameParts.push({ text: item.hinmei,    bold: true, fontSize: itemFs });
+          if (item.chubunrui) nameParts.push({ text: item.chubunrui, fontSize: Math.max(6, itemFs - 1), color: '#333' });
+          if (item.name3)     nameParts.push({ text: item.name3,     fontSize: Math.max(6, itemFs - 1), color: '#333' });
+        } else {
+          if (item.hinmei)  nameParts.push({ text: item.hinmei,  bold: true, fontSize: itemFs });
+          if (item.itemnum) nameParts.push({ text: item.itemnum, fontSize: Math.max(6, itemFs - 1), color: '#333' });
+          if (frpShowZuban) {
+            const zp = [];
+            if (item.zuban)  zp.push(`図番　${item.zuban}`);
+            if (item.hinban) zp.push(`品番　${item.hinban}`);
+            if (zp.length) nameParts.push({ text: zp.join('　'), fontSize: Math.max(5.5, itemFs - 1.5), color: '#555' });
+          }
+        }
         const nameCell = nameParts.length > 0 ? { stack: nameParts } : { text: item.name || '', bold: true, fontSize: itemFs };
         tableRows.push([
           { text: String(rowNo++), alignment: 'center', fontSize: itemFs },
@@ -1263,15 +1277,21 @@ const QuotationPDF = (() => {
         },
       ] : []),
 
-      // FRPモード: 枠外文言を鏡ページ末尾に追加
-      ...(frpMode && data.frpFooterText ? [{
-        text: data.frpFooterText,
-        fontSize: 8,
-        color: '#444',
-        margin: [0, 12, 0, 0],
-        lineHeight: 1.5,
-        preserveLeadingSpaces: true,
-      }] : []),
+      // FRPモード: 枠外文言を2列レイアウトで鏡ページ末尾に追加
+      ...(frpMode && data.frpFooterText ? (() => {
+        const sections = data.frpFooterText.split(/\n\n+/);
+        const mid = Math.ceil(sections.length / 2);
+        const leftText  = sections.slice(0, mid).join('\n\n');
+        const rightText = sections.slice(mid).join('\n\n');
+        return [{
+          columns: [
+            { text: leftText,  fontSize: 7, lineHeight: 1.3, preserveLeadingSpaces: true, color: '#444', width: '*' },
+            { text: rightText, fontSize: 7, lineHeight: 1.3, preserveLeadingSpaces: true, color: '#444', width: '*' },
+          ],
+          columnGap: 12,
+          margin: [0, 10, 0, 0],
+        }];
+      })() : []),
     ];
   }
 
@@ -1303,12 +1323,22 @@ const QuotationPDF = (() => {
       const priceTotal   = (Number(item.price) || 0) * qty;
       const shikiriTotal = shikiri * qty;
 
-      // 3段品名: hinmei / itemnum / 【図番:zuban】
+      // 品名: オプション品は3段（hinmei/chubunrui/name3）、製品は通常
       const nameParts = [];
-      if (item.hinmei)  nameParts.push({ text: item.hinmei, bold: true, fontSize: 9 });
-      if (item.itemnum) nameParts.push({ text: item.itemnum, fontSize: 8, color: '#333' });
-      if (frpShowZuban && item.zuban)
-        nameParts.push({ text: `【図番:${item.zuban}】`, fontSize: 7, color: '#555' });
+      if (item.type === 'option') {
+        if (item.hinmei)    nameParts.push({ text: item.hinmei,    bold: true, fontSize: 9 });
+        if (item.chubunrui) nameParts.push({ text: item.chubunrui, fontSize: 8, color: '#333' });
+        if (item.name3)     nameParts.push({ text: item.name3,     fontSize: 8, color: '#333' });
+      } else {
+        if (item.hinmei)  nameParts.push({ text: item.hinmei, bold: true, fontSize: 9 });
+        if (item.itemnum) nameParts.push({ text: item.itemnum, fontSize: 8, color: '#333' });
+        if (frpShowZuban) {
+          const zp = [];
+          if (item.zuban)  zp.push(`図番　${item.zuban}`);
+          if (item.hinban) zp.push(`品番　${item.hinban}`);
+          if (zp.length) nameParts.push({ text: zp.join('　'), fontSize: 7, color: '#555' });
+        }
+      }
       const nameCell = nameParts.length > 0
         ? { stack: nameParts }
         : { text: item.name || '', bold: true };
@@ -1334,15 +1364,17 @@ const QuotationPDF = (() => {
         ]);
       }
 
-      // 仕様補足行
-      (item.specs || []).forEach(spec => {
-        rows.push([
-          { text: '', border: [true, false, false, false] },
-          { text: `　${spec}`, fontSize: 8, color: '#555', colSpan: 7,
-            border: [false, false, true, false] },
-          { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-        ]);
-      });
+      // 仕様補足行（オプション品は非表示）
+      if (item.type !== 'option') {
+        (item.specs || []).forEach(spec => {
+          rows.push([
+            { text: '', border: [true, false, false, false] },
+            { text: `　${spec}`, fontSize: 8, color: '#555', colSpan: 7,
+              border: [false, false, true, false] },
+            { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
+          ]);
+        });
+      }
     });
 
     // 空白行（最低2行）

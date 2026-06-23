@@ -2392,6 +2392,32 @@ input.item-gensui-b::-webkit-inner-spin-button {
   vertical-align: middle;
 }
 .frp-wizard-table tr:hover td { background: #f5f9ff; }
+.frp-tpy-3col .frp-tpy-header {
+  background: #f5c518;
+  color: #333;
+  text-align: center;
+  font-weight: bold;
+  border: 1px solid #d4a800;
+}
+.frp-tpy-3col td { padding: 4px 6px; }
+.frp-tpy-3col .frp-tpy-zuban { color: #666; font-size: 11px; }
+.frp-opt-table .frp-opt-l1 { color: #555; white-space: nowrap; font-weight: bold; }
+.frp-opt-table .frp-opt-l2 { color: #1a6496; white-space: nowrap; }
+.frp-opt-name-btn {
+  background: none;
+  border: 1px solid #ccc;
+  padding: 2px 10px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  border-radius: 3px;
+  font-size: 13px;
+}
+.frp-opt-name-btn:hover {
+  border-color: #4caf50;
+  background: #f0fff0;
+  color: #2e7d32;
+}
 .btn-sm {
   padding: 3px 10px;
   font-size: 12px;
