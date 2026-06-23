@@ -3385,6 +3385,11 @@ const app = (() => {
 
   function _frpWizardRenderProduct(w, cache, titleEl, bodyEl, footerEl) {
     const step = w.step;
+    const FRP_FAMILY_GROUPS = {
+      'TPY': { prefix: 'TPY ', subGroups: ['TPY Φ1300', 'TPY Φ1600', 'TPY Φ2000'] },
+      'TJY': { prefix: 'TJY ', subGroups: ['TJY Φ1200', 'TJY Φ1300', 'TJY Φ1600', 'TJY Φ2000'] },
+      'TOY': { prefix: 'TOY ', subGroups: ['TOY Φ1200', 'TOY Φ1300', 'TOY Φ1600', 'TOY Φ2000'] },
+    };
 
     if (step === 1) {
       if (titleEl) titleEl.textContent = '① 対応Hz を選択';
@@ -3464,17 +3469,26 @@ const app = (() => {
         return true;
       });
       const groups = [...new Set(filtered.map(r => r.field1).filter(Boolean))].sort();
+      // "TPY Φ*" "TJY Φ*" "TOY Φ*" サブグループをそれぞれ1つにまとめる
+      const familyEntry = Object.entries(FRP_FAMILY_GROUPS).find(([, cfg]) =>
+        groups.some(g => g.startsWith(cfg.prefix)));
+      const displayGroups = familyEntry
+        ? [...groups.filter(g => !g.startsWith(familyEntry[1].prefix)), familyEntry[0]].sort()
+        : groups;
 
-      if (groups.length === 0) {
+      if (displayGroups.length === 0) {
         bodyEl.innerHTML = '<p style="color:#888;padding:16px">条件に合う型式グループが見つかりません。</p>';
         footerEl.innerHTML = `<button class="btn-secondary" onclick="app._frpWizardBack()">← 戻る</button>`;
         return;
       }
 
+      const kashiraSelected = displayGroups.includes(w.kashira) ? w.kashira
+        : (familyEntry && w.kashira && w.kashira.startsWith(familyEntry[1].prefix) ? familyEntry[0] : w.kashira);
+
       bodyEl.innerHTML = `
         <div class="frp-wizard-choices">
-          ${groups.map(g => `
-            <button class="frp-wizard-choice ${w.kashira === g ? 'selected' : ''}"
+          ${displayGroups.map(g => `
+            <button class="frp-wizard-choice ${kashiraSelected === g ? 'selected' : ''}"
                     data-val="${escHtml(g)}"
                     onclick="app._frpWizardSetKashira(this.dataset.val)">${escHtml(g)}</button>
           `).join('')}
@@ -3487,11 +3501,16 @@ const app = (() => {
 
     } else if (step === 5) {
       if (titleEl) titleEl.textContent = '型式を選択';
+      const familyCfg = FRP_FAMILY_GROUPS[w.kashira] || null;
       const items = cache.filter(r => {
         if (r.field3 === 'オプション部品') return false;
         if (w.shubetsu  && r.field3 !== w.shubetsu)  return false;
         if (w.chubunrui && r.field4 !== w.chubunrui) return false;
-        if (w.kashira   && r.field1 !== w.kashira)   return false;
+        if (familyCfg) {
+          if (!r.field1 || !r.field1.startsWith(familyCfg.prefix)) return false;
+        } else {
+          if (w.kashira && r.field1 !== w.kashira) return false;
+        }
         if (w.hz !== '共通' && r.Hz && r.Hz !== '共通' && r.Hz !== w.hz) return false;
         return true;
       });
@@ -3502,27 +3521,56 @@ const app = (() => {
         return;
       }
 
-      bodyEl.innerHTML = `
-        <table class="frp-wizard-table">
-          <thead>
-            <tr><th>品名</th><th>型式</th><th>図番</th><th>定価</th><th></th></tr>
-          </thead>
-          <tbody>
-            ${items.map((r, i) => `
-              <tr>
-                <td>${escHtml(r.field3 || '')}</td>
-                <td>${escHtml(r.itemnum || '')}</td>
-                <td>${escHtml(r.field || '')}</td>
-                <td style="text-align:right">${(Number(r.price) || 0).toLocaleString('ja-JP')}</td>
-                <td><button class="btn-primary btn-sm"
-                            onclick="app._frpWizardSelect(${i})">選択</button></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
-      _frpWizard._items = items;
-      footerEl.innerHTML = `<button class="btn-secondary" onclick="app._frpWizardBack()">← 戻る</button>`;
+      if (familyCfg) {
+        const subGroups = familyCfg.subGroups;
+        const cols = subGroups.map(sg => items.filter(r => r.field1 === sg));
+        const maxRows = Math.max(...cols.map(c => c.length), 0);
+        const allItems = [];
+        const colMeta = cols.map(col => { const s = allItems.length; allItems.push(...col); return s; });
+        _frpWizard._items = allItems;
+
+        bodyEl.innerHTML = `
+          <table class="frp-wizard-table frp-tpy-3col">
+            <thead>
+              <tr>${subGroups.map(sg => `<th colspan="2" class="frp-tpy-header">${escHtml(sg)}</th>`).join('')}</tr>
+            </thead>
+            <tbody>
+              ${Array.from({length: maxRows}, (_, ri) => `
+                <tr>${cols.map((col, ci) => {
+                  const item = col[ri];
+                  if (!item) return '<td></td><td></td>';
+                  const idx = colMeta[ci] + ri;
+                  return `<td class="frp-tpy-zuban">${escHtml(item.field || '')}</td>
+                          <td><button class="btn-primary btn-sm" onclick="app._frpWizardSelect(${idx})">${escHtml(item.itemnum || '')}</button></td>`;
+                }).join('')}</tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        footerEl.innerHTML = `<button class="btn-secondary" onclick="app._frpWizardBack()">← 戻る</button>`;
+      } else {
+        bodyEl.innerHTML = `
+          <table class="frp-wizard-table">
+            <thead>
+              <tr><th>品名</th><th>型式</th><th>図番</th><th>定価</th><th></th></tr>
+            </thead>
+            <tbody>
+              ${items.map((r, i) => `
+                <tr>
+                  <td>${escHtml(r.field3 || '')}</td>
+                  <td>${escHtml(r.itemnum || '')}</td>
+                  <td>${escHtml(r.field || '')}</td>
+                  <td style="text-align:right">${(Number(r.price) || 0).toLocaleString('ja-JP')}</td>
+                  <td><button class="btn-primary btn-sm"
+                              onclick="app._frpWizardSelect(${i})">選択</button></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        _frpWizard._items = items;
+        footerEl.innerHTML = `<button class="btn-secondary" onclick="app._frpWizardBack()">← 戻る</button>`;
+      }
     }
   }
 
@@ -3768,7 +3816,8 @@ const app = (() => {
     if (item.type === 'option') return 'opt';
     const s = item.shubetsu  || '';
     const c = item.chubunrui || '';
-    if (s === 'ポンプアップ槽') return 'p2';
+    if (s === 'ポンプアップ槽')         return 'p2';
+    if (s === 'ポンプアップ槽【槽のみ】') return 'p1';
     if (s === '便槽') {
       if (c.includes('簡易水洗')) return 'b1';
       if (c.includes('無臭'))     return 'b2';
