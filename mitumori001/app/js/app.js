@@ -1667,16 +1667,30 @@ const app = (() => {
           .replace(/[0-9]/g,     c => String.fromCharCode(c.charCodeAt(0) + 0xFEE0))
           .replace(/-/g, '－');
         // criteria starts_with 検索（word検索は部分一致しないケースがあるため）
-        // 半角入力の場合、コード・型式フィールドは半角のまま追加検索（半角登録商品に対応）
+        // Zoho は「－」「＿」をトークン区切りとして扱うため、トークン境界をまたぐ前方一致はヒットしない
+        // 例: starts_with:AWH-1501S では AWH-1501SA_1 はヒットしない（1501SA≠1501S）
+        // 対策: 最後の区切り文字より前のプレフィックス（例: AWH）でも検索し、ローカルフィルタで絞る
+        const lastDelimIdx = Math.max(q.lastIndexOf('－'), q.lastIndexOf('＿'));
+        const qPrefix = lastDelimIdx > 0 ? q.slice(0, lastDelimIdx) : null;
+        const nameQuery = qPrefix
+          ? `(Product_Name:starts_with:${q})or(Product_Name:starts_with:${qPrefix})`
+          : `Product_Name:starts_with:${q}`;
         const rawExtra = raw !== q
-          ? `or(Product_Code:starts_with:${raw})or(field2:starts_with:${raw})`
+          ? `or(Product_Name:starts_with:${raw})or(Product_Code:starts_with:${raw})or(field2:starts_with:${raw})`
           : '';
         const res = await ZOHO.CRM.API.searchRecord({
           Entity: 'Products', Type: 'criteria',
-          Query: `((Product_Name:starts_with:${q})or(Product_Code:starts_with:${q})or(field2:starts_with:${q})${rawExtra})`,
+          Query: `((${nameQuery})or(Product_Code:starts_with:${q})or(field2:starts_with:${q})${rawExtra})`,
           page: 1, per_page: 100,
         });
-        products = (res?.data || []).map(p => ({
+        // ローカルフィルタ: 正規化した検索語で前方一致する商品のみ残す
+        const nq   = normalize(q);
+        const nRaw = normalize(raw);
+        const matchesSearch = p =>
+          normalize(p.Product_Name  || '').startsWith(nq) ||
+          normalize(p.Product_Code  || '').startsWith(nRaw) ||
+          normalize(p.field2        || '').startsWith(nRaw);
+        products = (res?.data || []).filter(matchesSearch).map(p => ({
           id:         p.id,
           name:       p.Product_Name  || '',
           denpyoName: p.field17       || '',   // 伝票名称（field17）
