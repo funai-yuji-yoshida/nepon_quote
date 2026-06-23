@@ -513,10 +513,14 @@
       <!-- FRP見積コンテナー（frpMode時のみ表示） -->
       <div id="frpContainer" style="display:none">
         <div class="frp-header">
-          <div class="frp-ab-toggle">
-            <span class="frp-ab-label">価格モード：</span>
-            <button class="btn-ab active" id="btnFrpA" onclick="app.setFrpAB('A')">A価</button>
-            <button class="btn-ab"        id="btnFrpB" onclick="app.setFrpAB('B')">B価</button>
+          <div class="frp-area-section">
+            <span class="frp-area-label">代理店：</span>
+            <input id="frpDealerCodeInput" class="frp-dealer-input" type="text" maxlength="8" placeholder="例:Y1003122"
+                   oninput="app.onFrpDealerCodeInput(this.value)">
+            <span class="frp-area-label">エリア：</span>
+            <select id="frpAreaSelect" class="frp-area-select" onchange="app.onFrpAreaChange(this.value)">
+              <option value="">— 選択 —</option>
+            </select>
           </div>
           <div class="frp-add-buttons">
             <button class="btn-frp-add" onclick="app.openFrpWizard('product')">＋ 製品を追加</button>
@@ -531,6 +535,7 @@
             <tr>
               <th class="frp-col-no">番号</th>
               <th class="frp-col-name">品名</th>
+              <th class="frp-col-hinshu">品種</th>
               <th class="frp-col-qty">数量</th>
               <th class="frp-col-unit">単位</th>
               <th class="frp-col-price">定価単価</th>

@@ -862,6 +862,78 @@ const app = (() => {
     if (_nameDd._input === nameInput) _nameDd.style.display = 'none';
   }
 
+  const FRP_AREA_RATES = [
+    { code:'Y100', area:'株式会社YUASA（茨城）',              p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
+    { code:'Y100', area:'株式会社YUASA（栃木）',              p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
+    { code:'Y100', area:'株式会社YUASA（埼玉）',              p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
+    { code:'Y100', area:'株式会社YUASA（群馬）',              p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
+    { code:'Y100', area:'株式会社YUASA（千葉）',              p1:52, p2:52, b1:52, b2:52, b3:52, w1:52, w2:52, opt:65 },
+    { code:'F408', area:'冨士機材株式会社（茨城）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
+    { code:'F408', area:'冨士機材株式会社（栃木）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
+    { code:'F408', area:'冨士機材株式会社（埼玉）',           p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
+    { code:'F408', area:'冨士機材株式会社（群馬）',           p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
+    { code:'F408', area:'冨士機材株式会社（千葉）',           p1:52, p2:52, b1:52, b2:52, b3:52, w1:52, w2:52, opt:65 },
+    { code:'F408', area:'橋本総業株式会社（茨城）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
+    { code:'F408', area:'橋本総業株式会社（栃木）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
+    { code:'F408', area:'橋本総業株式会社（埼玉）',           p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
+    { code:'F408', area:'橋本総業株式会社（群馬）',           p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
+    { code:'F408', area:'橋本総業株式会社（千葉）',           p1:52, p2:52, b1:52, b2:52, b3:52, w1:52, w2:52, opt:65 },
+    { code:'Y001', area:'株式会社山善（茨城）',               p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
+    { code:'Y001', area:'株式会社山善（栃木）',               p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
+    { code:'Y001', area:'株式会社山善（埼玉）',               p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
+    { code:'Y001', area:'株式会社山善（群馬）',               p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
+    { code:'Y001', area:'株式会社山善（千葉）',               p1:52, p2:52, b1:52, b2:52, b3:52, w1:52, w2:52, opt:65 },
+    { code:'W001', area:'渡辺パイプ株式会社（茨城）',         p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
+    { code:'W001', area:'渡辺パイプ株式会社（栃木）',         p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
+    { code:'W001', area:'渡辺パイプ株式会社（埼玉）',         p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'W001', area:'渡辺パイプ株式会社（群馬）',         p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'W001', area:'渡辺パイプ株式会社（千葉）',         p1:52, p2:52, b1:52, b2:52, b3:52, w1:52, w2:52, opt:65 },
+    { code:'K952', area:'株式会社小泉東関東（茨城）',         p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
+    { code:'K952', area:'株式会社小泉東関東（栃木）',         p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
+    { code:'K952', area:'株式会社小泉東関東（千葉）',         p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65 },
+    { code:'K952', area:'株式会社小泉北関東（埼玉）',         p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'K952', area:'株式会社小泉北関東（群馬）',         p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'N038', area:'栃木サンケイ機器株式会社（栃木）',   p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
+    { code:'S348', area:'株式会社進栄管材（茨城）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
+    { code:'M171', area:'丸八管材株式会社（茨城）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
+    { code:'S013', area:'株式会社三協機材 （茨城）',          p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
+    { code:'KA72', area:'神奈川管材株式会社（千葉）',         p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65 },
+    { code:'T075', area:'株式会社タカムラ（茨城）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'T075', area:'株式会社タカムラ（栃木）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'T075', area:'株式会社タカムラ（埼玉）',           p1:58, p2:53, b1:53, b2:53, b3:53, w1:53, w2:53, opt:65 },
+    { code:'H052', area:'橋本産業株式会社（栃木）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'H052', area:'橋本産業株式会社（千葉）',           p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65 },
+    { code:'O282', area:'岡部バルブ工業株式会社（栃木）',     p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'O282', area:'岡部バルブ工業株式会社（埼玉）',     p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'O282', area:'岡部バルブ工業株式会社（千葉）',     p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65 },
+    { code:'O282', area:'岡部バルブ工業株式会社（茨城）',     p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'S160', area:'有限会社サンキョー（茨城）',         p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'T987', area:'ジャパン建材株式会社（茨城）',       p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'T987', area:'ジャパン建材株式会社（栃木）',       p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'T987', area:'ジャパン建材株式会社（埼玉）',       p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'T987', area:'ジャパン建材株式会社（群馬）',       p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'T987', area:'ジャパン建材株式会社（千葉）',       p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65 },
+    { code:'I257', area:'稲垣機材株式会社（埼玉）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'A178', area:'浅野機材株式会社（埼玉）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'A178', area:'浅野機材株式会社（栃木）',           p1:58, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
+    { code:'A178', area:'浅野機材株式会社（千葉）',           p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65 },
+    { code:'A178', area:'浅野機材株式会社（群馬）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'A178', area:'浅野機材株式会社（茨城）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'A178', area:'浅野商事株式会社（千葉）',           p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65 },
+    { code:'A178', area:'浅野商事株式会社（栃木）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+  ];
+
+  const FRP_HINSHU_OPTIONS = [
+    { key: 'p1',  label: 'ポンプアップ槽【槽のみ】' },
+    { key: 'p2',  label: 'ポンプアップ槽' },
+    { key: 'b1',  label: '簡易水洗専用便槽' },
+    { key: 'b2',  label: '無臭便槽' },
+    { key: 'b3',  label: 'くみ取り排水槽' },
+    { key: 'w1',  label: '小型埋設受水槽' },
+    { key: 'w2',  label: '特殊受水槽' },
+    { key: 'opt', label: 'オプション部品' },
+  ];
+
   let state = {
     quoteId:      null,   // ZohoCRM の Quote レコードID
     quoteNumber:  null,   // Zoho自動採番 Quote_Number (整数)
@@ -940,6 +1012,9 @@ const app = (() => {
     frpFooterText: '',    // 枠外文言
     frpShowZuban:  true,  // 図番印刷ON/OFF
     frpCache:      null,  // FRPモジュール全件キャッシュ
+    customerAccountId: null, // Quote.Account_Name.id（Account_Number取得用）
+    frpDealerCode: null,     // 代理店コード（Account_Number 上4桁）
+    frpArea:       null,     // 選択中エリア名
     roundingEnabled: false, // 切り上げ表示モード
     _thresholdSide: null,  // 閾値判定キャッシュ（'over'|'under'|null）
   };
@@ -1107,7 +1182,8 @@ const app = (() => {
 
     // 基本情報
     state.quoteNumber     = quote.Quote_Number || null;
-    state.customerName    = quote.Account_Name?.name || quote.Account_Name || '';
+    state.customerName       = quote.Account_Name?.name || quote.Account_Name || '';
+    state.customerAccountId  = quote.Account_Name?.id  || null;
     state.customerHonorific = quote.field4 || '御中';
     state.contactName     = quote.Contact_Name?.name || quote.Contact_Name || '';
     state.contactHonorific = quote.field3 || '様';
@@ -1212,6 +1288,8 @@ const app = (() => {
           state.nextFrpId  = state.frpItems.length > 0
             ? Math.max(...state.frpItems.map(i => i.id || 0)) + 1
             : 1;
+          if (parsed.frpArea)       state.frpArea       = parsed.frpArea;
+          if (parsed.frpDealerCode) state.frpDealerCode = parsed.frpDealerCode;
         }
         renumberSections();
         // ID重複を防ぐため nextId をロード済み最大値+1 に更新
@@ -3669,8 +3747,7 @@ const app = (() => {
     if (label) label.style.display = frpOn ? '' : 'none';
 
     if (frpOn) {
-      document.getElementById('btnFrpA')?.classList.toggle('active', state.frpAB === 'A');
-      document.getElementById('btnFrpB')?.classList.toggle('active', state.frpAB === 'B');
+      fetchFrpDealerCode();
 
       const discountEl = document.getElementById('frpDiscountInput');
       if (discountEl) {
@@ -3685,6 +3762,23 @@ const app = (() => {
         }
       }
     }
+  }
+
+  function _autoHinshu(item) {
+    if (item.type === 'option') return 'opt';
+    const s = item.shubetsu  || '';
+    const c = item.chubunrui || '';
+    if (s === 'ポンプアップ槽') return 'p2';
+    if (s === '便槽') {
+      if (c.includes('簡易水洗')) return 'b1';
+      if (c.includes('無臭'))     return 'b2';
+      return 'b1';
+    }
+    if (s === '受水槽') {
+      if (c === '排水槽') return 'b3';
+      return 'w1';
+    }
+    return null;
   }
 
   function addFrpItem(record) {
@@ -3712,6 +3806,15 @@ const app = (() => {
       soryoNote:   '',
       specs,
     };
+    // 品種を自動設定し、エリアが選択済みなら仕切単価を計算
+    item.hinshu = _autoHinshu(item);
+    if (item.hinshu && state.frpDealerCode && state.frpArea) {
+      const rateRow = FRP_AREA_RATES.find(r => r.code === state.frpDealerCode && r.area === state.frpArea);
+      if (rateRow && rateRow[item.hinshu] != null) {
+        item.priceA = Math.round((item.price || 0) * rateRow[item.hinshu] / 100);
+      }
+    }
+
     state.frpItems.push(item);
 
     // 製品アイテムの場合のみ送料行を自動追加（soryoKubun が設定されている場合）
@@ -3737,7 +3840,7 @@ const app = (() => {
     const tbody = document.getElementById('frpItemsTbody');
     if (!tbody) return;
 
-    const shikiriKey = state.frpAB === 'A' ? 'priceA' : 'priceB';
+    const shikiriKey = 'priceA';
     const rows = [];
 
     state.frpItems.forEach((item, idx) => {
@@ -3750,6 +3853,10 @@ const app = (() => {
       const zubanHtml = (state.frpShowZuban && item.zuban)
         ? `<div class="frp-zuban-text">【図番:${escHtml(item.zuban)}】</div>` : '';
 
+      const hinshuOptionsHtml = FRP_HINSHU_OPTIONS.map(h =>
+        `<option value="${h.key}" ${item.hinshu === h.key ? 'selected' : ''}>${escHtml(h.label)}</option>`
+      ).join('');
+
       rows.push(`
         <tr class="frp-item-row" data-frp-id="${item.id}">
           <td class="frp-col-no" style="text-align:center">${idx + 1}</td>
@@ -3761,6 +3868,9 @@ const app = (() => {
                    value="${escHtml(item.itemnum || '')}"
                    data-frp-id="${item.id}" data-field="itemnum">
             ${zubanHtml}
+          </td>
+          <td class="frp-col-hinshu">
+            ${item.type === 'soryo' ? '' : `<select class="frp-hinshu-sel" data-frp-id="${item.id}"><option value="">—</option>${hinshuOptionsHtml}</select>`}
           </td>
           <td class="frp-col-qty">
             <input type="number" class="frp-qty-input" value="${item.qty}"
@@ -3789,7 +3899,7 @@ const app = (() => {
         rows.push(`
           <tr class="frp-soryo-row">
             <td></td>
-            <td colspan="8" class="frp-soryo-note">${escHtml(item.soryoNote)}</td>
+            <td colspan="9" class="frp-soryo-note">${escHtml(item.soryoNote)}</td>
           </tr>
         `);
       }
@@ -3799,7 +3909,7 @@ const app = (() => {
         rows.push(`
           <tr class="frp-spec-row">
             <td></td>
-            <td colspan="8">
+            <td colspan="9">
               <input type="text" class="frp-spec-input"
                      value="${escHtml(spec)}"
                      data-frp-id="${item.id}" data-spec-idx="${si}">
@@ -3840,8 +3950,7 @@ const app = (() => {
           const totalCell = row.querySelector('.frp-col-total');
           if (totalCell) totalCell.textContent = fmtFrp(val * qty);
         } else {
-          if (state.frpAB === 'A') item.priceA = val;
-          else item.priceB = val;
+          item.priceA = val;
           const shikiriTotalCell = row.querySelector('.frp-col-shikiri-total');
           if (shikiriTotalCell) shikiriTotalCell.textContent = fmtFrp(val * qty);
         }
@@ -3876,10 +3985,129 @@ const app = (() => {
         markDirty();
       });
     });
+
+    // 品種選択イベント
+    tbody.querySelectorAll('.frp-hinshu-sel').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const id   = Number(sel.dataset.frpId);
+        const item = state.frpItems.find(i => i.id === id);
+        if (!item) return;
+        item.hinshu = sel.value || null;
+        if (item.hinshu && state.frpArea && state.frpDealerCode) {
+          const rateRow = FRP_AREA_RATES.find(r => r.code === state.frpDealerCode && r.area === state.frpArea);
+          if (rateRow && rateRow[item.hinshu] != null) {
+            const rate = rateRow[item.hinshu];
+            item.priceA = Math.round((item.price || 0) * rate / 100);
+            item.priceB = Math.round((item.price || 0) * rate / 100);
+            renderFrpItems();
+            updateFrpTotals();
+          }
+        }
+        updateOutput();
+        markDirty();
+      });
+    });
+  }
+
+  // 取引先名（全角・半角括弧）からコードを抽出: （A1780200） → "A178"
+  function _extractDealerCode(name) {
+    const m = String(name || '').match(/[（(]([A-Z]{1,2}\d{3,})[）)]/);
+    return m ? m[1].slice(0, 4) : null;
+  }
+
+  async function fetchFrpDealerCode() {
+    const accountId = state.customerAccountId;
+    if (!accountId || !zohoReady) {
+      // API なし: 取引先名からのみ抽出を試みる
+      const fromName = _extractDealerCode(state.customerName);
+      if (fromName && FRP_AREA_RATES.some(r => r.code === fromName)) {
+        state.frpDealerCode = fromName;
+      }
+      updateFrpAreaUI();
+      return;
+    }
+    try {
+      const res = await ZOHO.CRM.API.getRecord({ Entity: 'Accounts', RecordID: accountId });
+      const record = res?.data?.[0];
+
+      // 1st: Account_Number フィールドの上4桁
+      const rawNum   = String(record?.Account_Number || '');
+      let candidate  = rawNum.slice(0, 4);
+
+      // 2nd: Account_Number が無効ならアカウント名から抽出
+      if (!FRP_AREA_RATES.some(r => r.code === candidate)) {
+        candidate = _extractDealerCode(record?.Account_Name) || '';
+      }
+
+      // 3rd: それでも無効なら見積側の取引先名から抽出
+      if (!FRP_AREA_RATES.some(r => r.code === candidate)) {
+        candidate = _extractDealerCode(state.customerName) || '';
+      }
+
+      state.frpDealerCode = FRP_AREA_RATES.some(r => r.code === candidate) ? candidate : null;
+    } catch(e) {
+      console.error('[FRP] 代理店コード取得エラー:', e);
+      state.frpDealerCode = null;
+    }
+    updateFrpAreaUI();
+  }
+
+  // updateInput=true のときのみ input 欄の値を書き換える（自動検出時のみ）
+  function updateFrpAreaUI(updateInput = true) {
+    const dealerInput = document.getElementById('frpDealerCodeInput');
+    const areaSelect  = document.getElementById('frpAreaSelect');
+    if (!areaSelect) return;
+
+    if (updateInput && dealerInput && state.frpDealerCode) {
+      dealerInput.value = state.frpDealerCode;
+    }
+
+    const code  = state.frpDealerCode;
+    const areas = code
+      ? FRP_AREA_RATES.filter(r => r.code === code).map(r => r.area)
+      : [];
+
+    areaSelect.innerHTML = '<option value="">— 選択 —</option>' +
+      areas.map(a => `<option value="${escHtml(a)}" ${state.frpArea === a ? 'selected' : ''}>${escHtml(a)}</option>`).join('');
+  }
+
+  function onFrpDealerCodeInput(val) {
+    const upper = val.trim().toUpperCase();
+    // 8桁入力（例: Y1003122）でも4桁入力でも上4桁をコードとして使用
+    const code = upper.slice(0, 4);
+    state.frpDealerCode = FRP_AREA_RATES.some(r => r.code === code) ? code : null;
+    state.frpArea = null;
+    updateFrpAreaUI(false);  // ユーザー入力中は input 欄を上書きしない
+    markDirty();
+  }
+
+  function onFrpAreaChange(area) {
+    state.frpArea = area || null;
+    applyFrpAreaRates();
+    updateOutput();
+    markDirty();
+  }
+
+  function applyFrpAreaRates() {
+    if (!state.frpArea || !state.frpDealerCode) return;
+    const rateRow = FRP_AREA_RATES.find(r => r.code === state.frpDealerCode && r.area === state.frpArea);
+    if (!rateRow) return;
+
+    state.frpItems.forEach(item => {
+      if (item.type === 'soryo') return;
+      if (!item.hinshu) item.hinshu = _autoHinshu(item);
+      if (!item.hinshu) return;
+      const rate = rateRow[item.hinshu];
+      if (rate == null) return;
+      item.priceA = Math.round((item.price || 0) * rate / 100);
+    });
+
+    renderFrpItems();
+    updateFrpTotals();
   }
 
   function updateFrpTotals() {
-    const shikiriKey   = state.frpAB === 'A' ? 'priceA' : 'priceB';
+    const shikiriKey   = 'priceA';
     const priceTotal   = state.frpItems.reduce((s, i) => s + i.price * (Number(i.qty) || 1), 0);
     const shikiriTotal = state.frpItems.reduce((s, i) => s + (i[shikiriKey] || 0) * (Number(i.qty) || 1), 0);
     const discount     = state.frpDiscount || 0;
@@ -5944,10 +6172,9 @@ const app = (() => {
 
     // FRPモード時は専用合計を使用
     if (state.frpMode) {
-      const shikiriKey   = state.frpAB === 'A' ? 'priceA' : 'priceB';
       const frpItemsSafe     = state.frpItems || [];
       const frpPriceTotal    = frpItemsSafe.reduce((s, i) => s + i.price * (Number(i.qty)||1), 0);
-      const frpShikiriTotal  = frpItemsSafe.reduce((s, i) => s + (i[shikiriKey]||0) * (Number(i.qty)||1), 0);
+      const frpShikiriTotal  = frpItemsSafe.reduce((s, i) => s + (i.priceA||0) * (Number(i.qty)||1), 0);
       state.deliveryPrice    = frpShikiriTotal;
       state.dairiTotal       = frpShikiriTotal;
 
@@ -6586,6 +6813,8 @@ const app = (() => {
       frpDiscount:   state.frpMode ? (state.frpDiscount || 0) : 0,
       frpFooterText: state.frpMode ? (state.frpFooterText || '') : '',
       frpShowZuban:  state.frpMode ? (state.frpShowZuban !== false) : true,
+      frpArea:       state.frpMode ? (state.frpArea || undefined) : undefined,
+      frpDealerCode: state.frpMode ? (state.frpDealerCode || undefined) : undefined,
       dateFormat: getValue('dateFormat') || 'seireki',
       showProductCode: (() => {
         const cb = document.getElementById('printProductCode');
@@ -6709,6 +6938,8 @@ const app = (() => {
         frpMode:        state.frpMode  || undefined,
         frpAB:          state.frpMode ? state.frpAB : undefined,
         frpItems:       state.frpMode && state.frpItems.length ? state.frpItems : undefined,
+        frpArea:        state.frpMode ? (state.frpArea || undefined) : undefined,
+        frpDealerCode:  state.frpMode ? (state.frpDealerCode || undefined) : undefined,
         roundingEnabled:  state.roundingEnabled  || undefined,
         discountEnabled:  state.discountEnabled === false ? false : undefined,
         shochoName:       state.shochoName       || undefined,
@@ -7403,6 +7634,8 @@ const app = (() => {
     switchFrpMode, setFrpAB,
     removeFrpItem,
     openFrpWizard,
+    onFrpAreaChange,
+    onFrpDealerCodeInput,
     _frpWizardSetHz,
     _frpWizardSetShubetsu,
     _frpWizardSetChubunrui,

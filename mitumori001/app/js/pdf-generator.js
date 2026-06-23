@@ -184,15 +184,11 @@ const QuotationPDF = (() => {
       })),
     }));
     const frpMode  = data.frpMode  || false;
-    const frpAB    = data.frpAB    || 'A';
     const frpItems = data.frpItems || [];
 
     // FRPモード用合計
     const frpPriceTotal   = frpItems.reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.qty) || 1), 0);
-    const frpShikiriTotal = frpItems.reduce((s, i) => {
-      const p = frpAB === 'A' ? (Number(i.priceA) || 0) : (Number(i.priceB) || 0);
-      return s + p * (Number(i.qty) || 1);
-    }, 0);
+    const frpShikiriTotal = frpItems.reduce((s, i) => s + (Number(i.priceA) || 0) * (Number(i.qty) || 1), 0);
 
     const dateStr    = data.date ? formatDate(data.date, data.dateFormat) : '';
     const quoteNoStr = data.quoteNoStr || (data.seqNo ? `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}` : '');
@@ -295,7 +291,7 @@ const QuotationPDF = (() => {
           mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal,
           showUchiwake,
           showProductCode: data.showProductCodeCover,
-          frpMode, frpItems, frpAB, frpPriceTotal, frpShikiriTotal,
+          frpMode, frpItems, frpPriceTotal, frpShikiriTotal,
           frpShowZuban: data.frpShowZuban !== false,
           frpDiscount:  data.frpDiscount || 0,
           adjustAmount, waribikiAmount,
@@ -324,7 +320,7 @@ const QuotationPDF = (() => {
   function buildCoverPage({ quoteNoStr, dateStr, branch, data, sectionTotals,
     grandTotal, discount, discountEnabled, quoteCategory, deliveryPrice, materialCost, laborCost, legalWelfare, legalRate, anzenCost, buhanDiscTotal = 0,
     mainRate, pdfPriceMode, dairiTotal, showUchiwake, showProductCode = false,
-    frpMode, frpItems, frpAB, frpPriceTotal, frpShikiriTotal,
+    frpMode, frpItems, frpPriceTotal, frpShikiriTotal,
     frpShowZuban = true, frpDiscount = 0,
     adjustAmount = 0, waribikiAmount = 0 }) {
     const isDairiAvailable = mainRate != null || dairiTotal != null;
@@ -506,7 +502,7 @@ const QuotationPDF = (() => {
       const emptyPc = (fs) => showProductCode ? [{ text: '', fontSize: fs }] : [];
       if (entry.type === 'frpItem') {
         const item = entry.item;
-        const shikiri = frpAB === 'A' ? (Number(item.priceA) || 0) : (Number(item.priceB) || 0);
+        const shikiri = Number(item.priceA) || 0;
         const qty = Number(item.qty) || 1;
         const priceTotal   = (Number(item.price) || 0) * qty;
         const shikiriTotal = shikiri * qty;
@@ -1281,11 +1277,11 @@ const QuotationPDF = (() => {
 
   // ── FRP専用明細ページ ─────────────────────────────────────────
 
-  function buildFrpDetailPages({ quoteNoStr, frpItems, frpAB, frpPriceTotal, frpShikiriTotal,
+  function buildFrpDetailPages({ quoteNoStr, frpItems, frpPriceTotal, frpShikiriTotal,
       frpDiscount = 0, frpFooterText = '', frpShowZuban = true }) {
     const COL_WIDTHS    = [22, '*', 25, 20, 45, 45, 50, 50];
-    const shikiriLabel  = `仕切単価(${frpAB}価)`;
-    const shikiriTLabel = `仕切合計(${frpAB}価)`;
+    const shikiriLabel  = '仕切単価';
+    const shikiriTLabel = '仕切合計';
 
     const headerRow = [
       { text: 'No',          style: 'tableHeader' },
@@ -1302,7 +1298,7 @@ const QuotationPDF = (() => {
     let rowNo = 1;
 
     frpItems.forEach(item => {
-      const shikiri      = frpAB === 'A' ? (Number(item.priceA) || 0) : (Number(item.priceB) || 0);
+      const shikiri      = Number(item.priceA) || 0;
       const qty          = Number(item.qty) || 1;
       const priceTotal   = (Number(item.price) || 0) * qty;
       const shikiriTotal = shikiri * qty;

@@ -1944,6 +1944,34 @@ input.item-gensui-b::-webkit-inner-spin-button {
   font-size: 12px;
   color: #555;
 }
+.frp-area-section {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.frp-area-label {
+  font-size: 12px;
+  color: #555;
+  white-space: nowrap;
+}
+.frp-dealer-input {
+  font-size: 13px;
+  font-weight: bold;
+  color: #1a4d8f;
+  width: 88px;
+  padding: 2px 4px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  text-align: center;
+  text-transform: uppercase;
+}
+.frp-area-select {
+  font-size: 12px;
+  padding: 2px 4px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  max-width: 240px;
+}
 .btn-ab {
   padding: 4px 14px;
   border: 1px solid #aaa;
@@ -2039,6 +2067,8 @@ input.item-gensui-b::-webkit-inner-spin-button {
 .frp-col-price, .frp-col-total,
 .frp-col-shikiri, .frp-col-shikiri-total { width: 90px; text-align: right; }
 .frp-col-del   { width: 30px; text-align: center; }
+.frp-col-hinshu { width: 120px; }
+.frp-hinshu-sel { font-size: 11px; width: 100%; max-width: 118px; padding: 1px 2px; }
 
 .frp-name-input {
   width: 100%;
