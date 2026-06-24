@@ -3649,8 +3649,19 @@ const app = (() => {
   }
 
   function _frpWizardSetHz(hz)       { _frpWizard.hz = hz;        _frpWizardRender(); }
-  function _frpWizardSetShubetsu(v)  { _frpWizard.shubetsu = v;   _frpWizardRender(); }
-  function _frpWizardSetChubunrui(v) { _frpWizard.chubunrui = v;  _frpWizardRender(); }
+  function _frpWizardSetShubetsu(v)  {
+    // 種別変更時は下流の選択（中分類・型式グループ）をリセット
+    _frpWizard.shubetsu = v;
+    _frpWizard.chubunrui = null;
+    _frpWizard.kashira   = null;
+    _frpWizardRender();
+  }
+  function _frpWizardSetChubunrui(v) {
+    // 中分類変更時は型式グループをリセット
+    _frpWizard.chubunrui = v;
+    _frpWizard.kashira   = null;
+    _frpWizardRender();
+  }
   function _frpWizardSetKashira(v)   { _frpWizard.kashira = v;    _frpWizardRender(); }
 
   function _frpWizardNext() {
@@ -3661,7 +3672,10 @@ const app = (() => {
     if (_frpWizard.step > 1) { _frpWizard.step5Search = ''; _frpWizard.step--; _frpWizardRender(); }
   }
   function _frpWizardSkip() {
+    // Step3（中分類）スキップ時は chubunrui・kashira をクリアして全件対象にする
     _frpWizard.step5Search = '';
+    _frpWizard.chubunrui   = null;
+    _frpWizard.kashira     = null;
     _frpWizard.step++;
     _frpWizardRender();
   }
