@@ -357,17 +357,22 @@ const QuotationPDF = (() => {
     const useDiscountStyle = pdfPriceMode === 'dairi-discount' && isDairiAvailable;
     // dairi-discount は仕切を無視して「定価 - 出精値引き」を御見積金額にする
     const discountStylePrice = useDiscountStyle ? Math.max(0, grandTotal - discount) : deliveryPrice;
-    const displayPrice = frpMode ? (frpDiscount > 0 ? Math.max(0, frpShikiriTotal - frpDiscount) : frpShikiriTotal) : (isTeika ? grandTotal : discountStylePrice);
+    const displayPrice = frpMode
+      ? (isTeika
+        ? (frpDiscount > 0 ? Math.max(0, frpPriceTotal - frpDiscount) : frpPriceTotal)
+        : (frpDiscount > 0 ? Math.max(0, frpShikiriTotal - frpDiscount) : frpShikiriTotal))
+      : (isTeika ? grandTotal : discountStylePrice);
 
     // 工事モードは鏡に品目行が表示されないため品目コード列は不要
     if ((quoteCategory || '').includes('工事')) showProductCode = false;
-    // 代理店モード: 8列（単価・合計・仕切単価・仕切合計）、定価モード: 6列、FRPモード: 8列（定価単価・定価合計・仕切単価・仕切合計）
+    // 代理店モード: 8列（単価・合計・仕切単価・仕切合計）、定価モード: 6列
+    // FRPモード: 定価のみ=6列（定価単価・定価合計）、仕切あり=8列（定価単価・定価合計・仕切単価・仕切合計）
     const COL_WIDTHS = frpMode
-      ? [22, '*', 25, 20, 45, 45, 50, 50]
+      ? (isTeika ? [22, '*', 25, 20, 58, 58] : [22, '*', 25, 20, 45, 45, 50, 50])
       : (showProductCode
         ? (useDairi ? [22, '*', 50, 24, 30, 52, 58, 52, 58] : [22, '*', 50, 36, 30, 58, 58])
         : (useDairi ? [22, '*', 24, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58]));
-    const COLS = frpMode ? 8 : (useDairi ? (showProductCode ? 9 : 8) : (showProductCode ? 7 : 6));
+    const COLS = frpMode ? (isTeika ? 6 : 8) : (useDairi ? (showProductCode ? 9 : 8) : (showProductCode ? 7 : 6));
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
 
     // ── サマリーテーブルの行 ──────────────────────────────────
@@ -382,8 +387,10 @@ const QuotationPDF = (() => {
         { text: '単位',     style: 'tableHeader' },
         { text: '希望小売単価', style: 'tableHeader' },
         { text: '希望小売合計', style: 'tableHeader' },
-        { text: '仕切単価', style: 'tableHeader' },
-        { text: '仕切合計', style: 'tableHeader' },
+        ...(isTeika ? [] : [
+          { text: '仕切単価', style: 'tableHeader' },
+          { text: '仕切合計', style: 'tableHeader' },
+        ]),
       ]);
     } else {
       tableRows.push(useDairi ? [
@@ -526,6 +533,8 @@ const QuotationPDF = (() => {
           }
         }
         const nameCell = nameParts.length > 0 ? { stack: nameParts } : { text: item.name || '', bold: true, fontSize: itemFs };
+        const frpColSpan = COLS - 1;
+        const frpPad = Array.from({ length: frpColSpan - 1 }, () => ({ text: '' }));
         tableRows.push([
           { text: String(rowNo++), alignment: 'center', fontSize: itemFs },
           nameCell,
@@ -533,26 +542,32 @@ const QuotationPDF = (() => {
           { text: item.unit || '',       alignment: 'center', fontSize: itemFs },
           { text: fmt(item.price) || '', alignment: 'right',  fontSize: itemFs },
           { text: fmt(priceTotal),       alignment: 'right',  fontSize: itemFs },
-          { text: fmt(shikiri) || '',    alignment: 'right',  fontSize: itemFs },
-          { text: fmt(shikiriTotal),     alignment: 'right',  fontSize: itemFs },
+          ...(isTeika ? [] : [
+            { text: fmt(shikiri) || '',    alignment: 'right',  fontSize: itemFs },
+            { text: fmt(shikiriTotal),     alignment: 'right',  fontSize: itemFs },
+          ]),
         ]);
         return;
       }
       if (entry.type === 'frpNote') {
+        const frpColSpan = COLS - 1;
+        const frpPad = Array.from({ length: frpColSpan - 1 }, () => ({ text: '' }));
         tableRows.push([
           { text: '', border: [true, false, false, false], fontSize: itemFs },
-          { text: `  ${entry.text}`, fontSize: Math.max(6, itemFs - 1.5), color: '#c00', colSpan: 7,
+          { text: `  ${entry.text}`, fontSize: Math.max(6, itemFs - 1.5), color: '#c00', colSpan: frpColSpan,
             border: [false, false, true, false] },
-          { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
+          ...frpPad,
         ]);
         return;
       }
       if (entry.type === 'frpSpec') {
+        const frpColSpan = COLS - 1;
+        const frpPad = Array.from({ length: frpColSpan - 1 }, () => ({ text: '' }));
         tableRows.push([
           { text: '', border: [true, false, false, false], fontSize: itemFs },
-          { text: `　${entry.text}`, fontSize: Math.max(6, itemFs - 1), color: '#555', colSpan: 7,
+          { text: `　${entry.text}`, fontSize: Math.max(6, itemFs - 1), color: '#555', colSpan: frpColSpan,
             border: [false, false, true, false] },
-          { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
+          ...frpPad,
         ]);
         return;
       }
@@ -690,6 +705,36 @@ const QuotationPDF = (() => {
     const buppanDeliveryLabel = (isBuppan && dairiGrandTotal < 1000000) ? '販売価格合計' : '貴社お渡し価格';
 
     if (frpMode) {
+      if (isTeika) {
+        // 定価のみモード: 6列（仕切列なし）
+        tableRows.push([
+          { text: '', border: [true, true, false, false], fillColor: '#e8f0f8' },
+          { text: '合　　計', alignment: 'center', bold: true, fontSize: itemFs, colSpan: 4,
+            border: [false, true, false, false], fillColor: '#e8f0f8' },
+          { text: '' }, { text: '' }, { text: '' },
+          { text: fmt(frpPriceTotal), alignment: 'right', bold: true, fontSize: itemFs,
+            border: [false, true, true, false], fillColor: '#e8f0f8' },
+        ]);
+        if (frpDiscount > 0) {
+          tableRows.push([
+            { text: '', border: [true, false, false, false], fillColor: '#fff' },
+            { text: '出精値引き', alignment: 'center', fontSize: itemFs, colSpan: 4,
+              border: [false, false, false, false], fillColor: '#fff' },
+            { text: '' }, { text: '' }, { text: '' },
+            { text: `▲ ${fmt(frpDiscount)}`, alignment: 'right', fontSize: itemFs, noWrap: true,
+              border: [false, false, true, false], fillColor: '#fff' },
+          ]);
+          const grandFrpTeika = Math.max(0, frpPriceTotal - frpDiscount);
+          tableRows.push([
+            { text: '', border: [true, false, false, false], fillColor: '#dce8f7' },
+            { text: '御見積金額（税別）', alignment: 'center', bold: true, fontSize: itemFs, colSpan: 4,
+              border: [false, false, false, false], fillColor: '#dce8f7' },
+            { text: '' }, { text: '' }, { text: '' },
+            { text: fmt(grandFrpTeika), alignment: 'right', bold: true, fontSize: itemFs,
+              border: [false, false, true, false], fillColor: '#dce8f7' },
+          ]);
+        }
+      } else {
       // FRPモード専用合計行（8列: No/品名/数量/単位/定価単価/定価合計/仕切単価/仕切合計）
       tableRows.push([
         { text: '', border: [true, true, false, false], fillColor: '#e8f0f8' },
@@ -725,6 +770,7 @@ const QuotationPDF = (() => {
             border: [false, false, true, false], fillColor: '#dce8f7' },
         ]);
       }
+      } // end !isTeika
     } else if (useDairiColumns) {
       // showProductCode時は9列、通常は8列
       // colSpan を showProductCode に合わせて調整
