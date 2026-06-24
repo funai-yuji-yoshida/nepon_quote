@@ -3917,6 +3917,27 @@ const app = (() => {
     updateOutput();
   }
 
+  function moveFrpItem(itemId, dir) {
+    const idx = state.frpItems.findIndex(i => i.id === itemId);
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= state.frpItems.length) return;
+    const items = [...state.frpItems];
+    [items[idx], items[newIdx]] = [items[newIdx], items[idx]];
+    state.frpItems = items;
+    markDirty();
+    renderFrpItems();
+    updateFrpTotals();
+    updateOutput();
+  }
+
+  function removeFrpSpec(itemId, specIdx) {
+    const item = state.frpItems.find(i => i.id === itemId);
+    if (!item || !item.specs) return;
+    item.specs.splice(specIdx, 1);
+    markDirty();
+    renderFrpItems();
+  }
+
   function removeFrpItem(itemId) {
     state.frpItems = state.frpItems.filter(i => i.id !== itemId);
     markDirty();
@@ -3950,8 +3971,11 @@ const app = (() => {
       ).join('');
 
       rows.push(`
-        <tr class="frp-item-row" data-frp-id="${item.id}">
-          <td class="frp-col-no" style="text-align:center">${idx + 1}</td>
+        <tr class="frp-item-row" draggable="true" data-frp-id="${item.id}">
+          <td class="frp-col-no frp-drag-handle" style="text-align:center;cursor:grab">
+            <span style="display:block;font-size:15px;color:#aaa;line-height:1">⠿</span>
+            <span style="font-size:11px">${idx + 1}</span>
+          </td>
           <td class="frp-col-name">
             <input type="text" class="frp-name-input frp-name-main"
                    value="${escHtml(item.hinmei || '')}"
@@ -4011,10 +4035,14 @@ const app = (() => {
           rows.push(`
             <tr class="frp-spec-row">
               <td></td>
-              <td colspan="9">
+              <td colspan="8">
                 <input type="text" class="frp-spec-input"
                        value="${escHtml(spec)}"
                        data-frp-id="${item.id}" data-spec-idx="${si}">
+              </td>
+              <td class="frp-col-del">
+                <button onclick="app.removeFrpSpec(${item.id},${si})"
+                        style="color:#c00;background:none;border:none;cursor:pointer;font-size:14px;">✕</button>
               </td>
             </tr>
           `);
@@ -4023,6 +4051,43 @@ const app = (() => {
     });
 
     tbody.innerHTML = rows.join('');
+
+    // ドラッグ＆ドロップで並び替え
+    let _dragSrcId = null;
+    tbody.querySelectorAll('.frp-item-row').forEach(tr => {
+      tr.addEventListener('dragstart', e => {
+        _dragSrcId = Number(tr.dataset.frpId);
+        tr.classList.add('frp-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      tr.addEventListener('dragend', () => {
+        tr.classList.remove('frp-dragging');
+        tbody.querySelectorAll('.frp-drag-over').forEach(el => el.classList.remove('frp-drag-over'));
+      });
+      tr.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        tbody.querySelectorAll('.frp-drag-over').forEach(el => el.classList.remove('frp-drag-over'));
+        tr.classList.add('frp-drag-over');
+      });
+      tr.addEventListener('dragleave', () => tr.classList.remove('frp-drag-over'));
+      tr.addEventListener('drop', e => {
+        e.stopPropagation();
+        const dropId = Number(tr.dataset.frpId);
+        if (_dragSrcId == null || _dragSrcId === dropId) return;
+        const srcIdx = state.frpItems.findIndex(i => i.id === _dragSrcId);
+        const dstIdx = state.frpItems.findIndex(i => i.id === dropId);
+        if (srcIdx === -1 || dstIdx === -1) return;
+        const items = [...state.frpItems];
+        const [moved] = items.splice(srcIdx, 1);
+        items.splice(dstIdx, 0, moved);
+        state.frpItems = items;
+        markDirty();
+        renderFrpItems();
+        updateFrpTotals();
+        updateOutput();
+      });
+    });
 
     // 数量入力イベント
     tbody.querySelectorAll('.frp-qty-input').forEach(input => {
@@ -7721,6 +7786,8 @@ const app = (() => {
     // FRPモード
     switchFrpMode, setFrpAB,
     removeFrpItem,
+    removeFrpSpec,
+    moveFrpItem,
     openFrpWizard,
     onFrpAreaChange,
     onFrpDealerCodeInput,
