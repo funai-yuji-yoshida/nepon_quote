@@ -958,6 +958,11 @@ button {
   white-space: nowrap;
 }
 .btn-section-rate:hover { background: #c7d9fb; }
+.section-rate-warn {
+  font-size: 11px;
+  color: #b45309;
+  white-space: nowrap;
+}
 
 .subtotal-val {
   color: #1a4d8f;
@@ -1745,7 +1750,7 @@ input.item-gensui-b::-webkit-inner-spin-button {
 /* ── 仕様行 ──────────────────────────────────────────────────── */
 .spec-line-row td { background: #fafafa; padding: 1px 2px; }
 .spec-line-td { padding-left: 28px !important; }
-.spec-line-del-td { width: 28px; text-align: center; }
+.spec-line-del-td { width: 28px; text-align: center; position: sticky; right: 0; background: #fafafa; }
 .spec-line-input {
   width: 100%; border: none; background: transparent;
   border-bottom: 1px dashed #ccc; font-size: 12px;

@@ -1750,25 +1750,18 @@ const app = (() => {
         // 対策: 最後の区切り文字より前のプレフィックス（例: AWH）でも検索し、ローカルフィルタで絞る
         const lastDelimIdx = Math.max(q.lastIndexOf('－'), q.lastIndexOf('＿'));
         const qPrefix = lastDelimIdx > 0 ? q.slice(0, lastDelimIdx) : null;
-        const nameQuery = qPrefix
-          ? `(Product_Name:starts_with:${q})or(Product_Name:starts_with:${qPrefix})`
-          : `Product_Name:starts_with:${q}`;
+        const qPrefixPart = qPrefix ? `or(Product_Name:starts_with:${qPrefix})` : '';
         const rawExtra = raw !== q
           ? `or(Product_Name:starts_with:${raw})or(Product_Code:starts_with:${raw})or(field2:starts_with:${raw})`
           : '';
-        const res = await ZOHO.CRM.API.searchRecord({
-          Entity: 'Products', Type: 'criteria',
-          Query: `((${nameQuery})or(Product_Code:starts_with:${q})or(field2:starts_with:${q})${rawExtra})`,
-          page: 1, per_page: 100,
-        });
-        // ローカルフィルタ: 正規化した検索語で前方一致する商品のみ残す
         const nq   = normalize(q);
         const nRaw = normalize(raw);
+        // ローカルフィルタ: 名前は「含む」、コード・型式は「前方一致」
         const matchesSearch = p =>
-          normalize(p.Product_Name  || '').startsWith(nq) ||
+          normalize(p.Product_Name  || '').includes(nRaw) ||
           normalize(p.Product_Code  || '').startsWith(nRaw) ||
           normalize(p.field2        || '').startsWith(nRaw);
-        products = (res?.data || []).filter(matchesSearch).map(p => ({
+        const mapProduct = p => ({
           id:         p.id,
           name:       p.Product_Name  || '',
           denpyoName: p.field17       || '',   // 伝票名称（field17）
@@ -1785,7 +1778,28 @@ const app = (() => {
           hasSpec:     !!(p.field13 && String(p.field13).trim()),
           specContent: p.field13 || '',
           source: 'product',
-        }));
+        });
+        // criteria検索（コード・型式の前方一致）とword検索（名前の含む検索）を並列実行して結合
+        const [criteriaRes, wordRes] = await Promise.all([
+          ZOHO.CRM.API.searchRecord({
+            Entity: 'Products', Type: 'criteria',
+            Query: `((Product_Name:starts_with:${q})${qPrefixPart}or(Product_Code:starts_with:${q})or(field2:starts_with:${q})${rawExtra})`,
+            page: 1, per_page: 100,
+          }).catch(() => null),
+          ZOHO.CRM.API.searchRecord({
+            Entity: 'Products', Type: 'word',
+            Query: raw,
+            page: 1, per_page: 100,
+          }).catch(() => null),
+        ]);
+        const seen = new Set();
+        const allData = [...(criteriaRes?.data || []), ...(wordRes?.data || [])];
+        products = allData.filter(p => {
+          if (!matchesSearch(p)) return false;
+          if (seen.has(p.id)) return false;
+          seen.add(p.id);
+          return true;
+        }).map(mapProduct);
       }
       if (products.length === 0) { dd.style.display = 'none'; return; }
       state.searchResults = products;
@@ -4703,6 +4717,22 @@ const app = (() => {
     }
   }
 
+  function updateSectionRateWarn(sec, block) {
+    const warnEl = block && block.querySelector('.section-rate-warn');
+    if (!warnEl) return;
+    const mainRate = state.mainRate;
+    if (mainRate == null) { warnEl.style.display = 'none'; return; }
+    const rateSet = new Set();
+    (sec.items || []).forEach(i => rateSet.add(i.dairiRate ?? mainRate));
+    if (rateSet.size > 1) {
+      const list = [...rateSet].sort((a, b) => a - b).map(r => (r * 100).toFixed(1) + '%').join(' / ');
+      warnEl.textContent = `⚠ 掛率混在（${list}）`;
+      warnEl.style.display = '';
+    } else {
+      warnEl.style.display = 'none';
+    }
+  }
+
   function applyBulkRate(btn) {
     const block = btn.closest('.section-block');
     const rateInput = block.querySelector('.section-rate-input');
@@ -4721,6 +4751,7 @@ const app = (() => {
 
     renderSection(sec, block);
     updateSectionSubtotal(block);
+    updateSectionRateWarn(sec, block);
     updateOutput();
     showToast(`掛率 ${rate} を適用しました`);
   }
@@ -6652,6 +6683,11 @@ const app = (() => {
 
     updateQuoteNoBadge();
     checkMultipleRates();
+    // 各セクションのセクション内掛率チェックも更新
+    state.sections.forEach(sec => {
+      const block = document.querySelector(`.section-block[data-section-id="${sec.id}"]`);
+      if (block) updateSectionRateWarn(sec, block);
+    });
   }
 
   // ── 掛率複数検知 ───────────────────────────────────────────────────
@@ -6660,9 +6696,9 @@ const app = (() => {
     if (!warnEl) return;
     const mainRate = state.mainRate;
     if (state.frpMode || mainRate == null) { warnEl.style.display = 'none'; return; }
-    const rateSet = new Set([mainRate]);
+    const rateSet = new Set();
     state.sections.forEach(s => (s.items || []).forEach(i => {
-      if (i.dairiRate != null) rateSet.add(i.dairiRate);
+      rateSet.add(i.dairiRate ?? mainRate);
     }));
     if (rateSet.size > 1) {
       const list = [...rateSet].sort((a, b) => a - b).map(r => (r * 100).toFixed(1) + '%').join(' / ');

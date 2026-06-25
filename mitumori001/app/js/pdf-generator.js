@@ -450,7 +450,7 @@ const QuotationPDF = (() => {
             mirrorEntries.push({ type: 'item', item, idx });
             const _specLines = (item.specLines || []).filter(l => l.trim());
             if (_specLines.length > 0) {
-              mirrorEntries.push({ type: 'specLinesHeader' });
+              if (item.machineSpec) mirrorEntries.push({ type: 'specLinesHeader' });
               _specLines.forEach(line => mirrorEntries.push({ type: 'specLine', text: line }));
             }
             if (item.machineSpec) {
@@ -2152,10 +2152,7 @@ const QuotationPDF = (() => {
           });
         } else {
           const _sl1 = (item.specLines || []).filter(l => (l || '').trim());
-          if (_sl1.length > 0) {
-            rows.push([{ text: '' }, { text: '　＜仕様＞', fontSize: 7.5, bold: true }, ...emp(COLS - 2)]);
-            _sl1.forEach(line => rows.push([{ text: '' }, { text: `　　${line}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]));
-          }
+          _sl1.forEach(line => rows.push([{ text: '' }, { text: `　　${line}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]));
         }
       });
 
@@ -2409,7 +2406,7 @@ const QuotationPDF = (() => {
         }
         const _sl2 = (item.specLines || []).filter(l => (l || '').trim());
         if (_sl2.length > 0) {
-          rows.push([{ text: '' }, { text: '　＜仕様＞', fontSize: 7.5, bold: true }, ...emp(COLS - 2)]);
+          if (item.machineSpec) rows.push([{ text: '' }, { text: '　＜仕様＞', fontSize: 7.5, bold: true }, ...emp(COLS - 2)]);
           _sl2.forEach(line => rows.push([{ text: '' }, { text: `　　${line}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]));
         }
         if (item.machineSpec) {
