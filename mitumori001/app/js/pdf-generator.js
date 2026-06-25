@@ -450,7 +450,7 @@ const QuotationPDF = (() => {
             mirrorEntries.push({ type: 'item', item, idx });
             const _specLines = (item.specLines || []).filter(l => l.trim());
             if (_specLines.length > 0) {
-              if (item.machineSpec) mirrorEntries.push({ type: 'specLinesHeader' });
+              mirrorEntries.push({ type: 'specLinesHeader', show: !!item.machineSpec });
               _specLines.forEach(line => mirrorEntries.push({ type: 'specLine', text: line }));
             }
             if (item.machineSpec) {
@@ -607,16 +607,18 @@ const QuotationPDF = (() => {
         if (useDairi) { row.push({ text: '', fontSize: itemFs }); row.push({ text: '', fontSize: itemFs }); }
         tableRows.push(row);
       } else if (entry.type === 'specLinesHeader') {
-        const specFs = Math.max(5.5, itemFs - 0.5);
-        const row = [
-          { text: '', fontSize: specFs },
-          { text: '　＜仕様＞', fontSize: specFs, bold: true },
-          ...emptyPc(specFs),
-          { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
-          { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
-        ];
-        if (useDairi) { row.push({ text: '', fontSize: specFs }); row.push({ text: '', fontSize: specFs }); }
-        tableRows.push(row);
+        if (entry.show !== false) {
+          const specFs = Math.max(5.5, itemFs - 0.5);
+          const row = [
+            { text: '', fontSize: specFs },
+            { text: '　＜仕様＞', fontSize: specFs, bold: true },
+            ...emptyPc(specFs),
+            { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
+            { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
+          ];
+          if (useDairi) { row.push({ text: '', fontSize: specFs }); row.push({ text: '', fontSize: specFs }); }
+          tableRows.push(row);
+        }
       } else if (entry.type === 'specLine') {
         const specFs = Math.max(5.5, itemFs - 0.5);
         const row = [
