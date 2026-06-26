@@ -2338,7 +2338,7 @@ const app = (() => {
     if (state.sections.length === 0) addSection();
 
     // 追加先セクションを取得
-    const targetVal = document.getElementById('standardTargetSection')?.value || 'last';
+    const targetVal = document.getElementById('standardRowTargetSection')?.value || 'last';
     let targetSection;
     if (targetVal === 'last') {
       targetSection = state.sections[state.sections.length - 1];
@@ -2379,16 +2379,21 @@ const app = (() => {
     document.querySelectorAll('.cat-tab').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.cat === cat);
     });
-    ['product', 'kiki', 'kanzai', 'denzai', 'standard', 'kouji'].forEach(c => {
+    ['product', 'kiki', 'kanzai', 'denzai', 'standard', 'kouji', 'netsuki'].forEach(c => {
       const panel = document.getElementById(`catPanel-${c}`);
       if (panel) panel.style.display = c === cat ? '' : 'none';
     });
-    const kikiRow = document.getElementById('kikiRow');
-    if (kikiRow) kikiRow.style.display = cat === 'kiki' ? '' : 'none';
-    const kanzaiRow = document.getElementById('kanzaiRow');
-    if (kanzaiRow) kanzaiRow.style.display = cat === 'kanzai' ? '' : 'none';
-    const denzaiRow = document.getElementById('denzaiRow');
-    if (denzaiRow) denzaiRow.style.display = cat === 'denzai' ? '' : 'none';
+    [
+      ['kikiRow',      'kiki'],
+      ['kanzaiRow',    'kanzai'],
+      ['denzaiRow',    'denzai'],
+      ['koujiRow',     'kouji'],
+      ['standardRow',  'standard'],
+      ['netsukiRow',   'netsuki'],
+    ].forEach(([id, c]) => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = cat === c ? '' : 'none';
+    });
   }
 
   function onKoujiKubunChange(kubun) {
@@ -2420,7 +2425,7 @@ const app = (() => {
     const gensuiKubun = selOpt?.dataset?.gensui || '';
 
     if (state.sections.length === 0) addSection();
-    const targetVal = document.getElementById('commonTargetSection')?.value || 'last';
+    const targetVal = document.getElementById('koujiRowTargetSection')?.value || 'last';
     const targetSection = targetVal === 'last'
       ? state.sections[state.sections.length - 1]
       : (state.sections.find(s => s.id === Number(targetVal)) || state.sections[state.sections.length - 1]);
@@ -2462,7 +2467,7 @@ const app = (() => {
 
   /** 追加先セクションセレクトを更新（セクション追加・削除時に呼ぶ） */
   function updateTargetSectionSelect() {
-    ['standardTargetSection', 'productTargetSection', 'kikiTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'commonTargetSection', 'netsukiTargetSection', 'kanzaiRowTargetSection', 'denzaiRowTargetSection', 'kikiRowTargetSection'].forEach(id => {
+    ['standardTargetSection', 'productTargetSection', 'kikiTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'commonTargetSection', 'netsukiTargetSection', 'kanzaiRowTargetSection', 'denzaiRowTargetSection', 'kikiRowTargetSection', 'koujiRowTargetSection', 'standardRowTargetSection'].forEach(id => {
       const sel = document.getElementById(id);
       if (!sel) return;
       const cur = sel.value;
