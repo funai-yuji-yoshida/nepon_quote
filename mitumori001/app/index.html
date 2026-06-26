@@ -443,7 +443,25 @@
           </div>
         </div>
 
-        <!-- 行2: 管材選択行（管材タブ選択時に表示） -->
+        <!-- 行2: 機器選択行（機器タブ選択時に表示） -->
+        <div class="toolbar-main" id="kikiRow" style="display:none;margin-top:3px;">
+          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
+            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
+          </div>
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;">機器</button></div>
+            <select id="kikiCatSel" class="input-search" style="height:30px;width:160px;flex-shrink:0;" onchange="app.onKikiCatChange(this.value)">
+              <option value="">― カテゴリ ―</option>
+            </select>
+            <select id="kikiItemSel" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onKikiItemChange(this.value)" disabled>
+              <option value="">― 品名・型式を選択 ―</option>
+            </select>
+            <select id="kikiRowTargetSection" class="input-standard cat-target-sel"></select>
+            <button class="btn-cat-add" onclick="app.execKikiRowAdd()">追加</button>
+          </div>
+        </div>
+
+        <!-- 行3: 管材選択行（管材タブ選択時に表示） -->
         <div class="toolbar-main" id="kanzaiRow" style="display:none;margin-top:3px;">
           <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
             <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>

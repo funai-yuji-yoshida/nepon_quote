@@ -1863,29 +1863,31 @@ const app = (() => {
   }
 
   // ── 管材カテゴリ定義（依存ドロップダウン用）─────────────────────
+  // prefixes: CRMの品名フィールドの先頭部分。「品名　型式」形式でも先頭一致でマッチする。
+  // 管材CRMにカテゴリフィールドが存在しないため、品名プレフィックスでカテゴリを判定する。
   const KANZAI_CATEGORIES = [
-    { label: '1.SGP鋼管',            names: ['SGP鋼管(白)', 'SGP鋼管'] },
-    { label: '2.STK鋼管',            names: ['STK鋼管', 'STK鋼管(5.5m)'] },
-    { label: '3.ﾗｲﾆﾝｸﾞ鋼管',        names: ['外面被覆鋼管'] },
-    { label: '4.ｽﾃﾝﾚｽ管・継手',     names: ['ｽﾃﾝﾚｽ管', 'ｽﾃﾝﾚｽ ｴﾙﾎﾞ', 'ｽﾃﾝﾚｽ ﾁ-ｽﾞ', 'ｽﾃﾝﾚｽ ﾁｰｽﾞ', 'ｽﾃﾝﾚｽ ﾕﾆｵﾝ'] },
-    { label: '5.塩ﾋﾞ管・耐熱塩ビ管', names: ['塩ﾋﾞ管', '塩ﾋﾞ管(耐衝撃性)', '塩ﾋﾞ管(耐熱性)'] },
-    { label: '6.ﾎﾟﾘ管・ﾎﾟﾘﾌﾞﾃﾞﾝ管', names: ['硬質ﾎﾟﾘ管', 'ﾎﾟﾘｼﾞｮｲﾝﾄ', 'ﾎﾟﾘ管用ｿｹｯﾄ', 'ﾎﾟﾘ管用ｴﾙﾎﾞ', 'ﾎﾟﾘ管用ﾁｰｽﾞ', 'ﾎﾟﾘﾌﾞﾃﾞﾝ管', 'ﾎﾟﾘﾌﾞﾃﾞﾝ　ｿｹｯﾄ', 'ﾎﾟﾘﾌﾞﾃﾞﾝ　ｴﾙﾎﾞ'] },
-    { label: '7.ｹﾞｰﾄ弁',             names: ['ｹﾞｰﾄ弁'] },
-    { label: '8.ﾁｬｯｷ弁',             names: ['ﾁｬｯｷ弁'] },
-    { label: '9.ﾊﾞﾀﾌﾗｲ弁',            names: ['ﾊﾞﾀﾌﾗｲ弁'] },
-    { label: '10.ｸﾞﾛｰﾌﾞ弁',           names: ['ｸﾞﾛｰﾌﾞ弁'] },
-    { label: '11.ﾏﾚｰﾌﾞﾙ弁',           names: ['ﾏﾚｰﾌﾞﾙ弁'] },
-    { label: '12.ﾎﾞｰﾙ弁',             names: ['ﾎﾞｰﾙ弁(2方)', 'ﾎﾞｰﾙ弁(3方)', 'ﾎﾞｰﾙ弁(ｱﾝｸﾞﾙ)'] },
-    { label: '13.ｽﾄﾚｰﾅ',             names: ['Yｽﾄﾚｰﾅ', 'ｵｲﾙｽﾄﾚｰﾅ(複式)'] },
-    { label: '14.電動弁･混合三方弁',  names: ['電動ﾎﾞｰﾙ弁(2方)', '電動ﾎﾞｰﾙ弁(3方)', '電動ﾊﾞﾀﾌﾗｲ弁', '電動混合三方弁(ﾎﾞｰﾙ)', '電動混合三方弁(ﾌﾗﾝｼﾞ)'] },
-    { label: '15.ﾌﾚｷｼﾞｮｲﾝﾄ',          names: ['ﾌﾚｷｼﾞｮｲﾝﾄ(U)', 'ﾌﾚｷｼﾞｮｲﾝﾄ(F)', 'ﾎﾞｰﾙﾌﾚｷｼﾞｮｲﾝﾄ'] },
-    { label: '16.伸縮継手・ﾊｲﾊﾟｰﾛｯｸ', names: ['伸縮継手', 'ﾒｶﾆｶﾙ配管接手'] },
-    { label: '17.蒸気関連・落水防止弁', names: ['減圧弁(蒸気用)', '温度調節弁', '管末ﾄﾗｯﾌﾟ', '多量ﾄﾗｯﾌﾟ', '安全弁', '減圧弁(水用)', '落水防止弁'] },
-    { label: '18.温度・圧力計・空気抜弁', names: ['温度計', '水高温度計', '圧力計', 'ｻｲﾎﾝﾊﾟｲﾌﾟ', '空気抜弁', '空気抜弁(逆止弁付）'] },
-    { label: '19.油配管部材・ｷﾞﾔﾎﾟﾝﾌﾟ', names: ['油配管ｾｯﾄ', '逃し管ｾｯﾄ', 'ﾌﾚｷｼﾌﾞﾙﾎｰｽ', '注油口', 'ｷﾞﾔﾎﾟﾝﾌﾟ'] },
-    { label: '20.配管保温(材工)',       names: ['保温(ｶﾗｰﾗｯｷﾝｸﾞ)', '保温(ｽﾃﾝﾗｯｷﾝｸﾞ)', '保温(ﾃｰﾌﾟ巻)', '煙道保温工事', 'ﾀﾝｸ 保温工事', '同上保温工事'] },
-    { label: '21.配管亀甲保温(材工)',   names: ['保温(亀甲巻き)', '煙道保温工事', 'ﾀﾝｸ保温工事', '同上保温工事'] },
-    { label: '22.ﾊﾟｲﾌﾟｶﾞｰﾄﾞ･その他',  names: ['ﾗｲﾄｶﾊﾞｰ', 'ﾊﾟｲﾌﾟｶﾞｰﾄﾞ', '煙道保温工事', 'ﾀﾝｸ保温工事', '同上保温工事'] },
+    { label: '1.SGP鋼管',            prefixes: ['SGP鋼管(白)', 'SGP鋼管'] },
+    { label: '2.STK鋼管',            prefixes: ['STK鋼管', 'STK鋼管(5.5m)'] },
+    { label: '3.ﾗｲﾆﾝｸﾞ鋼管',        prefixes: ['外面被覆鋼管'] },
+    { label: '4.ｽﾃﾝﾚｽ管・継手',     prefixes: ['ｽﾃﾝﾚｽ管', 'ｽﾃﾝﾚｽ ｴﾙﾎﾞ', 'ｽﾃﾝﾚｽ ﾁ-ｽﾞ', 'ｽﾃﾝﾚｽ ﾁｰｽﾞ', 'ｽﾃﾝﾚｽ ﾕﾆｵﾝ'] },
+    { label: '5.塩ﾋﾞ管・耐熱塩ビ管', prefixes: ['塩ﾋﾞ管', '塩ﾋﾞ管(耐衝撃性)', '塩ﾋﾞ管(耐熱性)'] },
+    { label: '6.ﾎﾟﾘ管・ﾎﾟﾘﾌﾞﾃﾞﾝ管', prefixes: ['硬質ﾎﾟﾘ管', 'ﾎﾟﾘｼﾞｮｲﾝﾄ', 'ﾎﾟﾘ管用ｿｹｯﾄ', 'ﾎﾟﾘ管用ｴﾙﾎﾞ', 'ﾎﾟﾘ管用ﾁｰｽﾞ', 'ﾎﾟﾘﾌﾞﾃﾞﾝ管', 'ﾎﾟﾘﾌﾞﾃﾞﾝ　ｿｹｯﾄ', 'ﾎﾟﾘﾌﾞﾃﾞﾝ　ｴﾙﾎﾞ'] },
+    { label: '7.ｹﾞｰﾄ弁',             prefixes: ['ｹﾞｰﾄ弁'] },
+    { label: '8.ﾁｬｯｷ弁',             prefixes: ['ﾁｬｯｷ弁'] },
+    { label: '9.ﾊﾞﾀﾌﾗｲ弁',            prefixes: ['ﾊﾞﾀﾌﾗｲ弁'] },
+    { label: '10.ｸﾞﾛｰﾌﾞ弁',           prefixes: ['ｸﾞﾛｰﾌﾞ弁'] },
+    { label: '11.ﾏﾚｰﾌﾞﾙ弁',           prefixes: ['ﾏﾚｰﾌﾞﾙ弁'] },
+    { label: '12.ﾎﾞｰﾙ弁',             prefixes: ['ﾎﾞｰﾙ弁(2方)', 'ﾎﾞｰﾙ弁(3方)', 'ﾎﾞｰﾙ弁(ｱﾝｸﾞﾙ)'] },
+    { label: '13.ｽﾄﾚｰﾅ',             prefixes: ['Yｽﾄﾚｰﾅ', 'ｵｲﾙｽﾄﾚｰﾅ(複式)'] },
+    { label: '14.電動弁･混合三方弁',  prefixes: ['電動ﾎﾞｰﾙ弁(2方)', '電動ﾎﾞｰﾙ弁(3方)', '電動ﾊﾞﾀﾌﾗｲ弁', '電動混合三方弁(ﾎﾞｰﾙ)', '電動混合三方弁(ﾌﾗﾝｼﾞ)'] },
+    { label: '15.ﾌﾚｷｼﾞｮｲﾝﾄ',          prefixes: ['ﾌﾚｷｼﾞｮｲﾝﾄ(U)', 'ﾌﾚｷｼﾞｮｲﾝﾄ(F)', 'ﾎﾞｰﾙﾌﾚｷｼﾞｮｲﾝﾄ'] },
+    { label: '16.伸縮継手・ﾊｲﾊﾟｰﾛｯｸ', prefixes: ['伸縮継手', 'ﾒｶﾆｶﾙ配管接手'] },
+    { label: '17.蒸気関連・落水防止弁', prefixes: ['減圧弁(蒸気用)', '温度調節弁', '管末ﾄﾗｯﾌﾟ', '多量ﾄﾗｯﾌﾟ', '安全弁', '減圧弁(水用)', '落水防止弁'] },
+    { label: '18.温度・圧力計・空気抜弁', prefixes: ['温度計', '水高温度計', '圧力計', 'ｻｲﾎﾝﾊﾟｲﾌﾟ', '空気抜弁', '空気抜弁(逆止弁付）'] },
+    { label: '19.油配管部材・ｷﾞﾔﾎﾟﾝﾌﾟ', prefixes: ['油配管ｾｯﾄ', '逃し管ｾｯﾄ', 'ﾌﾚｷｼﾌﾞﾙﾎｰｽ', '注油口', 'ｷﾞﾔﾎﾟﾝﾌﾟ'] },
+    { label: '20.配管保温(材工)',       prefixes: ['保温(ｶﾗｰﾗｯｷﾝｸﾞ)', '保温(ｽﾃﾝﾗｯｷﾝｸﾞ)', '保温(ﾃｰﾌﾟ巻)', '煙道保温工事', 'ﾀﾝｸ 保温工事', '同上保温工事'] },
+    { label: '21.配管亀甲保温(材工)',   prefixes: ['保温(亀甲巻き)', '煙道保温工事', 'ﾀﾝｸ保温工事', '同上保温工事'] },
+    { label: '22.ﾊﾟｲﾌﾟｶﾞｰﾄﾞ･その他',  prefixes: ['ﾗｲﾄｶﾊﾞｰ', 'ﾊﾟｲﾌﾟｶﾞｰﾄﾞ', '煙道保温工事', 'ﾀﾝｸ保温工事', '同上保温工事'] },
   ];
 
   // ── 管材マスタ（CustomModule18）────────────────────────────────
@@ -1912,10 +1914,12 @@ const app = (() => {
   }
 
   // ── 電材カテゴリ定義（依存ドロップダウン用）─────────────────────
+  // prefixes: CRMの品名フィールドの先頭部分。「品名　型式」形式でも先頭一致でマッチする。
+  // 電材CRMにカテゴリフィールドが存在しないため、品名プレフィックスでカテゴリを判定する。
   const DENZAI_CATEGORIES = [
     {
       label: '1.複合環境制御・ｱｸﾞﾘﾈｯﾄ',
-      names: [
+      prefixes: [
         '温室環境制御盤', '統合環境制御盤',
         '湿度ｾﾝｻｰｾｯﾄ', '温湿度ｾﾝｻｰｾｯﾄ', '室温ｾﾝｻｰｾｯﾄ', 'ｾﾝｻｰｶﾊﾞｰ',
         'CO2ｾﾝｻｰ', '日射ｾﾝｻｰ', '雨ｾﾝｻｰ', '温度ｾﾝｻｰ',
@@ -1929,26 +1933,26 @@ const app = (() => {
     },
     {
       label: '2.天窓側窓関連',
-      names: [
+      prefixes: [
         '4段ｻｰﾓ', '多段ｻｰﾓ', 'CO2ｺﾝﾄﾛｰﾗ', 'ﾈﾎﾟﾝｻｰﾓ', 'ｷｬｽﾉｰﾙ',
         'ﾎﾟﾝﾌﾟｺﾝﾄﾛｰﾗ', '感震器', '不完全燃焼警報器', 'ﾈﾎﾟﾝﾀｲﾏBOX',
       ],
     },
     {
       label: '3.周辺機器制御',
-      names: ['換気窓制御盤', '天窓減速機'],
+      prefixes: ['換気窓制御盤', '天窓減速機'],
     },
     {
       label: '8.電線管（材工単価）',
-      names: ['電線管(露出)', 'ﾗｲﾆﾝｸﾞ鋼管(埋設)'],
+      prefixes: ['電線管(露出)', 'ﾗｲﾆﾝｸﾞ鋼管(埋設)'],
     },
     {
       label: '9.電線（材工単価）',
-      names: ['ﾋﾞﾆﾙｼｰｽｹｰﾌﾞﾙ', 'ｹｰﾌﾞﾙ(管内配線)', 'ｹｰﾌﾞﾙ(ﾗｯｸ配線)', 'ｼｰﾙﾄﾞ線', 'ﾋﾞﾆｰﾙｷｬﾌﾞﾀｲﾔｺｰﾄﾞ'],
+      prefixes: ['ﾋﾞﾆﾙｼｰｽｹｰﾌﾞﾙ', 'ｹｰﾌﾞﾙ(管内配線)', 'ｹｰﾌﾞﾙ(ﾗｯｸ配線)', 'ｼｰﾙﾄﾞ線', 'ﾋﾞﾆｰﾙｷｬﾌﾞﾀｲﾔｺｰﾄﾞ'],
     },
     {
       label: '10.遮断器（材工単価）',
-      names: ['ｵｰﾄﾌﾞﾚｰｶ'],
+      prefixes: ['ｵｰﾄﾌﾞﾚｰｶ'],
     },
   ];
 
@@ -2162,6 +2166,16 @@ const app = (() => {
           sel.appendChild(opt);
         });
       }
+      const kikiCatSel = document.getElementById('kikiCatSel');
+      if (kikiCatSel) {
+        while (kikiCatSel.options.length > 1) kikiCatSel.remove(1);
+        kubunSet.forEach(k => {
+          const opt = document.createElement('option');
+          opt.value = k;
+          opt.textContent = k;
+          kikiCatSel.appendChild(opt);
+        });
+      }
       console.log(`工事用機器リスト ${state.kiki.length} 件読み込み`);
     } catch (e) {
       console.warn('工事用機器リスト取得失敗:', e);
@@ -2369,6 +2383,8 @@ const app = (() => {
       const panel = document.getElementById(`catPanel-${c}`);
       if (panel) panel.style.display = c === cat ? '' : 'none';
     });
+    const kikiRow = document.getElementById('kikiRow');
+    if (kikiRow) kikiRow.style.display = cat === 'kiki' ? '' : 'none';
     const kanzaiRow = document.getElementById('kanzaiRow');
     if (kanzaiRow) kanzaiRow.style.display = cat === 'kanzai' ? '' : 'none';
     const denzaiRow = document.getElementById('denzaiRow');
@@ -2446,7 +2462,7 @@ const app = (() => {
 
   /** 追加先セクションセレクトを更新（セクション追加・削除時に呼ぶ） */
   function updateTargetSectionSelect() {
-    ['standardTargetSection', 'productTargetSection', 'kikiTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'commonTargetSection', 'netsukiTargetSection', 'kanzaiRowTargetSection', 'denzaiRowTargetSection'].forEach(id => {
+    ['standardTargetSection', 'productTargetSection', 'kikiTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'commonTargetSection', 'netsukiTargetSection', 'kanzaiRowTargetSection', 'denzaiRowTargetSection', 'kikiRowTargetSection'].forEach(id => {
       const sel = document.getElementById(id);
       if (!sel) return;
       const cur = sel.value;
@@ -2636,13 +2652,13 @@ const app = (() => {
     if (!catLabel) return;
     const cat = KANZAI_CATEGORIES.find(c => c.label === catLabel);
     if (!cat) return;
-    _kanzaiFilteredRecords = cat.names.reduce((arr, name) => {
-      return arr.concat(state.kanzai.filter(r => r.name === name));
+    _kanzaiFilteredRecords = cat.prefixes.reduce((arr, prefix) => {
+      return arr.concat(state.kanzai.filter(r => r.name === prefix || r.name.startsWith(prefix + '　')));
     }, []);
     _kanzaiFilteredRecords.forEach((r, i) => {
       const opt = document.createElement('option');
       opt.value = i;
-      opt.textContent = (r.name || '') + (r.model ? '　' + r.model : '');
+      opt.textContent = r.name || '';
       itemSel.appendChild(opt);
     });
     if (_kanzaiFilteredRecords.length > 0) itemSel.disabled = false;
@@ -2655,6 +2671,67 @@ const app = (() => {
     if (!isNaN(idx) && _kanzaiFilteredRecords[idx]) {
       state.pendingKanzai = _kanzaiFilteredRecords[idx];
     }
+  }
+
+  // ── 機器依存ドロップダウン ────────────────────────────────────
+
+  let _kikiFilteredRecords = [];
+
+  function onKikiCatChange(kubun) {
+    const itemSel = document.getElementById('kikiItemSel');
+    if (!itemSel) return;
+    itemSel.innerHTML = '<option value="">― 品名・型式を選択 ―</option>';
+    itemSel.disabled = true;
+    _kikiFilteredRecords = [];
+    state.pendingKiki = null;
+    if (!kubun) return;
+    _kikiFilteredRecords = state.kiki.filter(r => r.kubun === kubun);
+    _kikiFilteredRecords.forEach((r, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = r.name || '';
+      itemSel.appendChild(opt);
+    });
+    if (_kikiFilteredRecords.length > 0) itemSel.disabled = false;
+  }
+
+  function onKikiItemChange(val) {
+    state.pendingKiki = null;
+    if (val === '' || val === null || val === undefined) return;
+    const idx = parseInt(val, 10);
+    if (!isNaN(idx) && _kikiFilteredRecords[idx]) {
+      state.pendingKiki = _kikiFilteredRecords[idx];
+    }
+  }
+
+  function execKikiRowAdd() {
+    const pending = state.pendingKiki;
+    if (!pending) { showToast('品名・型式を選択してください', 'warn'); return; }
+    if (state.sections.length === 0) addSection();
+
+    const targetVal = document.getElementById('kikiRowTargetSection')?.value || 'last';
+    let targetSection;
+    if (targetVal === 'last') {
+      targetSection = state.sections[state.sections.length - 1];
+    } else {
+      const id = Number(targetVal);
+      targetSection = state.sections.find(s => s.id === id) || state.sections[state.sections.length - 1];
+    }
+
+    const lastItem = targetSection.items[targetSection.items.length - 1];
+    if (lastItem && !lastItem.name && !lastItem.spec && !lastItem.unitPrice && !lastItem.amount) {
+      targetSection.items.pop();
+    }
+
+    addMaterialItem(targetSection, pending);
+    showToast(`No.${targetSection.no} に ${pending.name} を追加しました`);
+
+    state.pendingKiki = null;
+    const itemSel = document.getElementById('kikiItemSel');
+    if (itemSel) itemSel.value = '';
+    markDirty();
+    renderSections();
+    updateOutput();
   }
 
   // ── 電材依存ドロップダウン ────────────────────────────────────
@@ -2682,13 +2759,13 @@ const app = (() => {
     if (!catLabel) return;
     const cat = DENZAI_CATEGORIES.find(c => c.label === catLabel);
     if (!cat) return;
-    _denzaiFilteredRecords = cat.names.reduce((arr, name) => {
-      return arr.concat(state.denzai.filter(r => r.name === name));
+    _denzaiFilteredRecords = cat.prefixes.reduce((arr, prefix) => {
+      return arr.concat(state.denzai.filter(r => r.name === prefix || r.name.startsWith(prefix + '　')));
     }, []);
     _denzaiFilteredRecords.forEach((r, i) => {
       const opt = document.createElement('option');
       opt.value = i;
-      opt.textContent = (r.name || '') + (r.model ? '　' + r.model : '');
+      opt.textContent = r.name || '';
       itemSel.appendChild(opt);
     });
     if (_denzaiFilteredRecords.length > 0) itemSel.disabled = false;
@@ -7769,6 +7846,9 @@ const app = (() => {
     searchDenzai,
     searchKiki,
     execKikiAdd,
+    onKikiCatChange,
+    onKikiItemChange,
+    execKikiRowAdd,
     execMaterialAdd,
     // 採番
     autoNumber,
