@@ -502,12 +502,7 @@ const QuotationPDF = (() => {
                       mirrorRowCount <= 20 ? 2   :
                       mirrorRowCount <= 30 ? 1.5 : 1;
 
-    const topMargin = mirrorRowCount <= 5  ? 110 :
-                      mirrorRowCount <= 8  ?  90 :
-                      mirrorRowCount <= 11 ?  70 :
-                      mirrorRowCount <= 14 ?  55 :
-                      mirrorRowCount <= 18 ?  50 :
-                      mirrorRowCount <= 26 ?  20 : 10;
+    const topMargin = mirrorRowCount > 18 ? 20 : 14;
 
     // 第2パス: 決定したフォントサイズで行を生成
     let rowNo = 1;
@@ -1130,25 +1125,11 @@ const QuotationPDF = (() => {
             width: 210,
             stack: [
               { text: quoteNoStr, alignment: 'right', fontSize: 9, font: fontLoaded ? 'NotoSansJP' : 'Roboto' },
-              { text: dateStr, alignment: 'right', fontSize: 9 },
-              {
-                margin: [0, 2, 0, 0],
-                table: {
-                  widths: [195],
-                  heights: [compact ? 22 : 28],
-                  body: [[{
-                    stack: [
-                      { text: 'ネポン株式会社', alignment: 'center', fontSize: 9, bold: true },
-                      { text: '【社印エリア】', alignment: 'center', fontSize: 7, color: '#999', margin: [0, 2, 0, 0] },
-                    ],
-                    alignment: 'center',
-                  }]],
-                },
-                layout: { hLineWidth: () => 0.5, vLineWidth: () => 0.5 },
-              },
-              { text: branch.name,    fontSize: 9, bold: true, alignment: 'right', margin: [0, compact ? 2 : 4, 0, 0] },
-              { text: branch.postal,  fontSize: 8, alignment: 'right' },
+              { text: dateStr, alignment: 'right', fontSize: 9, margin: [0, 29, 0, 0] },
+              { text: branch.postal,  fontSize: 8, alignment: 'right', margin: [0, compact ? 2 : 4, 0, 0] },
               { text: branch.address, fontSize: 7.5, alignment: 'right' },
+              { text: 'ネポン株式会社', fontSize: 9, bold: true, alignment: 'right' },
+              { text: branch.name,    fontSize: 9, bold: true, alignment: 'right' },
               { text: `TEL　${branch.tel}`, fontSize: 8, alignment: 'right' },
               { text: `FAX　${branch.fax}`, fontSize: 8, alignment: 'right' },
               ...(data.showOwnerName && data.ownerName ? [{ text: `担当者：${data.ownerName}（営業）${data.updaterName ? `　${data.updaterName}（事務）` : ''}`, fontSize: 8, alignment: 'right' }] : []),
