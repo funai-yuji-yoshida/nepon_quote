@@ -1845,6 +1845,10 @@ input.item-gensui-b::-webkit-inner-spin-button {
 .spm-reset-btn:hover { background: #fff5f5; }
 .spm-dept-btn  { border-color: #7e57c2; color: #4527a0; }
 .spm-dept-btn:hover { background: #f3f0ff; }
+.spm-hide-btn  { border-color: #888; color: #555; }
+.spm-hide-btn:hover { background: #f5f5f5; }
+.spm-hidden-on { border-color: #e57373; color: #c62828; background: #fff5f5; }
+.spm-hidden-on:hover { background: #ffe0e0; }
 
 /* ── モーダル共通 ──────────────────────────────────────── */
 .modal-overlay {

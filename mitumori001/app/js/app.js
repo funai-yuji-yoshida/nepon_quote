@@ -2834,13 +2834,16 @@ const app = (() => {
 
   function addMaterialItem(section, m) {
     const item = createItem();
-    item.name      = m.name;
-    item.spec      = m.model || m.code || '';
-    item.unit      = m.unit  || '個';
-    item.unitPrice = m.price || 0;
-    item.amount    = (m.price || 0) * (item.qty || 1);
-    item.genka     = m.cost  || 0;
-    item.houdan    = m.houdan || 0;
+    item.name             = m.name;
+    item.model            = m.model || '';
+    item.spec             = m.model || m.code || '';
+    item.unit             = m.unit  || '個';
+    item.unitPrice        = m.price || 0;
+    item.amount           = (m.price || 0) * (item.qty || 1);
+    item.genka            = m.cost  || 0;
+    item.houdan           = m.houdan || 0;
+    item.machineSpecHidden = true;
+    item.specMasterLoaded  = true;
     section.items.push(item);
   }
 
@@ -3004,7 +3007,7 @@ const app = (() => {
   function _applySpecToMachineSpec(item) {
     const text = item.specMasterContent || '';
     if (!text) return;
-    const modelKey = item.model || item.spec || '';
+    const modelKey = (item.machineSpec && item.machineSpec.model) || item.model || item.spec || '';
     const specs = text.split('\n').map(l => l.trim()).filter(Boolean).map(line => {
       const i = line.indexOf('：');
       if (i > 0) return { label: line.slice(0, i), value: line.slice(i + 1) };
@@ -3083,14 +3086,30 @@ const app = (() => {
       const deptRefBtn = item.specMasterFromProducts && item.specMasterId
         ? `<button class="spm-btn spm-dept-btn" onclick="app.applyDeptSpec(${itemId})">所課仕様を参照</button>`
         : '';
+      const hideBtn = item.machineSpecHidden
+        ? `<button class="spm-btn spm-hide-btn spm-hidden-on" onclick="app.toggleMachineSpecHidden(${itemId})">印刷OFF</button>`
+        : `<button class="spm-btn spm-hide-btn" onclick="app.toggleMachineSpecHidden(${itemId})">印刷ON</button>`;
       cell.innerHTML = `<span class="spm-label">機器仕様</span>
         <span class="spm-preview">${escHtml(preview)}</span>
-        <button class="spm-btn spm-edit-btn" onclick="app.showSpecMasterModal(${itemId})">${btnLabel}</button>${deptRefBtn}${resetBtn}`;
+        <button class="spm-btn spm-edit-btn" onclick="app.showSpecMasterModal(${itemId})">${btnLabel}</button>${deptRefBtn}${resetBtn}${hideBtn}`;
     } else {
+      const hideBtn2 = item.model
+        ? (item.machineSpecHidden
+            ? `<button class="spm-btn spm-hide-btn spm-hidden-on" onclick="app.toggleMachineSpecHidden(${itemId})">印刷OFF</button>`
+            : `<button class="spm-btn spm-hide-btn" onclick="app.toggleMachineSpecHidden(${itemId})">印刷ON</button>`)
+        : '';
       cell.innerHTML = `<span class="spm-label">機器仕様</span>
         <span class="spm-none">未登録</span>
-        <button class="spm-btn spm-new-btn" onclick="app.showSpecMasterModal(${itemId})">新規登録</button>`;
+        <button class="spm-btn spm-new-btn" onclick="app.showSpecMasterModal(${itemId})">新規登録</button>${hideBtn2}`;
     }
+  }
+
+  function toggleMachineSpecHidden(itemId) {
+    const item = state.sections.flatMap(s => s.items).find(i => i.id === itemId);
+    if (!item) return;
+    item.machineSpecHidden = !item.machineSpecHidden;
+    updateSpecMasterRow(itemId);
+    markDirty();
   }
 
   let _specMasterItemId = null;
@@ -3305,6 +3324,7 @@ const app = (() => {
       item.unitPrice = priceRaw;
       item.amount    = Math.round(priceRaw * qty);
     }
+    item.model = _machineSpecModel || '';
     item.machineSpec = { model: _machineSpecModel, specs };
     sec.items.push(item);
     markDirty();
@@ -5509,8 +5529,8 @@ const app = (() => {
       if (!row) {
         row = createItemRowDOM(item);
         tbody.appendChild(row);
-        // 商品アイテムまたは機器仕様があるアイテムには機器仕様マスタ行を追加
-        if (item.productId || item.machineSpec || item.specMasterContent) {
+        // 商品アイテムまたは機器仕様・型式があるアイテムには機器仕様マスタ行を追加
+        if (item.productId || item.machineSpec || item.specMasterContent || item.model) {
           const spmRow = createSpecMasterRowDOM(item);
           row.insertAdjacentElement('afterend', spmRow);
           if (item.productId && !item.specMasterLoaded) {
@@ -6215,6 +6235,7 @@ const app = (() => {
           specLines: item.specLines,
           machineSpec: item.machineSpec,
           specMasterContent: item.specMasterContent,
+          machineSpecHidden: item.machineSpecHidden || false,
         })),
       })),
     });
@@ -6372,6 +6393,7 @@ const app = (() => {
         item.specLines         = Array.isArray(tplItem.specLines) ? [...tplItem.specLines] : [];
         item.machineSpec       = tplItem.machineSpec       || null;
         item.specMasterContent = tplItem.specMasterContent || null;
+        item.machineSpecHidden = tplItem.machineSpecHidden || false;
         if (item.machineSpec && !item.specMasterContent) {
           item.specMasterContent = item.machineSpec.specs
             .map(s => s.value ? `${s.label}：${s.value}` : s.label).filter(Boolean).join('\n');
@@ -6379,6 +6401,9 @@ const app = (() => {
         if (item.machineSpec || item.specMasterContent) {
           item.specMasterLoaded      = true;
           item.specMasterFromProducts = false;
+        }
+        if (!item.specMasterLoaded && item.model) {
+          item.specMasterLoaded = true;
         }
         section.items.push(item);
       });
@@ -7896,6 +7921,7 @@ const app = (() => {
     saveSpecMaster,
     resetToProductSpec,
     applyDeptSpec,
+    toggleMachineSpecHidden,
     // 列表示・列幅
     toggleColDropdown,
     setColVisibility,

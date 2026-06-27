@@ -448,18 +448,20 @@ const QuotationPDF = (() => {
           (s.items || []).forEach((item, idx) => {
             if (!item.name || !item.name.trim()) return;
             mirrorEntries.push({ type: 'item', item, idx });
+            if (!item.machineSpecHidden) {
+              const _modelToShow = (item.machineSpec && item.machineSpec.model) || item.model || item.spec || '';
+              if (_modelToShow) {
+                mirrorEntries.push({ type: 'machineSpecModel', model: _modelToShow });
+              }
+              if (item.machineSpec) {
+                mirrorEntries.push({ type: 'machineSpecHeader' });
+                (item.machineSpec.specs || []).forEach(spec => {
+                  mirrorEntries.push({ type: 'machineSpecLine', spec });
+                });
+              }
+            }
             const _specLines = (item.specLines || []).filter(l => l.trim());
-            if (_specLines.length > 0) {
-              mirrorEntries.push({ type: 'specLinesHeader', show: !!item.machineSpec });
-              _specLines.forEach(line => mirrorEntries.push({ type: 'specLine', text: line }));
-            }
-            if (item.machineSpec) {
-              mirrorEntries.push({ type: 'machineSpecModel', model: item.machineSpec.model });
-              mirrorEntries.push({ type: 'machineSpecHeader' });
-              (item.machineSpec.specs || []).forEach(spec => {
-                mirrorEntries.push({ type: 'machineSpecLine', spec });
-              });
-            }
+            _specLines.forEach(line => mirrorEntries.push({ type: 'specLine', text: line }));
           });
         }
       });
@@ -607,23 +609,12 @@ const QuotationPDF = (() => {
         if (useDairi) { row.push({ text: '', fontSize: itemFs }); row.push({ text: '', fontSize: itemFs }); }
         tableRows.push(row);
       } else if (entry.type === 'specLinesHeader') {
-        if (entry.show !== false) {
-          const specFs = Math.max(5.5, itemFs - 0.5);
-          const row = [
-            { text: '', fontSize: specFs },
-            { text: '　＜仕様＞', fontSize: specFs, bold: true },
-            ...emptyPc(specFs),
-            { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
-            { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
-          ];
-          if (useDairi) { row.push({ text: '', fontSize: specFs }); row.push({ text: '', fontSize: specFs }); }
-          tableRows.push(row);
-        }
+        // ＜仕様＞ヘッダー行は出力しない
       } else if (entry.type === 'specLine') {
         const specFs = Math.max(5.5, itemFs - 0.5);
         const row = [
           { text: '', fontSize: specFs },
-          { text: `　　${entry.text}`, fontSize: specFs, color: '#444' },
+          { text: entry.text, fontSize: specFs, color: '#444', margin: [8, 0, 0, 0] },
           ...emptyPc(specFs),
           { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
           { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
@@ -642,21 +633,12 @@ const QuotationPDF = (() => {
         if (useDairi) { row.push({ text: '', fontSize: specFs }); row.push({ text: '', fontSize: specFs }); }
         tableRows.push(row);
       } else if (entry.type === 'machineSpecHeader') {
-        const specFs = Math.max(5.5, itemFs - 0.5);
-        const row = [
-          { text: '', fontSize: specFs },
-          { text: '　＜標準仕様＞', fontSize: specFs, bold: true },
-          ...emptyPc(specFs),
-          { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
-          { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
-        ];
-        if (useDairi) { row.push({ text: '', fontSize: specFs }); row.push({ text: '', fontSize: specFs }); }
-        tableRows.push(row);
+        // 標準仕様ヘッダー行は出力しない
       } else if (entry.type === 'machineSpecLine') {
         const specFs = Math.max(5.0, itemFs - 1.0);
         const row = [
           { text: '', fontSize: specFs },
-          { text: `　　${entry.spec.label}：${entry.spec.value}`, fontSize: specFs, color: '#444' },
+          { text: `${entry.spec.label}：${entry.spec.value}`, fontSize: specFs, color: '#444', margin: [8, 0, 0, 0] },
           ...emptyPc(specFs),
           { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
           { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
@@ -1881,12 +1863,16 @@ const QuotationPDF = (() => {
             { text: isShikiOnly ? fmt(dairiItemAmt(item)) : fmt(item.amount), alignment: 'right' },
           ]);
         }
-        if (item.machineSpec) {
-          rows.push([{ text: '' }, { text: `　型式　${item.machineSpec.model}`, fontSize: 8 }, ...emp(COLS - 2)]);
-          rows.push([{ text: '' }, { text: '　＜標準仕様＞', fontSize: 8, bold: true }, ...emp(COLS - 2)]);
-          (item.machineSpec.specs || []).forEach(spec => {
-            rows.push([{ text: '' }, { text: `　　${spec.label}：${spec.value}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]);
-          });
+        if (!item.machineSpecHidden) {
+          const _koujiModel = (item.machineSpec && item.machineSpec.model) || item.model || item.spec || '';
+          if (_koujiModel) {
+            rows.push([{ text: '' }, { text: `　型式　${_koujiModel}`, fontSize: 8 }, ...emp(COLS - 2)]);
+          }
+          if (item.machineSpec) {
+            (item.machineSpec.specs || []).forEach(spec => {
+              rows.push([{ text: '' }, { text: `${spec.label}：${spec.value}`, fontSize: 7.5, color: '#444', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
+            });
+          }
         }
       });
 
@@ -2139,22 +2125,25 @@ const QuotationPDF = (() => {
           ]);
         }
         // 型式行（熱機アイテムは品名が型式なので省略、品目コード列表示時も省略）
-        if (item.model && !showProductCode && !item.specMasterContent) {
-          rows.push([{ text: '' }, { text: `　型式：${item.model}`, fontSize: 7.5, color: '#333' }, ...emp(COLS - 2)]);
+        if (!showProductCode && !item.machineSpecHidden) {
+          const _detModel = (item.machineSpec && item.machineSpec.model)
+            || (item.specMasterContent ? '' : (item.model || item.spec || ''));
+          if (_detModel) {
+            rows.push([{ text: '' }, { text: `　型式　${_detModel}`, fontSize: 7.5, color: '#333' }, ...emp(COLS - 2)]);
+          }
         }
         // 仕様行
-        if (item.specMasterContent) {
+        if (!item.machineSpecHidden && item.specMasterContent) {
           // 熱機仕様：specMasterContentを行ごとに表示し、付属品リスト（specLines）を続けて表示
-          rows.push([{ text: '' }, { text: '　＜仕様＞', fontSize: 7.5, bold: true }, ...emp(COLS - 2)]);
           item.specMasterContent.split('\n').filter(l => l.trim()).forEach(line => {
-            rows.push([{ text: '' }, { text: `　　${line}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]);
+            rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#444', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
           });
           (item.specLines || []).filter(l => (l || '').trim()).forEach(line => {
-            rows.push([{ text: '' }, { text: `　　${line}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]);
+            rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#444', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
           });
         } else {
           const _sl1 = (item.specLines || []).filter(l => (l || '').trim());
-          _sl1.forEach(line => rows.push([{ text: '' }, { text: `　　${line}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]));
+          _sl1.forEach(line => rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#444', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]));
         }
       });
 
@@ -2403,21 +2392,19 @@ const QuotationPDF = (() => {
           ]);
         }
         // 型式行（商品マスタの型式。品目コード列表示時は重複を避けるため省略）
-        if (item.model && !item.machineSpec && !showProductCode) {
-          rows.push([{ text: '' }, { text: `　型式：${item.model}`, fontSize: 7.5, color: '#333' }, ...emp(COLS - 2)]);
+        if (!item.machineSpecHidden) {
+          if (item.model && !item.machineSpec && !showProductCode) {
+            rows.push([{ text: '' }, { text: `　型式：${item.model}`, fontSize: 7.5, color: '#333' }, ...emp(COLS - 2)]);
+          }
+          if (item.machineSpec) {
+            rows.push([{ text: '' }, { text: `　型式　${item.machineSpec.model}`, fontSize: 8 }, ...emp(COLS - 2)]);
+            (item.machineSpec.specs || []).forEach(spec => {
+              rows.push([{ text: '' }, { text: `${spec.label}：${spec.value}`, fontSize: 7.5, color: '#444', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
+            });
+          }
         }
         const _sl2 = (item.specLines || []).filter(l => (l || '').trim());
-        if (_sl2.length > 0) {
-          if (item.machineSpec) rows.push([{ text: '' }, { text: '　＜仕様＞', fontSize: 7.5, bold: true }, ...emp(COLS - 2)]);
-          _sl2.forEach(line => rows.push([{ text: '' }, { text: `　　${line}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]));
-        }
-        if (item.machineSpec) {
-          rows.push([{ text: '' }, { text: `　型式　${item.machineSpec.model}`, fontSize: 8 }, ...emp(COLS - 2)]);
-          rows.push([{ text: '' }, { text: '　＜標準仕様＞', fontSize: 8, bold: true }, ...emp(COLS - 2)]);
-          (item.machineSpec.specs || []).forEach(spec => {
-            rows.push([{ text: '' }, { text: `　　${spec.label}：${spec.value}`, fontSize: 7.5, color: '#444' }, ...emp(COLS - 2)]);
-          });
-        }
+        _sl2.forEach(line => rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#444', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]));
       });
 
       for (let i = 0; i < 2; i++) {
