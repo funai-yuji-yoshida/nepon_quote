@@ -1061,7 +1061,7 @@ const QuotationPDF = (() => {
     // 行数に応じたヘッダー部フォントサイズ
     const compact = mirrorRowCount > 18;
     const titleFs    = compact ? 17 : 22;
-    const custFs     = compact ? 11 : 14;
+    const custFs     = compact ? 12 : 16;
     const midFs      = compact ? 9  : 12;
     const amountBigFs= compact ? 14 : 18;
     const hdrLineH   = compact ? 1.3 : 1.6;
@@ -1082,7 +1082,7 @@ const QuotationPDF = (() => {
                 text: [
                   { text: (data.customerName || ''), fontSize: custFs, bold: true },
                   ...(data.customerHonorific && data.customerHonorific !== 'ー'
-                    ? [{ text: '　' + data.customerHonorific, fontSize: midFs }]
+                    ? [{ text: '　' + data.customerHonorific, fontSize: custFs }]
                     : []),
                 ],
               },

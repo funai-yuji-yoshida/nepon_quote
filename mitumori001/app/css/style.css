@@ -215,6 +215,7 @@ input:focus, select:focus, textarea:focus {
 .row-delivery-calc { background: #f0f4fa; border-radius: 4px; }
 .input-wide   { width: 260px; }
 .input-medium { width: 180px; }
+.hint-text    { font-size: 11px; color: #888; }
 .input-remarks {
   width: 100%;
   max-width: 540px;

@@ -1280,6 +1280,8 @@ const app = (() => {
         if (parsed.discountEnabled === false) state.discountEnabled = false;
         // 所長名復元
         if (parsed.shochoName) state.shochoName = parsed.shochoName;
+        // 営業所選択復元
+        if (parsed.branchKey) state.branchKey = parsed.branchKey;
         // FRPモード復元
         if (parsed.frpMode) {
           state.frpMode    = true;
@@ -1410,16 +1412,9 @@ const app = (() => {
     const pcCoverGrp = document.getElementById('printProductCodeCover')?.closest('.print-detail-option');
     if (pcCoverGrp) pcCoverGrp.style.display = isKouji ? 'none' : '';
     // カテゴリ別デフォルト印刷モード設定
-    // 物販: 鏡のみ  作業: 鏡のみ＋内訳チェックON  工事: 鏡＋明細（HTML既定値）
-    const radioCover  = document.getElementById('printCoverPage');
-    const radioDetail = document.getElementById('printDetailPages');
+    // 全カテゴリ: 鏡＋明細（HTML既定値）  作業: 内訳チェックON
     const chkNaiyaku  = document.getElementById('printNaiyaku');
-    if (isBuhan) {
-      if (radioCover)  radioCover.checked  = true;
-      if (radioDetail) radioDetail.checked = false;
-    } else if (isSagyo) {
-      if (radioCover)  radioCover.checked  = true;
-      if (radioDetail) radioDetail.checked = false;
+    if (isSagyo) {
       if (chkNaiyaku)  chkNaiyaku.checked  = true;
     }
     // 物販: 値引き額行を非表示
@@ -1481,10 +1476,14 @@ const app = (() => {
     setValue('validDays',       state.validDays);
     setValue('remarks',         state.remarks);
 
-    // 営業所設定: 工事→営業サービス本部固定、物販・作業→所課（field15）を使用
+    // 営業所設定: JSON保存済みのbranchKeyを優先、なければ所課（field15）から判定
     const branchSel = document.getElementById('branchSelect');
     const branchCustom = document.getElementById('branchCustomInput');
-    if (!isKouji && state.shoka) {
+    if (state.branchKey && state.branchKey !== 'honbu') {
+      // JSONから復元した営業所選択を反映
+      if (branchSel) branchSel.value = state.branchKey;
+      onBranchChange();
+    } else if (!isKouji && state.shoka) {
       const matchedDept = state.templateDepts.find(d => d.name === state.shoka);
       if (matchedDept) {
         if (branchSel) branchSel.value = `crm_${matchedDept.id}`;
@@ -7253,6 +7252,7 @@ const app = (() => {
         roundingEnabled:  state.roundingEnabled  || undefined,
         discountEnabled:  state.discountEnabled === false ? false : undefined,
         shochoName:       state.shochoName       || undefined,
+        branchKey:        state.branchKey         || undefined,
       });
 
       // field60/61/62 用に金額を再計算
