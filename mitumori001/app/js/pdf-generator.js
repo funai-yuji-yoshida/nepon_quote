@@ -435,12 +435,13 @@ const QuotationPDF = (() => {
     // 第1パス: 行データを収集してカウント（フォントサイズ決定のため）
     const mirrorEntries = [];
     if (!frpMode) {
+      const singleSection = sectionTotals.length === 1;
       sectionTotals.forEach(s => {
-        if (isKouji || !isBuppan) {
-          // 工事・作業: 大項目のみ表示（鏡は概要のみ、明細は別ページ）
+        if ((isKouji || !isBuppan) && !singleSection) {
+          // 工事・作業（大項目複数）: 大項目のみ表示（鏡は概要のみ、明細は別ページ）
           mirrorEntries.push({ type: 'section', s });
         } else {
-          // 物販: 個別アイテムを表示
+          // 物販、または大項目が1つの場合: 個別アイテムを表示
           if (s.name && s.name.trim()) {
             mirrorEntries.push({ type: 'sectionHeader', s });
           }
@@ -518,7 +519,8 @@ const QuotationPDF = (() => {
         if (item.type === 'option') {
           if (item.hinmei)    nameParts.push({ text: item.hinmei,    bold: true, fontSize: itemFs });
           if (item.chubunrui) nameParts.push({ text: item.chubunrui, fontSize: Math.max(6, itemFs - 1), color: '#333' });
-          if (item.name3)     nameParts.push({ text: item.name3,     fontSize: Math.max(6, itemFs - 1), color: '#333' });
+          const line3 = qty >= 2 ? (item.optSpec5 || '') : (item.name3 || '');
+          if (line3) nameParts.push({ text: line3, fontSize: Math.max(6, itemFs - 1), color: '#333' });
         } else {
           if (item.hinmei)  nameParts.push({ text: item.hinmei,  bold: true, fontSize: itemFs });
           if (item.itemnum) nameParts.push({ text: item.itemnum, fontSize: Math.max(6, itemFs - 1), color: '#333' });
@@ -642,8 +644,22 @@ const QuotationPDF = (() => {
         tableRows.push(row);
       } else {
         const item = entry.item;
+        // 熱機ヘッダー行（タイトル）: No.・数量・単位・単価・金額なし
+        if (item.isNetsukiHeader) {
+          const row = [
+            { text: '', fontSize: itemFs },
+            { text: item.name || '', fontSize: itemFs },
+            ...(showProductCode ? [{ text: '', fontSize: itemFs }] : []),
+            { text: '', fontSize: itemFs }, { text: '', fontSize: itemFs },
+            { text: '', fontSize: itemFs }, { text: '', fontSize: itemFs },
+          ];
+          if (useDairi) { row.push({ text: '', fontSize: itemFs }); row.push({ text: '', fontSize: itemFs }); }
+          tableRows.push(row);
+          return;
+        }
+        const rowNoText = String(rowNo++);
         const row = [
-          { text: String(rowNo++), alignment: 'center', fontSize: itemFs },
+          { text: rowNoText, alignment: 'right', fontSize: itemFs },
           { text: item.name || '', fontSize: itemFs },
           ...(showProductCode ? [{ text: item.productCode || '', fontSize: itemFs, noWrap: true }] : []),
           { text: String(item.qty || 1), alignment: 'center', fontSize: itemFs },
@@ -1334,12 +1350,13 @@ const QuotationPDF = (() => {
       const priceTotal   = (Number(item.price) || 0) * qty;
       const shikiriTotal = shikiri * qty;
 
-      // 品名: オプション品は3段（hinmei/chubunrui/name3）、製品は通常
+      // 品名: オプション品は3段（hinmei/chubunrui/name3(qty<2) or optSpec5(qty>=2)）、製品は通常
       const nameParts = [];
       if (item.type === 'option') {
         if (item.hinmei)    nameParts.push({ text: item.hinmei,    bold: true, fontSize: 9 });
         if (item.chubunrui) nameParts.push({ text: item.chubunrui, fontSize: 8, color: '#333' });
-        if (item.name3)     nameParts.push({ text: item.name3,     fontSize: 8, color: '#333' });
+        const line3 = qty >= 2 ? (item.optSpec5 || '') : (item.name3 || '');
+        if (line3) nameParts.push({ text: line3, fontSize: 8, color: '#333' });
       } else {
         if (item.hinmei)  nameParts.push({ text: item.hinmei, bold: true, fontSize: 9 });
         if (item.itemnum) nameParts.push({ text: item.itemnum, fontSize: 8, color: '#333' });
@@ -1562,6 +1579,11 @@ const QuotationPDF = (() => {
 
       let itemNo = 1;
       normalItems.forEach(item => {
+        // 熱機ヘッダー行（タイトル）
+        if (item.isNetsukiHeader) {
+          rows.push([{ text: '' }, { text: item.name || '' }, ...emp(COLS - 2)]);
+          return;
+        }
         const noCell = { text: String(itemNo++), alignment: 'right' };
         if (useDairi) {
           rows.push([

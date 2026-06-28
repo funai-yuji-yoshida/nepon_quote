@@ -2076,11 +2076,14 @@ const app = (() => {
           // 品名ヘッダー行（価格なし）
           const header = createItem();
           header.name            = r.name;
+          header.qty             = '';
+          header.unit            = '';
           header.isNetsukiHeader = true;
           targetSection.items.push(header);
         } else if (r.order === 2 && !mainItem) {
           // 本機行（価格・仕様あり）
           const item = createItem();
+          item.isNetsukiMain = true;
           item.name           = r.name;
           item.spec           = r.hinban || '';
           item.qty            = r.qty;
@@ -2139,7 +2142,6 @@ const app = (() => {
 
   async function loadKiki() {
     if (!zohoReady) return;
-    if (!(state.quoteCategory || '').includes('工事')) return;
     try {
       const data = await fetchAllRecords('CustomModule23', 'Name');
       state.kiki = data.map(r => ({
@@ -2386,31 +2388,28 @@ const app = (() => {
       ['kanzaiRow',    'kanzai'],
       ['denzaiRow',    'denzai'],
       ['koujiRow',     'kouji'],
+      ['kikiRow',      'kiki'],
     ].forEach(([id, c]) => {
       const el = document.getElementById(id);
       if (el) el.style.display = cat === c ? '' : 'none';
     });
-    // 農用・熱機・標準項の行はswitchStandardSubで制御。タブ切替時は常時非表示
-    ['kikiRow', 'netsukiRow', 'standardRow'].forEach(id => {
+    // 熱機・標準項の行はswitchStandardSubで制御。タブ切替時は常時非表示
+    ['netsukiRow', 'standardRow'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
     // 標準項以外に切替時はサブタブのアクティブ状態をリセット
     if (cat !== 'standard') {
-      document.getElementById('standardSubKiki')?.classList.remove('active');
       document.getElementById('standardSubNetsuki')?.classList.remove('active');
       document.getElementById('standardSubStandard')?.classList.remove('active');
     }
   }
 
   function switchStandardSub(sub) {
-    document.getElementById('standardSubKiki')?.classList.toggle('active', sub === 'kiki');
     document.getElementById('standardSubNetsuki')?.classList.toggle('active', sub === 'netsuki');
     document.getElementById('standardSubStandard')?.classList.toggle('active', sub === 'standard');
-    const kikiRow = document.getElementById('kikiRow');
     const netsukiRow = document.getElementById('netsukiRow');
     const standardRow = document.getElementById('standardRow');
-    if (kikiRow) kikiRow.style.display = sub === 'kiki' ? '' : 'none';
     if (netsukiRow) netsukiRow.style.display = sub === 'netsuki' ? '' : 'none';
     if (standardRow) standardRow.style.display = sub === 'standard' ? '' : 'none';
   }
@@ -4028,10 +4027,11 @@ const app = (() => {
       id:          state.nextFrpId++,
       type:        isOpt ? 'option' : 'product',
       shubetsu:    record.field3  || '',
-      chubunrui:   record.field4  || '',
+      chubunrui:   isOpt ? (record.spec3 || '') : (record.field4 || ''),
       kashira:     record.field1  || '',
-      hinmei:      record.field3  || record.Name || '',
-      name3:       isOpt ? (record.Name || '') : '',
+      hinmei:      isOpt ? (record.spec2 || '') : (record.field3 || record.Name || ''),
+      name3:       isOpt ? (record.spec4 || '') : '',
+      optSpec5:    isOpt ? (record.spec5 || '') : '',
       itemnum:     record.itemnum || '',
       zuban:       record.field  || '',
       hinban:      record.field5 || '',
@@ -4134,8 +4134,8 @@ const app = (() => {
                    value="${escHtml(item.chubunrui || '')}"
                    data-frp-id="${item.id}" data-field="chubunrui">
             <input type="text" class="frp-name-input frp-name-sub"
-                   value="${escHtml(item.name3 || '')}"
-                   data-frp-id="${item.id}" data-field="name3">
+                   value="${escHtml(qty >= 2 ? (item.optSpec5 || '') : (item.name3 || ''))}"
+                   data-frp-id="${item.id}" data-field="${qty >= 2 ? 'optSpec5' : 'name3'}">
             ` : `
             <input type="text" class="frp-name-input frp-name-sub"
                    value="${escHtml(item.itemnum || '')}"
@@ -5688,11 +5688,16 @@ const app = (() => {
 
     // 順序修正＋仕様行・機器仕様マスタ行を各アイテム行の直後に挿入
     const fragment = document.createDocumentFragment();
-    sec.items.forEach((item, rowIdx) => {
+    let displayNo = 1;
+    sec.items.forEach((item) => {
       const itemRow = tbody.querySelector(`.item-row[data-item-id="${item.id}"]`);
       if (itemRow) {
         const numEl = itemRow.querySelector('.item-row-num');
-        if (numEl) numEl.textContent = rowIdx + 1;
+        if (item.isNetsukiHeader) {
+          if (numEl) numEl.textContent = '';
+        } else {
+          if (numEl) numEl.textContent = displayNo++;
+        }
         fragment.appendChild(itemRow);
       }
       // 機器仕様マスタ行（item-row の直後）
