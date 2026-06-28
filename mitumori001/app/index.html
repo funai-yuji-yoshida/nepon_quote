@@ -382,7 +382,7 @@
               <div class="cat-tabs">
                 <button class="cat-tab active" data-cat="product" onclick="app.switchCatTab('product')">商品</button>
                 <button class="cat-tab" data-cat="kiki" onclick="app.switchCatTab('kiki')" style="display:none">農用</button>
-                <button class="cat-tab" data-cat="netsuki" onclick="app.switchCatTab('netsuki')">熱機</button>
+                <button class="cat-tab" data-cat="netsuki" onclick="app.switchCatTab('netsuki')" style="display:none">熱機</button>
                 <button class="cat-tab" data-cat="kanzai" onclick="app.switchCatTab('kanzai')">管材</button>
                 <button class="cat-tab" data-cat="denzai" onclick="app.switchCatTab('denzai')">電材</button>
                 <button class="cat-tab" data-cat="kouji" onclick="app.switchCatTab('kouji')">工事</button>
@@ -400,7 +400,13 @@
                 <div class="cat-panel" id="catPanel-kanzai" style="display:none"></div>
                 <div class="cat-panel" id="catPanel-denzai" style="display:none"></div>
                 <div class="cat-panel" id="catPanel-kouji" style="display:none"></div>
-                <div class="cat-panel" id="catPanel-standard" style="display:none"></div>
+                <div class="cat-panel" id="catPanel-standard" style="display:none">
+                  <div class="cat-tabs">
+                    <button class="cat-tab" id="standardSubKiki" onclick="app.switchStandardSub('kiki')">農用</button>
+                    <button class="cat-tab" id="standardSubNetsuki" onclick="app.switchStandardSub('netsuki')">熱機</button>
+                    <button class="cat-tab" id="standardSubStandard" onclick="app.switchStandardSub('standard')">工事標準項</button>
+                  </div>
+                </div>
               </div>
               <select id="commonTargetSection" class="input-standard cat-target-sel"></select>
               <button class="btn-cat-add" id="btnCommonAdd" onclick="app.execCatAdd()">追加</button>

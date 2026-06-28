@@ -1282,6 +1282,8 @@ const app = (() => {
         if (parsed.shochoName) state.shochoName = parsed.shochoName;
         // 営業所選択復元
         if (parsed.branchKey) state.branchKey = parsed.branchKey;
+        // 採番復元（field55が空の場合はJSONからフォールバック）
+        if (!state.seqNo && parsed.seqNo) state.seqNo = parsed.seqNo;
         // FRPモード復元
         if (parsed.frpMode) {
           state.frpMode    = true;
@@ -1378,10 +1380,8 @@ const app = (() => {
     if (catEl) catEl.textContent = state.quoteCategory || '―';
     // 値引き額ラベル切り替え（工事を含む場合→出精値引き）
     const isKouji = (state.quoteCategory || '').includes('工事');
-    // 機器タブ: 工事カテゴリのみ表示
-    const kikiTabBtn = document.querySelector('.cat-tab[data-cat="kiki"]');
-    if (kikiTabBtn) kikiTabBtn.style.display = isKouji ? '' : 'none';
-    if (!isKouji && currentCat === 'kiki') switchCatTab('product');
+    // 農用・熱機タブは標準項サブボタン経由のみ（常時非表示）
+    if (currentCat === 'kiki' || currentCat === 'netsuki') switchCatTab('standard');
     const discountLabelEl = document.getElementById('discountLabel');
     if (discountLabelEl) {
       discountLabelEl.textContent = '調整額';
@@ -2383,16 +2383,36 @@ const app = (() => {
       if (panel) panel.style.display = c === cat ? '' : 'none';
     });
     [
-      ['kikiRow',      'kiki'],
       ['kanzaiRow',    'kanzai'],
       ['denzaiRow',    'denzai'],
       ['koujiRow',     'kouji'],
-      ['standardRow',  'standard'],
-      ['netsukiRow',   'netsuki'],
     ].forEach(([id, c]) => {
       const el = document.getElementById(id);
       if (el) el.style.display = cat === c ? '' : 'none';
     });
+    // 農用・熱機・標準項の行はswitchStandardSubで制御。タブ切替時は常時非表示
+    ['kikiRow', 'netsukiRow', 'standardRow'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    // 標準項以外に切替時はサブタブのアクティブ状態をリセット
+    if (cat !== 'standard') {
+      document.getElementById('standardSubKiki')?.classList.remove('active');
+      document.getElementById('standardSubNetsuki')?.classList.remove('active');
+      document.getElementById('standardSubStandard')?.classList.remove('active');
+    }
+  }
+
+  function switchStandardSub(sub) {
+    document.getElementById('standardSubKiki')?.classList.toggle('active', sub === 'kiki');
+    document.getElementById('standardSubNetsuki')?.classList.toggle('active', sub === 'netsuki');
+    document.getElementById('standardSubStandard')?.classList.toggle('active', sub === 'standard');
+    const kikiRow = document.getElementById('kikiRow');
+    const netsukiRow = document.getElementById('netsukiRow');
+    const standardRow = document.getElementById('standardRow');
+    if (kikiRow) kikiRow.style.display = sub === 'kiki' ? '' : 'none';
+    if (netsukiRow) netsukiRow.style.display = sub === 'netsuki' ? '' : 'none';
+    if (standardRow) standardRow.style.display = sub === 'standard' ? '' : 'none';
   }
 
   function onKoujiKubunChange(kubun) {
@@ -7845,6 +7865,7 @@ const app = (() => {
     duplicateSection,
     // カテゴリタブ
     switchCatTab,
+    switchStandardSub,
     execCatAdd,
     onKoujiKubunChange,
     // 明細行
