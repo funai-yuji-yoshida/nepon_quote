@@ -4087,6 +4087,35 @@ const app = (() => {
     renderFrpItems();
   }
 
+  function addFrpManualItem() {
+    state.frpItems.push({
+      id:         state.nextFrpId++,
+      type:       'product',
+      shubetsu:   '',
+      chubunrui:  '',
+      kashira:    '',
+      hinmei:     '',
+      name3:      '',
+      optSpec5:   '',
+      itemnum:    '',
+      zuban:      '',
+      hinban:     '',
+      qty:        1,
+      unit:       '式',
+      price:      0,
+      priceA:     0,
+      priceB:     0,
+      soryoKubun: 0,
+      soryoNote:  '',
+      specs:      [],
+      hinshu:     null,
+    });
+    markDirty();
+    renderFrpItems();
+    updateFrpTotals();
+    updateOutput();
+  }
+
   function removeFrpItem(itemId) {
     state.frpItems = state.frpItems.filter(i => i.id !== itemId);
     markDirty();
@@ -7972,6 +8001,7 @@ const app = (() => {
     saveToCRM,
     // FRPモード
     switchFrpMode, setFrpAB,
+    addFrpManualItem,
     removeFrpItem,
     removeFrpSpec,
     moveFrpItem,

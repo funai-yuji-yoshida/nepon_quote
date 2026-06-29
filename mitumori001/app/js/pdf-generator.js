@@ -469,11 +469,15 @@ const QuotationPDF = (() => {
     } else {
       // FRPモード: frpItemsの各行をエントリとして追加
       frpItems.forEach(item => {
-        mirrorEntries.push({ type: 'frpItem', item });
-        if (item.soryoNote) mirrorEntries.push({ type: 'frpNote', text: item.soryoNote });
+        const subEntries = [];
+        if (item.soryoNote) subEntries.push({ type: 'frpNote', text: item.soryoNote });
         if (item.type !== 'option') {
-          (item.specs || []).forEach(spec => mirrorEntries.push({ type: 'frpSpec', text: spec }));
+          (item.specs || []).forEach(spec => subEntries.push({ type: 'frpSpec', text: spec }));
         }
+        mirrorEntries.push({ type: 'frpItem', item, hasSubRows: subEntries.length > 0 });
+        subEntries.forEach((e, i) => {
+          mirrorEntries.push({ ...e, isLastSub: i === subEntries.length - 1 });
+        });
       });
     }
     // 見積外工事行・固定行も含めてトータル行数を算出
@@ -534,16 +538,17 @@ const QuotationPDF = (() => {
         const nameCell = nameParts.length > 0 ? { stack: nameParts } : { text: item.name || '', bold: true, fontSize: itemFs };
         const frpColSpan = COLS - 1;
         const frpPad = Array.from({ length: frpColSpan - 1 }, () => ({ text: '' }));
+        const btm = !entry.hasSubRows;
         tableRows.push([
-          { text: String(rowNo++), alignment: 'center', fontSize: itemFs },
-          nameCell,
-          { text: String(qty),          alignment: 'center', fontSize: itemFs },
-          { text: item.unit || '',       alignment: 'center', fontSize: itemFs },
-          { text: fmt(item.price) || '', alignment: 'right',  fontSize: itemFs },
-          { text: fmt(priceTotal),       alignment: 'right',  fontSize: itemFs },
+          { text: String(rowNo++), alignment: 'center', fontSize: itemFs, border: [true, true, true, btm] },
+          { ...nameCell, border: [true, true, true, btm] },
+          { text: String(qty),          alignment: 'center', fontSize: itemFs, border: [true, true, true, btm] },
+          { text: item.unit || '',       alignment: 'center', fontSize: itemFs, border: [true, true, true, btm] },
+          { text: fmt(item.price) || '', alignment: 'right',  fontSize: itemFs, border: [true, true, true, btm] },
+          { text: fmt(priceTotal),       alignment: 'right',  fontSize: itemFs, border: [true, true, true, btm] },
           ...(isTeika ? [] : [
-            { text: fmt(shikiri) || '',    alignment: 'right',  fontSize: itemFs },
-            { text: fmt(shikiriTotal),     alignment: 'right',  fontSize: itemFs },
+            { text: fmt(shikiri) || '',    alignment: 'right',  fontSize: itemFs, border: [true, true, true, btm] },
+            { text: fmt(shikiriTotal),     alignment: 'right',  fontSize: itemFs, border: [true, true, true, btm] },
           ]),
         ]);
         return;
@@ -551,10 +556,11 @@ const QuotationPDF = (() => {
       if (entry.type === 'frpNote') {
         const frpColSpan = COLS - 1;
         const frpPad = Array.from({ length: frpColSpan - 1 }, () => ({ text: '' }));
+        const subBtm = entry.isLastSub ? true : false;
         tableRows.push([
-          { text: '', border: [true, false, false, false], fontSize: itemFs },
+          { text: '', border: [true, false, false, subBtm], fontSize: itemFs },
           { text: `  ${entry.text}`, fontSize: Math.max(6, itemFs - 1.5), color: '#c00', colSpan: frpColSpan,
-            border: [false, false, true, false] },
+            border: [false, false, true, subBtm] },
           ...frpPad,
         ]);
         return;
@@ -562,10 +568,11 @@ const QuotationPDF = (() => {
       if (entry.type === 'frpSpec') {
         const frpColSpan = COLS - 1;
         const frpPad = Array.from({ length: frpColSpan - 1 }, () => ({ text: '' }));
+        const subBtm = entry.isLastSub ? true : false;
         tableRows.push([
-          { text: '', border: [true, false, false, false], fontSize: itemFs },
+          { text: '', border: [true, false, false, subBtm], fontSize: itemFs },
           { text: `　${entry.text}`, fontSize: Math.max(6, itemFs - 1), color: '#555', colSpan: frpColSpan,
-            border: [false, false, true, false] },
+            border: [false, false, true, subBtm] },
           ...frpPad,
         ]);
         return;
@@ -1371,31 +1378,19 @@ const QuotationPDF = (() => {
         ? { stack: nameParts }
         : { text: item.name || '', bold: true };
 
-      rows.push([
-        { text: String(rowNo++), alignment: 'center' },
-        nameCell,
-        { text: String(qty), alignment: 'center' },
-        { text: item.unit || '', alignment: 'center' },
-        { text: fmt(item.price),   alignment: 'right' },
-        { text: fmt(priceTotal),   alignment: 'right' },
-        { text: fmt(shikiri),      alignment: 'right' },
-        { text: fmt(shikiriTotal), alignment: 'right' },
-      ]);
-
-      // 送料注意文行
+      // サブ行（送料注意文・仕様補足）を先に組み立て、有無で main 行の下線を決定
+      const subRows = [];
       if (item.soryoNote) {
-        rows.push([
+        subRows.push([
           { text: '', border: [true, false, false, false] },
           { text: `  ${item.soryoNote}`, fontSize: 7, color: '#c00', colSpan: 7,
             border: [false, false, true, false] },
           { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
         ]);
       }
-
-      // 仕様補足行（オプション品は非表示）
       if (item.type !== 'option') {
         (item.specs || []).forEach(spec => {
-          rows.push([
+          subRows.push([
             { text: '', border: [true, false, false, false] },
             { text: `　${spec}`, fontSize: 8, color: '#555', colSpan: 7,
               border: [false, false, true, false] },
@@ -1403,6 +1398,24 @@ const QuotationPDF = (() => {
           ]);
         });
       }
+      // 最後のサブ行に下線を付ける
+      if (subRows.length > 0) {
+        const last = subRows[subRows.length - 1];
+        last[0].border[3] = true;
+        last[1].border[3] = true;
+      }
+      const btm = subRows.length === 0;
+      rows.push([
+        { text: String(rowNo++), alignment: 'center', border: [true, true, true, btm] },
+        { ...nameCell, border: [true, true, true, btm] },
+        { text: String(qty), alignment: 'center', border: [true, true, true, btm] },
+        { text: item.unit || '', alignment: 'center', border: [true, true, true, btm] },
+        { text: fmt(item.price),   alignment: 'right', border: [true, true, true, btm] },
+        { text: fmt(priceTotal),   alignment: 'right', border: [true, true, true, btm] },
+        { text: fmt(shikiri),      alignment: 'right', border: [true, true, true, btm] },
+        { text: fmt(shikiriTotal), alignment: 'right', border: [true, true, true, btm] },
+      ]);
+      subRows.forEach(r => rows.push(r));
     });
 
     // 空白行（最低2行）
