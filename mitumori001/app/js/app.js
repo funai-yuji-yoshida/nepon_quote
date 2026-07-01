@@ -6262,6 +6262,9 @@ const app = (() => {
     if (state.sections.length === 0) { showToast('保存する明細がありません', 'warn'); return; }
     if (state.templateDepts.length === 0) await loadDepartments();
     populateDeptSelects();
+    const currentDept = state.templateDepts.find(d => d.name === state.shoka);
+    const deptEl = document.getElementById('tplSaveDept');
+    if (deptEl && currentDept) deptEl.value = currentDept.id;
     const el = document.getElementById('tplSaveModal');
     if (el) el.style.display = 'flex';
   }
