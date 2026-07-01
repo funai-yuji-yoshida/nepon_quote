@@ -1061,6 +1061,19 @@
             <option value="">― 選択 ―</option>
           </select>
         </div>
+        <div class="modal-form-row">
+          <label>含める項目</label>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label style="font-weight:normal;display:flex;align-items:center;gap:6px">
+              <input type="checkbox" id="tplSaveIncludeConditions" checked>
+              見積条件（納期・納入条件・支払条件・有効日数）
+            </label>
+            <label style="font-weight:normal;display:flex;align-items:center;gap:6px">
+              <input type="checkbox" id="tplSaveIncludeRemarks" checked>
+              鏡の備考欄
+            </label>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="document.getElementById('tplSaveModal').style.display='none'">キャンセル</button>

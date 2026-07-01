@@ -6275,7 +6275,10 @@ const app = (() => {
       ? (state.templateDepts.find(d => d.id === deptId)?.name || '')
       : '';
 
-    const tplData = JSON.stringify({
+    const includeConditions = document.getElementById('tplSaveIncludeConditions')?.checked;
+    const includeRemarks    = document.getElementById('tplSaveIncludeRemarks')?.checked;
+
+    const payload = {
       sections: state.sections.map(sec => ({
         name:   sec.name,
         cat:    sec.cat || '',
@@ -6296,7 +6299,17 @@ const app = (() => {
           machineSpecHidden: item.machineSpecHidden || false,
         })),
       })),
-    });
+    };
+    if (includeConditions) {
+      payload.deliveryTerm   = getValue('deliveryTerm')   || '';
+      payload.deliveryMethod = getValue('deliveryMethod') || '';
+      payload.paymentTerm    = getValue('paymentTerm')    || '';
+      payload.validDays      = getValue('validDays')      || '';
+    }
+    if (includeRemarks) {
+      payload.remarks = getValue('remarks') || '';
+    }
+    const tplData = JSON.stringify(payload);
 
     try {
       const apiData = { Name: name, JSON: tplData };
@@ -6310,14 +6323,14 @@ const app = (() => {
         await ZOHO.CRM.API.updateRecord({
           Entity: 'CustomModule8', APIData: { id: existing.id, ...apiData }, Trigger: [],
         });
-        Object.assign(existing, { type, deptId, deptName });
+        Object.assign(existing, { type, deptId, deptName, data: payload });
         showToast('テンプレートを更新しました');
       } else {
         const res = await ZOHO.CRM.API.insertRecord({
           Entity: 'CustomModule8', APIData: apiData, Trigger: [],
         });
         const newId = res?.data?.[0]?.details?.id;
-        if (newId) state.templateList.push({ id: newId, name, type, deptId, deptName });
+        if (newId) state.templateList.push({ id: newId, name, type, deptId, deptName, data: payload });
         showToast('テンプレートを保存しました');
       }
       document.getElementById('tplSaveModal').style.display = 'none';
