@@ -6417,8 +6417,8 @@ const app = (() => {
     const lines = [];
     if (d.sections && d.sections.length) {
       const sectionSummary = d.sections.map(sec => {
-        const rowCount = sec.rows ? sec.rows.length : 0;
-        const sample = (sec.rows || []).slice(0, 3).map(r => escHtml(r.name || r.hinmei || '')).filter(Boolean);
+        const rowCount = sec.items ? sec.items.length : 0;
+        const sample = (sec.items || []).slice(0, 3).map(r => escHtml(r.name || r.hinmei || '')).filter(Boolean);
         const extra  = rowCount > 3 ? `他${rowCount - 3}行` : '';
         const items  = [...sample, ...(extra ? [extra] : [])].join('、');
         return `${escHtml(sec.name || '大項目')}（${rowCount}行）${items ? '：' + items : ''}`;
