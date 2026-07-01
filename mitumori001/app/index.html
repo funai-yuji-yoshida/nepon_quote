@@ -1104,6 +1104,16 @@
           <label><input type="radio" name="tplLoadMode" value="add" checked> 現在の明細に追加</label>
           <label><input type="radio" name="tplLoadMode" value="replace"> 現在の明細を置き換え</label>
         </div>
+        <div class="tpl-restore-options" style="margin-top:8px;display:flex;gap:16px">
+          <label style="font-weight:normal;display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="tplRestoreConditions" checked disabled>
+            見積条件を復元
+          </label>
+          <label style="font-weight:normal;display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="tplRestoreRemarks" checked disabled>
+            備考欄を復元
+          </label>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="document.getElementById('tplLoadModal').style.display='none'">キャンセル</button>

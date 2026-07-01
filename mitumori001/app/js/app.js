@@ -6443,6 +6443,21 @@ const app = (() => {
       const radio = el.querySelector('input[type=radio]');
       if (radio) radio.checked = el.dataset.tplId === id;
     });
+    const tpl = state.templateList.find(t => t.id === id);
+    const d   = tpl?.data || {};
+    const cbCond = document.getElementById('tplRestoreConditions');
+    const cbRmk  = document.getElementById('tplRestoreRemarks');
+    if (cbCond) {
+      const hasConditions = d.deliveryTerm !== undefined || d.deliveryMethod !== undefined ||
+                            d.paymentTerm !== undefined  || d.validDays     !== undefined;
+      cbCond.disabled = !hasConditions;
+      cbCond.checked  = hasConditions;
+    }
+    if (cbRmk) {
+      const hasRemarks = d.remarks !== undefined;
+      cbRmk.disabled = !hasRemarks;
+      cbRmk.checked  = hasRemarks;
+    }
   }
 
   async function execTemplateLoad() {
@@ -6523,6 +6538,19 @@ const app = (() => {
       if (section.items.length === 0) section.items.push(createItem());
       state.sections.push(section);
     });
+
+    const restoreConditions = document.getElementById('tplRestoreConditions')?.checked;
+    const restoreRemarks    = document.getElementById('tplRestoreRemarks')?.checked;
+    if (restoreConditions && tplData.deliveryTerm !== undefined) {
+      setValue('deliveryTerm',   tplData.deliveryTerm   || '');
+      setValue('deliveryMethod', tplData.deliveryMethod || '');
+      setValue('paymentTerm',    tplData.paymentTerm    || '');
+      setValue('validDays',      tplData.validDays      != null ? String(tplData.validDays) : '');
+    }
+    if (restoreRemarks && tplData.remarks !== undefined) {
+      state.remarks = tplData.remarks || '';
+      setValue('remarks', state.remarks);
+    }
 
     markDirty();
     renumberSections();
