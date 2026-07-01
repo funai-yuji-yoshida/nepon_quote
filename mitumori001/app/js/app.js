@@ -6232,13 +6232,18 @@ const app = (() => {
       const data = await fetchAllRecords('CustomModule8', 'Name');
       state.templateList = data
         .filter(r => r.JSON)
-        .map(r => ({
-          id:   r.id,
-          name: r.Name || '',
-          type: r.field17 || '',
-          deptId:   r.field21?.id   || '',
-          deptName: r.field21?.name || '',
-        }));
+        .map(r => {
+          let parsed = null;
+          try { parsed = JSON.parse(r.JSON); } catch(e) {}
+          return {
+            id:      r.id,
+            name:    r.Name || '',
+            type:    r.field17 || '',
+            deptId:  r.field21?.id   || '',
+            deptName:r.field21?.name || '',
+            data:    parsed,
+          };
+        });
     } catch (e) { console.warn('loadAllTemplates error:', e); }
   }
 
