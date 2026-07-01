@@ -6389,8 +6389,50 @@ const app = (() => {
           <div class="tpl-item-name">${escHtml(t.name)}</div>
           <div class="tpl-item-meta">${[t.deptName, t.type].filter(Boolean).join(' / ') || '―'}</div>
         </div>
+        <button class="tpl-detail-btn" onclick="event.stopPropagation();app.toggleTplDetail('${t.id}')"
+                data-detail-id="${t.id}" style="margin-left:auto;padding:2px 8px;font-size:12px;background:none;border:1px solid #ccc;border-radius:4px;cursor:pointer;white-space:nowrap">▶ 詳細</button>
       </div>
+      <div class="tpl-detail-panel" id="tpl-detail-${t.id}" style="display:none;padding:6px 12px 8px 36px;font-size:12px;color:#444;background:#f9f9f9;border-bottom:1px solid #e0e0e0"></div>
     `).join('');
+  }
+
+  function toggleTplDetail(id) {
+    const panel = document.getElementById('tpl-detail-' + id);
+    const btn   = document.querySelector('[data-detail-id="' + id + '"]');
+    if (!panel) return;
+    const isOpen = panel.style.display !== 'none';
+    if (isOpen) {
+      panel.style.display = 'none';
+      if (btn) btn.textContent = '▶ 詳細';
+      return;
+    }
+    const tpl = state.templateList.find(t => t.id === id);
+    if (!tpl || !tpl.data) {
+      panel.innerHTML = '<span style="color:#999">データなし</span>';
+      panel.style.display = '';
+      if (btn) btn.textContent = '▼ 詳細';
+      return;
+    }
+    const d = tpl.data;
+    const lines = [];
+    if (d.sections && d.sections.length) {
+      const sectionSummary = d.sections.map(sec => {
+        const rowCount = sec.rows ? sec.rows.length : 0;
+        const sample = (sec.rows || []).slice(0, 3).map(r => escHtml(r.name || r.hinmei || '')).filter(Boolean);
+        const extra  = rowCount > 3 ? `他${rowCount - 3}行` : '';
+        const items  = [...sample, ...(extra ? [extra] : [])].join('、');
+        return `${escHtml(sec.name || '大項目')}（${rowCount}行）${items ? '：' + items : ''}`;
+      }).join('<br>');
+      lines.push('【大項目】' + sectionSummary);
+    }
+    if (d.deliveryTerm)   lines.push('【納期】'     + escHtml(d.deliveryTerm));
+    if (d.deliveryMethod) lines.push('【納入条件】' + escHtml(d.deliveryMethod));
+    if (d.paymentTerm)    lines.push('【支払条件】' + escHtml(d.paymentTerm));
+    if (d.validDays)      lines.push('【有効日数】' + escHtml(String(d.validDays)) + '日');
+    if (d.remarks)        lines.push('【備考】'     + escHtml(d.remarks).replace(/\n/g, ' '));
+    panel.innerHTML = lines.length ? lines.join('<br>') : '<span style="color:#999">情報なし</span>';
+    panel.style.display = '';
+    if (btn) btn.textContent = '▼ 詳細';
   }
 
   function selectTemplate(id) {
@@ -8004,6 +8046,7 @@ const app = (() => {
     execTemplateSave,
     showTemplateLoadDialog,
     filterTemplates,
+    toggleTplDetail,
     selectTemplate,
     execTemplateLoad,
     // 単位ピッカー
