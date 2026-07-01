@@ -6348,7 +6348,8 @@ const app = (() => {
     if (state.templateDepts.length === 0) await loadDepartments();
     populateDeptSelects();
 
-    document.getElementById('tplFilterDept').value = '';
+    const currentDept = state.templateDepts.find(d => d.name === state.shoka);
+    document.getElementById('tplFilterDept').value = currentDept ? currentDept.id : '';
     document.getElementById('tplFilterType').value = '';
     document.getElementById('tplFilterName').value = '';
     state.selectedTemplateId = null;
