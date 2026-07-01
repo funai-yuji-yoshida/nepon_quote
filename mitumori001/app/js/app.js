@@ -6401,6 +6401,7 @@ const app = (() => {
     const panel = document.getElementById('tpl-detail-' + id);
     const btn   = document.querySelector('[data-detail-id="' + id + '"]');
     if (!panel) return;
+    selectTemplate(id);
     const isOpen = panel.style.display !== 'none';
     if (isOpen) {
       panel.style.display = 'none';
