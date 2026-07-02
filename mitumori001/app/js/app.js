@@ -8110,6 +8110,7 @@ const app = (() => {
     _frpWizardBack,
     _frpWizardSkip,
     _frpWizardSelect,
+    _frpWizardSearchStep5,
     openFrpSettings,
     saveFrpSettings,
     // 代理店単価ロック解除・SABCランク選択
