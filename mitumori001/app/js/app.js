@@ -6266,12 +6266,15 @@ const app = (() => {
     const deptEl = document.getElementById('tplSaveDept');
     if (deptEl && currentDept) deptEl.value = currentDept.id;
 
-    // 上書き先ドロップダウンを構築
+    // 上書き先ドロップダウンを構築（同じ所課のみ）
     const overwriteEl = document.getElementById('tplSaveOverwriteTarget');
     if (overwriteEl) {
+      const sameDeptList = currentDept
+        ? state.templateList.filter(t => t.deptId === currentDept.id)
+        : state.templateList;
       overwriteEl.innerHTML = '<option value="">― 新規保存 ―</option>' +
-        state.templateList.map(t =>
-          `<option value="${t.id}">${escHtml(t.name)}${t.deptName ? '　(' + escHtml(t.deptName) + ')' : ''}</option>`
+        sameDeptList.map(t =>
+          `<option value="${t.id}">${escHtml(t.name)}${t.type ? '　' + escHtml(t.type) : ''}</option>`
         ).join('');
       overwriteEl.value = '';
     }
