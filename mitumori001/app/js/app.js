@@ -6265,11 +6265,38 @@ const app = (() => {
     const currentDept = state.templateDepts.find(d => d.name === state.shoka);
     const deptEl = document.getElementById('tplSaveDept');
     if (deptEl && currentDept) deptEl.value = currentDept.id;
+
+    // 上書き先ドロップダウンを構築
+    const overwriteEl = document.getElementById('tplSaveOverwriteTarget');
+    if (overwriteEl) {
+      overwriteEl.innerHTML = '<option value="">― 新規保存 ―</option>' +
+        state.templateList.map(t =>
+          `<option value="${t.id}">${escHtml(t.name)}${t.deptName ? '　(' + escHtml(t.deptName) + ')' : ''}</option>`
+        ).join('');
+      overwriteEl.value = '';
+    }
+    // 名前フィールドをリセット
+    const nameEl = document.getElementById('tplSaveName');
+    if (nameEl) nameEl.value = '';
+
     const el = document.getElementById('tplSaveModal');
     if (el) el.style.display = 'flex';
   }
 
+  function onTplOverwriteTargetChange(id) {
+    if (!id) return;
+    const tpl = state.templateList.find(t => t.id === id);
+    if (!tpl) return;
+    const nameEl = document.getElementById('tplSaveName');
+    const typeEl = document.getElementById('tplSaveType');
+    const deptEl = document.getElementById('tplSaveDept');
+    if (nameEl) nameEl.value = tpl.name;
+    if (typeEl) typeEl.value = tpl.type || '';
+    if (deptEl && tpl.deptId) deptEl.value = tpl.deptId;
+  }
+
   async function execTemplateSave() {
+    const overwriteId = document.getElementById('tplSaveOverwriteTarget')?.value || '';
     const name = (document.getElementById('tplSaveName')?.value || '').trim();
     if (!name) { showToast('テンプレート名を入力してください', 'warn'); return; }
     const type   = (document.getElementById('tplSaveType')?.value || '').trim();
@@ -6324,10 +6351,12 @@ const app = (() => {
       if (type) apiData.field17 = type;
       if (deptId) apiData.field21 = { id: deptId, name: deptName };
 
-      // 同名テンプレートを確認
-      const existing = state.templateList.find(t => t.name === name);
+      // 上書き先が指定されている場合はIDで直接更新、なければ同名チェック
+      const existing = overwriteId
+        ? state.templateList.find(t => t.id === overwriteId)
+        : state.templateList.find(t => t.name === name);
       if (existing) {
-        if (!confirm(`「${name}」は既に存在します。上書きしますか？`)) return;
+        if (!overwriteId && !confirm(`「${name}」は既に存在します。上書きしますか？`)) return;
         await ZOHO.CRM.API.updateRecord({
           Entity: 'CustomModule8', APIData: { id: existing.id, ...apiData }, Trigger: [],
         });
@@ -8094,6 +8123,7 @@ const app = (() => {
     // テンプレート
     showTemplateSaveDialog,
     execTemplateSave,
+    onTplOverwriteTargetChange,
     showTemplateLoadDialog,
     filterTemplates,
     toggleTplDetail,

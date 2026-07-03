@@ -1048,6 +1048,13 @@
       </div>
       <div class="modal-body">
         <div class="modal-form-row">
+          <label>上書き先</label>
+          <select id="tplSaveOverwriteTarget" class="input-standard" style="flex:1" onchange="app.onTplOverwriteTargetChange(this.value)">
+            <option value="">― 新規保存 ―</option>
+          </select>
+        </div>
+        <div style="border-top:1px solid #eee;margin:4px 0 12px"></div>
+        <div class="modal-form-row">
           <label>テンプレート名</label>
           <input type="text" id="tplSaveName" class="input-wide" placeholder="例: 温室暖房標準">
         </div>
