@@ -6278,8 +6278,9 @@ const app = (() => {
       ? (state.templateDepts.find(d => d.id === deptId)?.name || '')
       : '';
 
-    const includeConditions = document.getElementById('tplSaveIncludeConditions')?.checked;
-    const includeRemarks    = document.getElementById('tplSaveIncludeRemarks')?.checked;
+    const includeConditions  = document.getElementById('tplSaveIncludeConditions')?.checked;
+    const includeRemarks     = document.getElementById('tplSaveIncludeRemarks')?.checked;
+    const includeExclusions  = document.getElementById('tplSaveIncludeExclusions')?.checked;
 
     const payload = {
       sections: state.sections.map(sec => ({
@@ -6311,6 +6312,10 @@ const app = (() => {
     }
     if (includeRemarks) {
       payload.remarks = getValue('remarks') || '';
+    }
+    if (includeExclusions) {
+      collectExclusions();
+      payload.exclusions = state.exclusions.slice();
     }
     const tplData = JSON.stringify(payload);
 
@@ -6435,6 +6440,7 @@ const app = (() => {
     if (d.paymentTerm)    lines.push('【支払条件】' + escHtml(d.paymentTerm));
     if (d.validDays)      lines.push('【有効日数】' + escHtml(String(d.validDays)) + '日');
     if (d.remarks)        lines.push('【備考】'     + escHtml(d.remarks).replace(/\n/g, ' '));
+    if (d.exclusions && d.exclusions.length) lines.push('【見積外工事】' + d.exclusions.length + '件');
     panel.innerHTML = lines.length ? lines.join('<br>') : '<span style="color:#999">情報なし</span>';
     panel.style.display = '';
     if (btn) btn.textContent = '▼ 詳細';
@@ -6462,6 +6468,12 @@ const app = (() => {
       const hasRemarks = d.remarks !== undefined;
       cbRmk.disabled = !hasRemarks;
       cbRmk.checked  = hasRemarks;
+    }
+    const cbExcl = document.getElementById('tplRestoreExclusions');
+    if (cbExcl) {
+      const hasExclusions = Array.isArray(d.exclusions) && d.exclusions.length > 0;
+      cbExcl.disabled = !hasExclusions;
+      cbExcl.checked  = hasExclusions;
     }
   }
 
@@ -6546,6 +6558,7 @@ const app = (() => {
 
     const restoreConditions = document.getElementById('tplRestoreConditions')?.checked;
     const restoreRemarks    = document.getElementById('tplRestoreRemarks')?.checked;
+    const restoreExclusions = document.getElementById('tplRestoreExclusions')?.checked;
     if (restoreConditions && tplData.deliveryTerm !== undefined) {
       setValue('deliveryTerm',   tplData.deliveryTerm   || '');
       setValue('deliveryMethod', tplData.deliveryMethod || '');
@@ -6555,6 +6568,10 @@ const app = (() => {
     if (restoreRemarks && tplData.remarks !== undefined) {
       state.remarks = tplData.remarks || '';
       setValue('remarks', state.remarks);
+    }
+    if (restoreExclusions && Array.isArray(tplData.exclusions)) {
+      state.exclusions = tplData.exclusions.slice();
+      applyExclusionsToForm();
     }
 
     markDirty();
