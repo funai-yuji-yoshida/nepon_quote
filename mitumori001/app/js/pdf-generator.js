@@ -554,27 +554,27 @@ const QuotationPDF = (() => {
         return;
       }
       if (entry.type === 'frpNote') {
-        const frpColSpan = COLS - 1;
-        const frpPad = Array.from({ length: frpColSpan - 1 }, () => ({ text: '' }));
         const subBtm = entry.isLastSub ? true : false;
-        tableRows.push([
-          { text: '', border: [true, false, false, subBtm], fontSize: itemFs },
-          { text: `  ${entry.text}`, fontSize: Math.max(6, itemFs - 1.5), color: '#c00', colSpan: frpColSpan,
-            border: [false, false, true, subBtm] },
-          ...frpPad,
-        ]);
+        tableRows.push(
+          Array.from({ length: COLS }, (_, c) => ({
+            text: c === 1 ? `  ${entry.text}` : '',
+            fontSize: c === 1 ? Math.max(6, itemFs - 1.5) : itemFs,
+            color: c === 1 ? '#c00' : undefined,
+            border: [true, false, c === COLS - 1, subBtm],
+          }))
+        );
         return;
       }
       if (entry.type === 'frpSpec') {
-        const frpColSpan = COLS - 1;
-        const frpPad = Array.from({ length: frpColSpan - 1 }, () => ({ text: '' }));
         const subBtm = entry.isLastSub ? true : false;
-        tableRows.push([
-          { text: '', border: [true, false, false, subBtm], fontSize: itemFs },
-          { text: `　${entry.text}`, fontSize: Math.max(6, itemFs - 1), color: '#555', colSpan: frpColSpan,
-            border: [false, false, true, subBtm] },
-          ...frpPad,
-        ]);
+        tableRows.push(
+          Array.from({ length: COLS }, (_, c) => ({
+            text: c === 1 ? `　${entry.text}` : '',
+            fontSize: c === 1 ? Math.max(6, itemFs - 1) : itemFs,
+            color: c === 1 ? '#555' : undefined,
+            border: [true, false, c === COLS - 1, subBtm],
+          }))
+        );
         return;
       }
       if (entry.type === 'section') {
