@@ -3395,6 +3395,184 @@ const app = (() => {
     return FRP_SORYO_NOTES[Number(kubun)] ?? '';
   }
 
+  // 型式 → 仮固定バンドセット対応表（ポンプアップ槽【槽のみ】横型）
+  const FRP_BAND_SET_MAP = {
+    // ポンプアップ槽【槽のみ】横型（CRYシリーズ）
+    'CRY50-10C': { model: 'KB-960',  qty: 2, unit: '組' },
+    'CRY50-13C': { model: 'KB-1050', qty: 2, unit: '組' },
+    'CRY50-16C': { model: 'KB-1200', qty: 2, unit: '組' },
+    'CRY50-20C': { model: 'KB-1300', qty: 2, unit: '組' },
+    'CRY50-24C': { model: 'KB-1300', qty: 2, unit: '組' },
+    'CRY50-26C': { model: 'KB-1600', qty: 2, unit: '組' },
+    // ポンプアップ槽【槽のみ】大型横型Φ1300（TPYシリーズ）
+    'TPY-25W-13': { model: 'KB-1300', qty: 2, unit: '組' },
+    'TPY-30W-13': { model: 'KB-1300', qty: 2, unit: '組' },
+    'TPY-35W-13': { model: 'KB-1300', qty: 2, unit: '組' },
+    'TPY-40W-13': { model: 'KB-1300', qty: 3, unit: '組' },
+    'TPY-45W-13': { model: 'KB-1300', qty: 3, unit: '組' },
+    'TPY-50W-13': { model: 'KB-1300', qty: 3, unit: '組' },
+    'TPY-60W-13': { model: 'KB-1300', qty: 4, unit: '組' },
+    'TPY-70W-13': { model: 'KB-1300', qty: 5, unit: '組' },
+    'TPY-80W-13': { model: 'KB-1300', qty: 5, unit: '組' },
+    // ポンプアップ槽【槽のみ】大型横型Φ1600（TPYシリーズ）
+    'TPY-30W-16':  { model: 'KB-1600', qty: 2, unit: '組' },
+    'TPY-40W-16':  { model: 'KB-1600', qty: 2, unit: '組' },
+    'TPY-50W-16':  { model: 'KB-1600', qty: 2, unit: '組' },
+    'TPY-60W-16':  { model: 'KB-1600', qty: 3, unit: '組' },
+    'TPY-70W-16':  { model: 'KB-1600', qty: 3, unit: '組' },
+    'TPY-80W-16':  { model: 'KB-1600', qty: 3, unit: '組' },
+    'TPY-90W-16':  { model: 'KB-1600', qty: 4, unit: '組' },
+    'TPY-100W-16': { model: 'KB-1600', qty: 5, unit: '組' },
+    'TPY-120W-16': { model: 'KB-1600', qty: 5, unit: '組' },
+    'TPY-130W-16': { model: 'KB-1600', qty: 6, unit: '組' },
+    // ポンプアップ槽【槽のみ】大型横型Φ2000（TPYシリーズ）
+    'TPY-50W-20':  { model: 'KB-2000', qty: 2, unit: '組' },
+    'TPY-60W-20':  { model: 'KB-2000', qty: 2, unit: '組' },
+    'TPY-70W-20':  { model: 'KB-2000', qty: 2, unit: '組' },
+    'TPY-80W-20':  { model: 'KB-2000', qty: 3, unit: '組' },
+    'TPY-90W-20':  { model: 'KB-2000', qty: 3, unit: '組' },
+    'TPY-100W-20': { model: 'KB-2000', qty: 3, unit: '組' },
+    'TPY-130W-20': { model: 'KB-2000', qty: 4, unit: '組' },
+    'TPY-150W-20': { model: 'KB-2000', qty: 4, unit: '組' },
+    'TPY-180W-20': { model: 'KB-2000', qty: 5, unit: '組' },
+    'TPY-200W-20': { model: 'KB-2000', qty: 6, unit: '組' },
+    'TPY-250W-20': { model: 'KB-2000', qty: 6, unit: '組' },
+    // 便槽・簡易水洗・横型直下（NYU2シリーズ）
+    'NYU2-5':  { model: 'KB-720',  qty: 2, unit: '組' },
+    'NYU2-9':  { model: 'KB-820',  qty: 2, unit: '組' },
+    'NYU2-10': { model: 'KB-960',  qty: 2, unit: '組' },
+    'NYU2-13': { model: 'KB-960',  qty: 2, unit: '組' },
+    'NYU2-16': { model: 'KB-1050', qty: 2, unit: '組' },
+    'NYU2-18': { model: 'KB-1200', qty: 2, unit: '組' },
+    'NYU2-21': { model: 'KB-1200', qty: 2, unit: '組' },
+    'NYU2-25': { model: 'KB-1300', qty: 2, unit: '組' },
+    'NYU2-31': { model: 'KB-1300', qty: 2, unit: '組' },
+    // 便槽・簡易水洗・横型横引き（NYU4シリーズ）
+    'NYU4-5':  { model: 'KB-720',  qty: 2, unit: '組' },
+    'NYU4-9':  { model: 'KB-820',  qty: 2, unit: '組' },
+    'NYU4-10': { model: 'KB-960',  qty: 2, unit: '組' },
+    'NYU4-13': { model: 'KB-960',  qty: 2, unit: '組' },
+    'NYU4-16': { model: 'KB-1050', qty: 2, unit: '組' },
+    'NYU4-18': { model: 'KB-1200', qty: 2, unit: '組' },
+    'NYU4-21': { model: 'KB-1200', qty: 2, unit: '組' },
+    'NYU4-25': { model: 'KB-1300', qty: 2, unit: '組' },
+    'NYU4-31': { model: 'KB-1300', qty: 2, unit: '組' },
+    // 便槽・簡易水洗・横型横引き2連（NYU48シリーズ）
+    'NYU48-5':  { model: 'KB-720',  qty: 2, unit: '組' },
+    'NYU48-9':  { model: 'KB-820',  qty: 2, unit: '組' },
+    'NYU48-10': { model: 'KB-960',  qty: 2, unit: '組' },
+    'NYU48-13': { model: 'KB-960',  qty: 2, unit: '組' },
+    'NYU48-16': { model: 'KB-1050', qty: 2, unit: '組' },
+    'NYU48-18': { model: 'KB-1200', qty: 2, unit: '組' },
+    'NYU48-21': { model: 'KB-1200', qty: 2, unit: '組' },
+    'NYU48-25': { model: 'KB-1300', qty: 2, unit: '組' },
+    'NYU48-31': { model: 'KB-1300', qty: 2, unit: '組' },
+    // 便槽・簡易水洗・横型横引き3連（NYU・Tシリーズ）
+    'NYU・T-9':  { model: 'KB-820',  qty: 2, unit: '組' },
+    'NYU・T-13': { model: 'KB-960',  qty: 2, unit: '組' },
+    'NYU・T-16': { model: 'KB-1050', qty: 2, unit: '組' },
+    'NYU・T-18': { model: 'KB-1200', qty: 2, unit: '組' },
+    'NYU・T-21': { model: 'KB-1200', qty: 2, unit: '組' },
+    'NYU・T-25': { model: 'KB-1300', qty: 2, unit: '組' },
+    'NYU・T-31': { model: 'KB-1300', qty: 2, unit: '組' },
+    // 受水槽・横型（小型）（JYシリーズ）
+    'JY-5':  { model: 'KB-720',  qty: 2, unit: '組' },
+    'JY-9':  { model: 'KB-820',  qty: 2, unit: '組' },
+    'JY-10': { model: 'KB-960',  qty: 2, unit: '組' },
+    'JY-13': { model: 'KB-960',  qty: 2, unit: '組' },
+    'JY-16': { model: 'KB-1050', qty: 2, unit: '組' },
+    'JY-18': { model: 'KB-1200', qty: 2, unit: '組' },
+    'JY-21': { model: 'KB-1200', qty: 2, unit: '組' },
+    'JY-25': { model: 'KB-1300', qty: 2, unit: '組' },
+    'JY-31': { model: 'KB-1300', qty: 2, unit: '組' },
+    // 受水槽・特殊Φ1200（TJYシリーズ）
+    'TJY-2000-12': { model: 'KB-1200', qty: 2, unit: '組' },
+    'TJY-2500-12': { model: 'KB-1200', qty: 2, unit: '組' },
+    'TJY-3000-12': { model: 'KB-1200', qty: 2, unit: '組' },
+    'TJY-4000-12': { model: 'KB-1200', qty: 3, unit: '組' },
+    'TJY-5000-12': { model: 'KB-1200', qty: 3, unit: '組' },
+    'TJY-6000-12': { model: 'KB-1200', qty: 3, unit: '組' },
+    // 受水槽・特殊Φ1300（TJYシリーズ）
+    'TJY-2000-13':  { model: 'KB-1300', qty: 2, unit: '組' },
+    'TJY-2500-13':  { model: 'KB-1300', qty: 2, unit: '組' },
+    'TJY-3000-13':  { model: 'KB-1300', qty: 2, unit: '組' },
+    'TJY-4000-13':  { model: 'KB-1300', qty: 2, unit: '組' },
+    'TJY-5000-13':  { model: 'KB-1300', qty: 3, unit: '組' },
+    'TJY-6000-13':  { model: 'KB-1300', qty: 3, unit: '組' },
+    'TJY-7000-13':  { model: 'KB-1300', qty: 3, unit: '組' },
+    'TJY-8000-13':  { model: 'KB-1300', qty: 4, unit: '組' },
+    'TJY-9000-13':  { model: 'KB-1300', qty: 5, unit: '組' },
+    'TJY-10000-13': { model: 'KB-1300', qty: 5, unit: '組' },
+    // 受水槽・特殊Φ1600（TJYシリーズ）
+    'TJY-3000-16':  { model: 'KB-1600', qty: 2, unit: '組' },
+    'TJY-4000-16':  { model: 'KB-1600', qty: 2, unit: '組' },
+    'TJY-5000-16':  { model: 'KB-1600', qty: 2, unit: '組' },
+    'TJY-6000-16':  { model: 'KB-1600', qty: 2, unit: '組' },
+    'TJY-7000-16':  { model: 'KB-1600', qty: 3, unit: '組' },
+    'TJY-8000-16':  { model: 'KB-1600', qty: 3, unit: '組' },
+    'TJY-9000-16':  { model: 'KB-1600', qty: 3, unit: '組' },
+    'TJY-10000-16': { model: 'KB-1600', qty: 4, unit: '組' },
+    'TJY-12000-16': { model: 'KB-1600', qty: 5, unit: '組' },
+    'TJY-13000-16': { model: 'KB-1600', qty: 5, unit: '組' },
+    'TJY-15000-16': { model: 'KB-1600', qty: 6, unit: '組' },
+    // 受水槽・特殊Φ2000（TJYシリーズ）
+    'TJY-9000-20':  { model: 'KB-2000', qty: 3, unit: '組' },
+    'TJY-10000-20': { model: 'KB-2000', qty: 3, unit: '組' },
+    'TJY-13000-20': { model: 'KB-2000', qty: 3, unit: '組' },
+    'TJY-15000-20': { model: 'KB-2000', qty: 4, unit: '組' },
+    'TJY-20000-20': { model: 'KB-2000', qty: 5, unit: '組' },
+    'TJY-25000-20': { model: 'KB-2000', qty: 6, unit: '組' },
+    'TJY-28000-20': { model: 'KB-2000', qty: 7, unit: '組' },
+    // 排水槽・小型（OYシリーズ）
+    'OY-5':  { model: 'KB-720',  qty: 2, unit: '組' },
+    'OY-9':  { model: 'KB-820',  qty: 2, unit: '組' },
+    'OY-10': { model: 'KB-960',  qty: 2, unit: '組' },
+    'OY-13': { model: 'KB-960',  qty: 2, unit: '組' },
+    'OY-16': { model: 'KB-1050', qty: 2, unit: '組' },
+    'OY-18': { model: 'KB-1200', qty: 2, unit: '組' },
+    'OY-21': { model: 'KB-1200', qty: 2, unit: '組' },
+    'OY-25': { model: 'KB-1300', qty: 2, unit: '組' },
+    'OY-31': { model: 'KB-1300', qty: 2, unit: '組' },
+    // 排水槽・Φ1200（TOYシリーズ）
+    'TOY-2000-12': { model: 'KB-1200', qty: 2, unit: '組' },
+    'TOY-2500-12': { model: 'KB-1200', qty: 2, unit: '組' },
+    'TOY-3000-12': { model: 'KB-1200', qty: 2, unit: '組' },
+    'TOY-4000-12': { model: 'KB-1200', qty: 3, unit: '組' },
+    'TOY-5000-12': { model: 'KB-1200', qty: 3, unit: '組' },
+    'TOY-6000-12': { model: 'KB-1200', qty: 3, unit: '組' },
+    // 排水槽・Φ1300（TOYシリーズ）
+    'TOY-2000-13':  { model: 'KB-1300', qty: 2, unit: '組' },
+    'TOY-2500-13':  { model: 'KB-1300', qty: 2, unit: '組' },
+    'TOY-3000-13':  { model: 'KB-1300', qty: 2, unit: '組' },
+    'TOY-4000-13':  { model: 'KB-1300', qty: 2, unit: '組' },
+    'TOY-5000-13':  { model: 'KB-1300', qty: 3, unit: '組' },
+    'TOY-6000-13':  { model: 'KB-1300', qty: 3, unit: '組' },
+    'TOY-7000-13':  { model: 'KB-1300', qty: 3, unit: '組' },
+    'TOY-8000-13':  { model: 'KB-1300', qty: 4, unit: '組' },
+    'TOY-9000-13':  { model: 'KB-1300', qty: 5, unit: '組' },
+    'TOY-10000-13': { model: 'KB-1300', qty: 5, unit: '組' },
+    // 排水槽・Φ1600（TOYシリーズ）
+    'TOY-3000-16':  { model: 'KB-1600', qty: 2, unit: '組' },
+    'TOY-4000-16':  { model: 'KB-1600', qty: 2, unit: '組' },
+    'TOY-5000-16':  { model: 'KB-1600', qty: 2, unit: '組' },
+    'TOY-6000-16':  { model: 'KB-1600', qty: 2, unit: '組' },
+    'TOY-7000-16':  { model: 'KB-1600', qty: 3, unit: '組' },
+    'TOY-8000-16':  { model: 'KB-1600', qty: 3, unit: '組' },
+    'TOY-9000-16':  { model: 'KB-1600', qty: 3, unit: '組' },
+    'TOY-10000-16': { model: 'KB-1600', qty: 4, unit: '組' },
+    'TOY-12000-16': { model: 'KB-1600', qty: 5, unit: '組' },
+    'TOY-13000-16': { model: 'KB-1600', qty: 5, unit: '組' },
+    'TOY-15000-16': { model: 'KB-1600', qty: 6, unit: '組' },
+    // 排水槽・Φ2000（TOYシリーズ）
+    'TOY-9000-20':  { model: 'KB-2000', qty: 3, unit: '組' },
+    'TOY-10000-20': { model: 'KB-2000', qty: 3, unit: '組' },
+    'TOY-13000-20': { model: 'KB-2000', qty: 3, unit: '組' },
+    'TOY-15000-20': { model: 'KB-2000', qty: 4, unit: '組' },
+    'TOY-20000-20': { model: 'KB-2000', qty: 5, unit: '組' },
+    'TOY-25000-20': { model: 'KB-2000', qty: 6, unit: '組' },
+    'TOY-28000-20': { model: 'KB-2000', qty: 7, unit: '組' },
+  };
+
   // 混載便 固定送料（全国共通、区分別）
   const FRP_SORYO_KONZAI = {
     1:  11000,
@@ -3824,9 +4002,59 @@ const app = (() => {
   function _frpWizardSelect(idx) {
     const record = (_frpWizard._items || [])[idx];
     if (!record) return;
+
+    // 製品を追加し、そのIDを取得
+    const prevMaxId0 = state.frpItems.reduce((m, i) => Math.max(m, i.id), 0);
     addFrpItem(record);
+    const productItem = state.frpItems.find(i => i.id > prevMaxId0 && i.type !== 'soryo');
+
+    // 仮固定バンドセットを自動追加（全角→半角正規化して照合）
+    const normalizedItemnum = (record.itemnum || '').normalize('NFKC').trim();
+    const bandCfg = FRP_BAND_SET_MAP[normalizedItemnum];
+    if (bandCfg && productItem) {
+      const normalizedModel = bandCfg.model.normalize('NFKC');
+      // itemnum または Name にモデル番号が含まれるオプション部品レコードを検索
+      const bandRecord = state.frpCache.find(r =>
+        r.field3 === 'オプション部品' && (
+          (r.itemnum || '').normalize('NFKC').trim() === normalizedModel ||
+          (r.Name || '').normalize('NFKC').includes(normalizedModel)
+        )
+      );
+      if (bandRecord) {
+        const prevMaxId = state.frpItems.reduce((m, i) => Math.max(m, i.id), 0);
+        addFrpItem(bandRecord);
+        const added = state.frpItems.find(i => i.id > prevMaxId && i.type !== 'soryo');
+        if (added) {
+          added.qty = bandCfg.qty;
+          added._bandFor = productItem.id;
+          added._bandQtyPer = bandCfg.qty;
+        }
+      } else {
+        // FRPキャッシュにない場合は手動で追加
+        state.frpItems.push({
+          id: state.nextFrpId++, type: 'option',
+          shubetsu: 'オプション部品', chubunrui: '', kashira: '',
+          hinmei: '仮固定バンドセット', name3: '', optSpec5: '',
+          itemnum: bandCfg.model, zuban: '', hinban: '',
+          qty: bandCfg.qty, unit: bandCfg.unit,
+          price: 0, priceA: 0, priceB: 0,
+          soryoKubun: 0, soryoNote: '', specs: [], hinshu: 'opt',
+          _bandFor: productItem.id, _bandQtyPer: bandCfg.qty,
+        });
+        // 送料を末尾に再ソート
+        const soryo = state.frpItems.filter(i => i.type === 'soryo');
+        const other = state.frpItems.filter(i => i.type !== 'soryo');
+        state.frpItems = [...other, ...soryo];
+      }
+      markDirty();
+      renderFrpItems();
+      updateFrpTotals();
+      updateOutput();
+      showToast(`${record.itemnum} → ${bandCfg.model} × ${bandCfg.qty}${bandCfg.unit} を自動追加しました`);
+    }
+
     document.getElementById('frpWizardModal').style.display = 'none';
-    showToast(`${record.Name || record.itemnum || '製品'} を追加しました`);
+    if (!bandCfg) showToast(`${record.Name || record.itemnum || '製品'} を追加しました`);
   }
 
   const FRP_DEFAULT_FOOTER = `----ご注文について----
@@ -4281,6 +4509,9 @@ const app = (() => {
         const item = state.frpItems.find(i => i.id === id);
         if (item) {
           item.qty = Number(input.value) || 0;
+          // 紐付き仮固定バンドセットの数量を連動更新
+          const bandItem = state.frpItems.find(i => i._bandFor === id);
+          if (bandItem) bandItem.qty = item.qty * (bandItem._bandQtyPer || 1);
           renderFrpItems();
           updateFrpTotals();
           updateOutput();
