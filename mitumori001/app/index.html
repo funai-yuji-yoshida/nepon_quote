@@ -1059,6 +1059,10 @@
           <input type="text" id="tplSaveName" class="input-wide" placeholder="例: 温室暖房標準">
         </div>
         <div class="modal-form-row">
+          <label>説明</label>
+          <textarea id="tplSaveDescription" class="input-wide" rows="2" placeholder="用途・適用条件など（省略可）" style="resize:vertical;font-size:13px"></textarea>
+        </div>
+        <div class="modal-form-row">
           <label>種別</label>
           <input type="text" id="tplSaveType" class="input-medium" placeholder="例: 暖房">
         </div>
@@ -1107,6 +1111,12 @@
           </select>
           <input type="text" id="tplFilterType" class="input-medium" placeholder="種別..." oninput="app.filterTemplates()">
           <input type="text" id="tplFilterName" class="input-medium" placeholder="名前..." oninput="app.filterTemplates()">
+          <select id="tplSortOrder" class="input-standard" style="min-width:90px" onchange="app.filterTemplates()">
+            <option value="name_asc">名前 ↑</option>
+            <option value="name_desc">名前 ↓</option>
+            <option value="type_asc">種別 ↑</option>
+            <option value="type_desc">種別 ↓</option>
+          </select>
         </div>
         <div id="tplList" class="tpl-list">
           <div class="tpl-loading">読み込み中...</div>
@@ -1132,7 +1142,66 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="document.getElementById('tplLoadModal').style.display='none'">キャンセル</button>
+        <button class="btn-secondary" onclick="app.showSetProductDialog()">📦 セット商品を追加</button>
         <button class="btn-primary" id="btnTplLoad" onclick="app.execTemplateLoad()" disabled>📂 読み込み</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- セット商品選択モーダル -->
+  <div id="setProductModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <span>セット商品を追加</span>
+        <button class="modal-close" onclick="document.getElementById('setProductModal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="setProductList" class="tpl-list"></div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;font-size:13px">
+          <label style="white-space:nowrap">追加先大項目</label>
+          <select id="setProductTargetSection" class="input-standard" style="flex:1"></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('setProductModal').style.display='none'">キャンセル</button>
+        <button class="btn-secondary" onclick="app.showSetProductSaveDialog(null)">➕ 新規登録</button>
+        <button class="btn-primary" id="btnAddSetProduct" onclick="app.execAddSetProduct()" disabled>📦 追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- セット商品登録モーダル -->
+  <div id="setProductSaveModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog" style="min-width:480px;max-width:600px">
+      <div class="modal-header">
+        <span id="setProductSaveTitle">セット商品を登録</span>
+        <button class="modal-close" onclick="document.getElementById('setProductSaveModal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-form-row">
+          <label>商品名</label>
+          <input type="text" id="spSaveName" class="input-wide" placeholder="例: 暖房セットAB">
+        </div>
+        <div class="modal-form-row">
+          <label>所課</label>
+          <select id="spSaveDept" class="input-standard">
+            <option value="">― 選択 ―</option>
+          </select>
+        </div>
+        <div style="margin-top:12px">
+          <div style="font-size:13px;font-weight:bold;margin-bottom:6px">構成品（見積明細から選択）</div>
+          <div id="spSaveItemChecklist" style="max-height:220px;overflow-y:auto;border:1px solid #ddd;border-radius:4px"></div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:16px;align-items:center;justify-content:flex-end;font-size:13px">
+          <span>定価合計：<strong id="spSaveNormalTotal">0</strong> 円</span>
+          <label style="font-weight:normal;display:flex;align-items:center;gap:6px">
+            セット価格：<input type="number" id="spSaveSetPrice" style="width:100px;padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-size:13px;text-align:right" placeholder="90000" oninput="app.calcSetProductNormal()"> 円
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('setProductSaveModal').style.display='none'">キャンセル</button>
+        <button class="btn-primary" onclick="app.execSetProductSave()">💾 保存</button>
       </div>
     </div>
   </div>

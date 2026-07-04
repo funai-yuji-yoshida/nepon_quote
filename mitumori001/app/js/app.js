@@ -1001,7 +1001,9 @@ const app = (() => {
     subformRowIds:   [],       // 前回保存時の LinkingModule1 行ID（重複防止用）
     templateDepts:   [],       // 所課マスタ（DepartmentsList）
     templateList:    [],       // 所課別商品マスタ（CustomModule8）
-    selectedTemplateId: null,  // 読み込みモーダルで選択中のテンプレートID
+    setProductList:  [],       // セット商品リスト（CustomModule8 isSetProduct:true）
+    selectedTemplateId:   null,  // 読み込みモーダルで選択中のテンプレートID
+    selectedSetProductId: null,  // セット商品モーダルで選択中のID
     shoka:           '',       // Quotes.field15（所課）の名前
     frpMode:     false,   // FRPモードフラグ
     frpAB:       'A',     // 'A' or 'B'
@@ -2485,7 +2487,7 @@ const app = (() => {
 
   /** 追加先セクションセレクトを更新（セクション追加・削除時に呼ぶ） */
   function updateTargetSectionSelect() {
-    ['standardTargetSection', 'productTargetSection', 'kikiTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'commonTargetSection', 'netsukiTargetSection', 'kanzaiRowTargetSection', 'denzaiRowTargetSection', 'kikiRowTargetSection', 'koujiRowTargetSection', 'standardRowTargetSection'].forEach(id => {
+    ['standardTargetSection', 'productTargetSection', 'kikiTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'commonTargetSection', 'netsukiTargetSection', 'kanzaiRowTargetSection', 'denzaiRowTargetSection', 'kikiRowTargetSection', 'koujiRowTargetSection', 'standardRowTargetSection', 'setProductTargetSection'].forEach(id => {
       const sel = document.getElementById(id);
       if (!sel) return;
       const cur = sel.value;
@@ -4059,6 +4061,11 @@ const app = (() => {
     if (item.type === 'product' && item.soryoKubun) {
       state.frpItems.push(makeFrpSoryoItem(item.soryoKubun));
     }
+
+    // 送料行を常に最下段へ移動
+    const soryoItems = state.frpItems.filter(i => i.type === 'soryo');
+    const otherItems = state.frpItems.filter(i => i.type !== 'soryo');
+    state.frpItems = [...otherItems, ...soryoItems];
 
     markDirty();
     renderFrpItems();
@@ -6230,20 +6237,26 @@ const app = (() => {
     if (!zohoReady) return;
     try {
       const data = await fetchAllRecords('CustomModule8', 'Name');
-      state.templateList = data
-        .filter(r => r.JSON)
-        .map(r => {
-          let parsed = null;
-          try { parsed = JSON.parse(r.JSON); } catch(e) {}
-          return {
-            id:      r.id,
-            name:    r.Name || '',
-            type:    r.field17 || '',
-            deptId:  r.field21?.id   || '',
-            deptName:r.field21?.name || '',
-            data:    parsed,
-          };
-        });
+      state.templateList   = [];
+      state.setProductList = [];
+      data.filter(r => r.JSON).forEach(r => {
+        let parsed = null;
+        try { parsed = JSON.parse(r.JSON); } catch(e) {}
+        const entry = {
+          id:          r.id,
+          name:        r.Name || '',
+          type:        r.field17 || '',
+          deptId:      r.field21?.id   || '',
+          deptName:    r.field21?.name || '',
+          description: parsed?.description || r.Description || '',
+          data:        parsed,
+        };
+        if (parsed?.isSetProduct) {
+          state.setProductList.push(entry);
+        } else {
+          state.templateList.push(entry);
+        }
+      });
     } catch (e) { console.warn('loadAllTemplates error:', e); }
   }
 
@@ -6255,6 +6268,312 @@ const app = (() => {
     if (saveEl) saveEl.innerHTML = opts;
     if (filterEl) filterEl.innerHTML = '<option value="">― 所課で絞り込み ―</option>' +
       state.templateDepts.map(d => `<option value="${d.id}">${escHtml(d.name)}</option>`).join('');
+  }
+
+  function showSetProductSaveDialog(existingId) {
+    if (!zohoReady) { showToast('Zoho未接続', 'warn'); return; }
+    if (state.templateDepts.length === 0) {
+      loadDepartments().then(() => { populateDeptSelects(); _openSpSaveModal(existingId); });
+      return;
+    }
+    populateDeptSelects();
+    _openSpSaveModal(existingId);
+  }
+
+  function _openSpSaveModal(existingId) {
+    const nameEl  = document.getElementById('spSaveName');
+    const deptEl  = document.getElementById('spSaveDept');
+    const setPrEl = document.getElementById('spSaveSetPrice');
+    const titleEl = document.getElementById('setProductSaveTitle');
+
+    // 所課ドロップダウンを構築
+    if (deptEl) {
+      deptEl.innerHTML = '<option value="">― 選択 ―</option>' +
+        state.templateDepts.map(d => `<option value="${d.id}">${escHtml(d.name)}</option>`).join('');
+      const currentDept = state.templateDepts.find(d => d.name === state.shoka);
+      if (currentDept) deptEl.value = currentDept.id;
+    }
+
+    // 見積明細チェックリストを構築（品名・単価が入っている行のみ）
+    const checklistEl = document.getElementById('spSaveItemChecklist');
+    if (checklistEl) {
+      const rows = [];
+      state.sections.forEach((sec, si) => {
+        sec.items.forEach((item, ii) => {
+          if (!item.name && !item.unitPrice) return;
+          rows.push({ si, ii, item, secName: sec.name });
+        });
+      });
+
+      if (rows.length === 0) {
+        checklistEl.innerHTML = '<div style="padding:12px;color:#999;font-size:13px;text-align:center">見積明細に行がありません</div>';
+      } else {
+        // 編集時は既存構成品の品名でチェック状態を初期設定
+        const existingSp   = existingId ? state.setProductList.find(p => p.id === existingId) : null;
+        const existingNames = existingSp?.data?.items?.map(i => i.name) || [];
+
+        checklistEl.innerHTML = rows.map(({ si, ii, item, secName }) => {
+          const amount  = item.amount ?? Math.round((item.qty || 1) * (item.unitPrice || 0));
+          const checked = existingId ? existingNames.includes(item.name) : true;
+          return `<label style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:13px" data-si="${si}" data-ii="${ii}">
+            <input type="checkbox" ${checked ? 'checked' : ''} onchange="app.calcSetProductNormal()">
+            <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(item.name)}">${escHtml(secName ? secName + ' / ' : '') + escHtml(item.name)}</span>
+            <span style="color:#666;white-space:nowrap">${item.qty}${escHtml(item.unit || '式')} × ${(item.unitPrice ?? 0).toLocaleString()} = ${amount.toLocaleString()}円</span>
+          </label>`;
+        }).join('');
+      }
+    }
+
+    if (existingId) {
+      const sp = state.setProductList.find(p => p.id === existingId);
+      if (!sp) return;
+      document.getElementById('setProductSaveModal').dataset.editId = existingId;
+      if (titleEl) titleEl.textContent = 'セット商品を編集';
+      if (nameEl)  nameEl.value = sp.name;
+      if (deptEl && sp.deptId) deptEl.value = sp.deptId;
+      if (setPrEl) setPrEl.value = sp.data?.setPrice ?? '';
+    } else {
+      delete document.getElementById('setProductSaveModal').dataset.editId;
+      if (titleEl) titleEl.textContent = 'セット商品を登録';
+      if (nameEl)  nameEl.value = '';
+      if (setPrEl) setPrEl.value = '';
+    }
+    calcSetProductNormal();
+    document.getElementById('setProductSaveModal').style.display = 'flex';
+  }
+
+  function calcSetProductNormal() {
+    const checklistEl = document.getElementById('spSaveItemChecklist');
+    if (!checklistEl) return;
+    let total = 0;
+    checklistEl.querySelectorAll('label').forEach(label => {
+      const cb = label.querySelector('input[type=checkbox]');
+      if (!cb?.checked) return;
+      const si   = parseInt(label.dataset.si);
+      const ii   = parseInt(label.dataset.ii);
+      const sec  = state.sections[si];
+      const item = sec?.items[ii];
+      if (!item) return;
+      total += item.amount ?? Math.round((item.qty || 1) * (item.unitPrice || 0));
+    });
+    const el = document.getElementById('spSaveNormalTotal');
+    if (el) el.textContent = total.toLocaleString();
+  }
+
+  function _collectSpItems() {
+    const checklistEl = document.getElementById('spSaveItemChecklist');
+    if (!checklistEl) return [];
+    const items = [];
+    checklistEl.querySelectorAll('label').forEach(label => {
+      const cb = label.querySelector('input[type=checkbox]');
+      if (!cb?.checked) return;
+      const si   = parseInt(label.dataset.si);
+      const ii   = parseInt(label.dataset.ii);
+      const sec  = state.sections[si];
+      const item = sec?.items[ii];
+      if (!item) return;
+      items.push({
+        name:      item.name      || '',
+        spec:      item.spec      || '',
+        qty:       item.qty       ?? 1,
+        unit:      item.unit      || '式',
+        unitPrice: item.unitPrice ?? 0,
+        amount:    item.amount    ?? Math.round((item.qty || 1) * (item.unitPrice || 0)),
+        genka:     item.genka     ?? 0,
+      });
+    });
+    return items;
+  }
+
+  async function execSetProductSave() {
+    const name     = (document.getElementById('spSaveName')?.value || '').trim();
+    const deptId   = document.getElementById('spSaveDept')?.value || '';
+    const setPrice = parseFloat(document.getElementById('spSaveSetPrice')?.value) || 0;
+    if (!name)   { showToast('商品名を入力してください', 'warn'); return; }
+    if (!deptId) { showToast('所課を選択してください', 'warn'); return; }
+
+    const items = _collectSpItems();
+    if (items.length === 0) { showToast('構成品を1件以上選択してください', 'warn'); return; }
+
+    const normalPrice = items.reduce((s, it) => s + it.amount, 0);
+    const deptName = state.templateDepts.find(d => d.id === deptId)?.name || '';
+
+    const payload = { isSetProduct: true, items, normalPrice, setPrice };
+    const apiData = {
+      Name:    name,
+      JSON:    JSON.stringify(payload),
+      field17: 'セット商品',
+      field21: { id: deptId, name: deptName },
+    };
+
+    const editId = document.getElementById('setProductSaveModal').dataset.editId;
+    try {
+      if (editId) {
+        await ZOHO.CRM.API.updateRecord({
+          Entity: 'CustomModule8', APIData: { id: editId, ...apiData }, Trigger: [],
+        });
+        const sp = state.setProductList.find(p => p.id === editId);
+        if (sp) Object.assign(sp, { name, deptId, deptName, data: payload });
+        showToast('セット商品を更新しました');
+      } else {
+        // 同じ所課・同じ名前のセット商品を検索
+        const sameName = state.setProductList.find(p => p.name === name && p.deptId === deptId);
+        if (sameName) {
+          if (!confirm(`「${name}」は同じ所課に既に存在します。上書きしますか？`)) return;
+          await ZOHO.CRM.API.updateRecord({
+            Entity: 'CustomModule8', APIData: { id: sameName.id, ...apiData }, Trigger: [],
+          });
+          Object.assign(sameName, { name, deptId, deptName, data: payload });
+          showToast('セット商品を上書きしました');
+        } else {
+          const res = await ZOHO.CRM.API.insertRecord({
+            Entity: 'CustomModule8', APIData: apiData, Trigger: [],
+          });
+          const newId = res?.data?.[0]?.details?.id;
+          if (newId) state.setProductList.push({ id: newId, name, type: 'セット商品', deptId, deptName, data: payload });
+          showToast('セット商品を登録しました');
+        }
+      }
+      document.getElementById('setProductSaveModal').style.display = 'none';
+      showSetProductDialog();
+    } catch (e) {
+      console.error('セット商品保存エラー:', e);
+      showToast('保存に失敗しました', 'err');
+    }
+  }
+
+  function showSetProductDialog() {
+    const currentDept = state.templateDepts.find(d => d.name === state.shoka);
+    const list = currentDept
+      ? state.setProductList.filter(p => p.deptId === currentDept.id)
+      : state.setProductList;
+
+    state.selectedSetProductId = null;
+    const btnEl = document.getElementById('btnAddSetProduct');
+    if (btnEl) btnEl.disabled = true;
+
+    const listEl = document.getElementById('setProductList');
+    if (listEl) {
+      if (list.length === 0) {
+        listEl.innerHTML = '<div class="tpl-none">セット商品が登録されていません</div>';
+      } else {
+        listEl.innerHTML = list.map(p => {
+          const d = p.data || {};
+          const normalPrice = d.normalPrice != null ? `定価 ${Number(d.normalPrice).toLocaleString()}円` : '';
+          const setPrice    = d.setPrice    != null ? `セット価格 ${Number(d.setPrice).toLocaleString()}円` : '';
+          const itemCount   = Array.isArray(d.items) ? `${d.items.length}品目` : '';
+          return `
+            <div class="tpl-item${state.selectedSetProductId === p.id ? ' selected' : ''}"
+                 data-set-id="${p.id}" onclick="app.selectSetProduct('${p.id}')">
+              <input type="radio" class="tpl-item-radio" name="setProductItem"
+                     ${state.selectedSetProductId === p.id ? 'checked' : ''}>
+              <div class="tpl-item-info">
+                <div class="tpl-item-name">${escHtml(p.name)}</div>
+                <div class="tpl-item-meta">${[p.deptName, itemCount, normalPrice, setPrice].filter(Boolean).join(' / ') || '―'}</div>
+              </div>
+              <button class="tpl-detail-btn" onclick="event.stopPropagation();app.toggleSetProductDetail('${p.id}')"
+                      data-sp-detail-id="${p.id}" style="margin-left:auto;padding:2px 8px;font-size:12px;background:none;border:1px solid #ccc;border-radius:4px;cursor:pointer;white-space:nowrap">▶ 詳細</button>
+            </div>
+            <div id="sp-detail-${p.id}" style="display:none;padding:6px 12px 8px 36px;font-size:12px;color:#444;background:#f9f9f9;border-bottom:1px solid #e0e0e0"></div>`;
+        }).join('');
+      }
+    }
+    // 追加先セクション選択を commonTargetSection と同期
+    const commonVal = document.getElementById('commonTargetSection')?.value || 'last';
+    const spSel = document.getElementById('setProductTargetSection');
+    if (spSel) spSel.value = commonVal;
+
+    const el = document.getElementById('setProductModal');
+    if (el) el.style.display = 'flex';
+  }
+
+  function selectSetProduct(id) {
+    state.selectedSetProductId = id;
+    const btnEl = document.getElementById('btnAddSetProduct');
+    if (btnEl) btnEl.disabled = false;
+    document.querySelectorAll('#setProductList .tpl-item').forEach(el => {
+      el.classList.toggle('selected', el.dataset.setId === id);
+      const radio = el.querySelector('input[type=radio]');
+      if (radio) radio.checked = el.dataset.setId === id;
+    });
+  }
+
+  function toggleSetProductDetail(id) {
+    const panel = document.getElementById('sp-detail-' + id);
+    const btn   = document.querySelector('[data-sp-detail-id="' + id + '"]');
+    if (!panel) return;
+    selectSetProduct(id);
+    const isOpen = panel.style.display !== 'none';
+    if (isOpen) {
+      panel.style.display = 'none';
+      if (btn) btn.textContent = '▶ 詳細';
+      return;
+    }
+    const sp = state.setProductList.find(p => p.id === id);
+    const d  = sp?.data || {};
+    const lines = [];
+    if (Array.isArray(d.items) && d.items.length > 0) {
+      const itemLines = d.items.map(it => {
+        const amount = it.amount ?? Math.round((it.qty || 1) * (it.unitPrice || 0));
+        return `${escHtml(it.name)}　${it.qty}${escHtml(it.unit || '式')} × ${(it.unitPrice || 0).toLocaleString()}円 ＝ ${amount.toLocaleString()}円`;
+      }).join('<br>');
+      lines.push(itemLines);
+    }
+    if (d.normalPrice != null) lines.push(`<span style="color:#666">定価合計：${Number(d.normalPrice).toLocaleString()}円</span>`);
+    if (d.setPrice    != null) lines.push(`<span style="color:#c00;font-weight:bold">セット価格：${Number(d.setPrice).toLocaleString()}円</span>`);
+    panel.innerHTML = lines.length ? lines.join('<br>') : '<span style="color:#999">情報なし</span>';
+    panel.style.display = '';
+    if (btn) btn.textContent = '▼ 詳細';
+  }
+
+  function execAddSetProduct() {
+    if (!state.selectedSetProductId) { showToast('セット商品を選択してください', 'warn'); return; }
+    const setProduct = state.setProductList.find(p => p.id === state.selectedSetProductId);
+    if (!setProduct?.data) { showToast('データが見つかりません', 'warn'); return; }
+
+    const d = setProduct.data;
+    const items = Array.isArray(d.items) ? d.items : [];
+    if (items.length === 0) { showToast('構成品が登録されていません', 'warn'); return; }
+
+    // 追加先セクションを選択肢から取得、なければ新規作成
+    const targetVal = document.getElementById('setProductTargetSection')?.value || 'last';
+    let targetSection;
+    if (targetVal === 'last') {
+      targetSection = state.sections[state.sections.length - 1];
+    } else {
+      const targetId = Number(targetVal);
+      targetSection = state.sections.find(s => s.id === targetId) || state.sections[state.sections.length - 1];
+    }
+    if (!targetSection) {
+      targetSection = {
+        id: state.nextSectionId++, no: 1,
+        name: setProduct.name, cat: '', items: [],
+      };
+      state.sections.push(targetSection);
+    }
+
+    // 構成品を追加
+    items.forEach(tplItem => {
+      const item = createItem();
+      item.name      = tplItem.name      || '';
+      item.spec      = tplItem.spec      || '';
+      item.qty       = tplItem.qty       ?? 1;
+      item.unit      = tplItem.unit      || '式';
+      item.unitPrice = tplItem.unitPrice ?? null;
+      item.amount    = tplItem.amount    ?? 0;
+      item.genka     = tplItem.genka     ?? 0;
+      targetSection.items.push(item);
+    });
+
+    markDirty();
+    renumberSections();
+    renderSections();
+    updateOutput();
+    document.getElementById('setProductModal').style.display = 'none';
+    document.getElementById('tplLoadModal').style.display = 'none';
+    showToast(`「${setProduct.name}」を追加しました`);
+    const msg = document.getElementById('noSectionsMsg');
+    if (msg) msg.style.display = 'none';
   }
 
   async function showTemplateSaveDialog() {
@@ -6278,9 +6597,11 @@ const app = (() => {
         ).join('');
       overwriteEl.value = '';
     }
-    // 名前フィールドをリセット
+    // 名前・説明フィールドをリセット
     const nameEl = document.getElementById('tplSaveName');
     if (nameEl) nameEl.value = '';
+    const descEl = document.getElementById('tplSaveDescription');
+    if (descEl) descEl.value = '';
 
     const el = document.getElementById('tplSaveModal');
     if (el) el.style.display = 'flex';
@@ -6293,16 +6614,19 @@ const app = (() => {
     const nameEl = document.getElementById('tplSaveName');
     const typeEl = document.getElementById('tplSaveType');
     const deptEl = document.getElementById('tplSaveDept');
+    const descEl = document.getElementById('tplSaveDescription');
     if (nameEl) nameEl.value = tpl.name;
     if (typeEl) typeEl.value = tpl.type || '';
     if (deptEl && tpl.deptId) deptEl.value = tpl.deptId;
+    if (descEl) descEl.value = tpl.description || '';
   }
 
   async function execTemplateSave() {
     const overwriteId = document.getElementById('tplSaveOverwriteTarget')?.value || '';
     const name = (document.getElementById('tplSaveName')?.value || '').trim();
     if (!name) { showToast('テンプレート名を入力してください', 'warn'); return; }
-    const type   = (document.getElementById('tplSaveType')?.value || '').trim();
+    const type        = (document.getElementById('tplSaveType')?.value || '').trim();
+    const description = (document.getElementById('tplSaveDescription')?.value || '').trim();
     const deptId = document.getElementById('tplSaveDept')?.value || '';
     const deptName = deptId
       ? (state.templateDepts.find(d => d.id === deptId)?.name || '')
@@ -6313,6 +6637,7 @@ const app = (() => {
     const includeExclusions  = document.getElementById('tplSaveIncludeExclusions')?.checked;
 
     const payload = {
+      description,
       sections: state.sections.map(sec => ({
         name:   sec.name,
         cat:    sec.cat || '',
@@ -6353,6 +6678,7 @@ const app = (() => {
       const apiData = { Name: name, JSON: tplData };
       if (type) apiData.field17 = type;
       if (deptId) apiData.field21 = { id: deptId, name: deptName };
+      apiData.Description = description;
 
       // 上書き先が指定されている場合はIDで直接更新、なければ同名チェック
       const existing = overwriteId
@@ -6363,14 +6689,14 @@ const app = (() => {
         await ZOHO.CRM.API.updateRecord({
           Entity: 'CustomModule8', APIData: { id: existing.id, ...apiData }, Trigger: [],
         });
-        Object.assign(existing, { type, deptId, deptName, data: payload });
+        Object.assign(existing, { type, deptId, deptName, description, data: payload });
         showToast('テンプレートを更新しました');
       } else {
         const res = await ZOHO.CRM.API.insertRecord({
           Entity: 'CustomModule8', APIData: apiData, Trigger: [],
         });
         const newId = res?.data?.[0]?.details?.id;
-        if (newId) state.templateList.push({ id: newId, name, type, deptId, deptName, data: payload });
+        if (newId) state.templateList.push({ id: newId, name, type, deptId, deptName, description, data: payload });
         showToast('テンプレートを保存しました');
       }
       document.getElementById('tplSaveModal').style.display = 'none';
@@ -6408,10 +6734,20 @@ const app = (() => {
     const typeQ  = (document.getElementById('tplFilterType')?.value || '').trim().toLowerCase();
     const nameQ  = (document.getElementById('tplFilterName')?.value || '').trim().toLowerCase();
 
-    let filtered = state.templateList;
+    const sortOrder = document.getElementById('tplSortOrder')?.value || 'name_asc';
+
+    let filtered = state.templateList.slice();
     if (deptId) filtered = filtered.filter(t => t.deptId === deptId);
     if (typeQ)  filtered = filtered.filter(t => t.type.toLowerCase().includes(typeQ));
     if (nameQ)  filtered = filtered.filter(t => t.name.toLowerCase().includes(nameQ));
+
+    filtered.sort((a, b) => {
+      if (sortOrder === 'name_asc')  return a.name.localeCompare(b.name, 'ja');
+      if (sortOrder === 'name_desc') return b.name.localeCompare(a.name, 'ja');
+      if (sortOrder === 'type_asc')  return (a.type || '').localeCompare(b.type || '', 'ja') || a.name.localeCompare(b.name, 'ja');
+      if (sortOrder === 'type_desc') return (b.type || '').localeCompare(a.type || '', 'ja') || a.name.localeCompare(b.name, 'ja');
+      return 0;
+    });
 
     const listEl = document.getElementById('tplList');
     if (!listEl) return;
@@ -6457,6 +6793,7 @@ const app = (() => {
     }
     const d = tpl.data;
     const lines = [];
+    if (tpl.description) lines.push('【説明】' + escHtml(tpl.description).replace(/\n/g, '<br>'));
     if (d.sections && d.sections.length) {
       const sectionSummary = d.sections.map(sec => {
         const rowCount = sec.items ? sec.items.length : 0;
@@ -8132,6 +8469,13 @@ const app = (() => {
     toggleTplDetail,
     selectTemplate,
     execTemplateLoad,
+    showSetProductDialog,
+    selectSetProduct,
+    toggleSetProductDetail,
+    execAddSetProduct,
+    showSetProductSaveDialog,
+    calcSetProductNormal,
+    execSetProductSave,
     // 単位ピッカー
     toggleUnitDropdown,
     // 減衰計算サマリー折りたたみ
