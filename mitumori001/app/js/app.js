@@ -1998,9 +1998,11 @@ const app = (() => {
         teika:    Number(r.field8) || 0,
         shikiri:  Number(r.field7) || 0,
         spec:     r.field9 || '',        // 熱機仕様
+        shubetsu: r.field10 || '',       // 種別（熱機/農用/衛生）
       }));
       console.log(`物販標準項マスタ ${state.buppanStandard.length} 件読み込み`);
       buildBuppanCategorySelect();
+      buildEiseiCategorySelect();
     } catch (e) {
       console.warn('物販標準項マスタ取得失敗:', e);
     }
@@ -2009,7 +2011,12 @@ const app = (() => {
   function buildBuppanCategorySelect() {
     const catSel = document.getElementById('buppanStdCategorySelect');
     if (!catSel) return;
-    const cats = [...new Set(state.buppanStandard.map(r => r.category).filter(Boolean))];
+    const cats = [...new Set(
+      state.buppanStandard
+        .filter(r => r.shubetsu !== '衛生')
+        .map(r => r.category)
+        .filter(Boolean)
+    )];
     while (catSel.options.length > 1) catSel.remove(1);
     cats.forEach(cat => {
       const opt = document.createElement('option');
@@ -2025,7 +2032,44 @@ const app = (() => {
     while (modelSel.options.length > 1) modelSel.remove(1);
     const models = [...new Set(
       state.buppanStandard
-        .filter(r => r.category === cat)
+        .filter(r => r.shubetsu !== '衛生' && r.category === cat)
+        .map(r => r.model)
+        .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b, 'ja'));
+    models.forEach(model => {
+      const opt = document.createElement('option');
+      opt.value = model;
+      opt.textContent = model;
+      modelSel.appendChild(opt);
+    });
+    modelSel.value = '';
+  }
+
+  function buildEiseiCategorySelect() {
+    const catSel = document.getElementById('eiseiCatSelect');
+    if (!catSel) return;
+    const cats = [...new Set(
+      state.buppanStandard
+        .filter(r => r.shubetsu === '衛生')
+        .map(r => r.category)
+        .filter(Boolean)
+    )];
+    while (catSel.options.length > 1) catSel.remove(1);
+    cats.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      catSel.appendChild(opt);
+    });
+  }
+
+  function onEiseiCatChange(cat) {
+    const modelSel = document.getElementById('eiseiModelSelect');
+    if (!modelSel) return;
+    while (modelSel.options.length > 1) modelSel.remove(1);
+    const models = [...new Set(
+      state.buppanStandard
+        .filter(r => r.shubetsu === '衛生' && r.category === cat)
         .map(r => r.model)
         .filter(Boolean)
     )].sort((a, b) => a.localeCompare(b, 'ja'));
@@ -2128,6 +2172,100 @@ const app = (() => {
           targetSection.items.push(item);
         } else if (mainItem) {
           // 付属品行
+          mainItem.specLines = mainItem.specLines || [];
+          mainItem.specLines.push(`${r.name}（${r.qty}${r.unit}）`);
+        }
+      }
+    });
+
+    markDirty();
+    renderSections();
+    updateOutput();
+    showToast(`No.${targetSection.no} に ${model} を追加しました`);
+  }
+
+  function execEiseiAdd() {
+    const model = document.getElementById('eiseiModelSelect')?.value || '';
+    if (!model) { showToast('型式を選択してください', 'warn'); return; }
+
+    if (state.sections.length === 0) addSection();
+
+    const targetVal = document.getElementById('eiseiTargetSection')?.value || 'last';
+    let targetSection;
+    if (targetVal === 'last') {
+      targetSection = state.sections[state.sections.length - 1];
+    } else {
+      const targetId = Number(targetVal);
+      targetSection = state.sections.find(s => s.id === targetId) || state.sections[state.sections.length - 1];
+    }
+
+    const lastItem = targetSection.items[targetSection.items.length - 1];
+    if (lastItem && !lastItem.name && !lastItem.spec && !lastItem.unitPrice && !lastItem.amount) {
+      targetSection.items.pop();
+    }
+
+    const matched = state.buppanStandard
+      .filter(r => r.shubetsu === '衛生' && r.model === model)
+      .sort((a, b) => a.order - b.order);
+
+    if (matched.length === 0) {
+      showToast(`型式「${model}」の標準項が見つかりません`, 'warn');
+      return;
+    }
+
+    const isNetsukiStructure = matched.some(r => !!r.spec);
+
+    let mainItem = null;
+    matched.forEach(r => {
+      if (isNetsukiStructure) {
+        if (r.order === 1) {
+          const header = createItem();
+          header.name            = r.name;
+          header.qty             = '';
+          header.unit            = '';
+          header.isNetsukiHeader = true;
+          targetSection.items.push(header);
+        } else if (r.order === 2 && !mainItem) {
+          const item = createItem();
+          item.isNetsukiMain = true;
+          item.name           = r.name;
+          item.spec           = r.hinban || '';
+          item.qty            = r.qty;
+          item.unit           = r.unit;
+          item.unitPrice      = r.teika  || null;
+          item.amount         = (r.teika || 0) * r.qty;
+          item.genka          = r.shikiri;
+          item.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
+          if (r.spec) {
+            const cleanedSpec = r.spec.split('\n')
+              .map(l => l.split('\t').map(t => t.trim()).filter(t => t).join('　'))
+              .filter(l => l).join('\n');
+            item.model              = r.model || '';
+            item.specMasterContent  = cleanedSpec;
+            item.specMasterLoaded   = true;
+            item.specMasterFromProducts = true;
+            _applySpecToMachineSpec(item);
+          }
+          mainItem = item;
+          targetSection.items.push(item);
+        } else if (mainItem) {
+          mainItem.specLines = mainItem.specLines || [];
+          mainItem.specLines.push(`${r.name}（${r.qty}${r.unit}）`);
+        }
+      } else {
+        if (r.order === 1) {
+          const item = createItem();
+          item.name           = r.name;
+          item.spec           = r.hinban || '';
+          item.qty            = r.qty;
+          item.unit           = r.unit;
+          item.unitPrice      = r.teika  || null;
+          item.amount         = (r.teika || 0) * r.qty;
+          item.genka          = r.shikiri;
+          item.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
+          mainItem = item;
+          targetSection.items.push(item);
+        } else if (mainItem) {
           mainItem.specLines = mainItem.specLines || [];
           mainItem.specLines.push(`${r.name}（${r.qty}${r.unit}）`);
         }
@@ -2395,8 +2533,8 @@ const app = (() => {
       const el = document.getElementById(id);
       if (el) el.style.display = cat === c ? '' : 'none';
     });
-    // 熱機・標準項の行はswitchStandardSubで制御。タブ切替時は常時非表示
-    ['netsukiRow', 'standardRow'].forEach(id => {
+    // 熱機・衛生・標準項の行はswitchStandardSubで制御。タブ切替時は常時非表示
+    ['netsukiRow', 'standardRow', 'eiseiRow'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
@@ -2404,16 +2542,20 @@ const app = (() => {
     if (cat !== 'standard') {
       document.getElementById('standardSubNetsuki')?.classList.remove('active');
       document.getElementById('standardSubStandard')?.classList.remove('active');
+      document.getElementById('standardSubEisei')?.classList.remove('active');
     }
   }
 
   function switchStandardSub(sub) {
     document.getElementById('standardSubNetsuki')?.classList.toggle('active', sub === 'netsuki');
     document.getElementById('standardSubStandard')?.classList.toggle('active', sub === 'standard');
+    document.getElementById('standardSubEisei')?.classList.toggle('active', sub === 'eisei');
     const netsukiRow = document.getElementById('netsukiRow');
     const standardRow = document.getElementById('standardRow');
+    const eiseiRow = document.getElementById('eiseiRow');
     if (netsukiRow) netsukiRow.style.display = sub === 'netsuki' ? '' : 'none';
     if (standardRow) standardRow.style.display = sub === 'standard' ? '' : 'none';
+    if (eiseiRow) eiseiRow.style.display = sub === 'eisei' ? '' : 'none';
   }
 
   function onKoujiKubunChange(kubun) {
@@ -2487,7 +2629,7 @@ const app = (() => {
 
   /** 追加先セクションセレクトを更新（セクション追加・削除時に呼ぶ） */
   function updateTargetSectionSelect() {
-    ['standardTargetSection', 'productTargetSection', 'kikiTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'commonTargetSection', 'netsukiTargetSection', 'kanzaiRowTargetSection', 'denzaiRowTargetSection', 'kikiRowTargetSection', 'koujiRowTargetSection', 'standardRowTargetSection', 'setProductTargetSection'].forEach(id => {
+    ['standardTargetSection', 'productTargetSection', 'kikiTargetSection', 'kanzaiTargetSection', 'denzaiTargetSection', 'commonTargetSection', 'netsukiTargetSection', 'eiseiTargetSection', 'kanzaiRowTargetSection', 'denzaiRowTargetSection', 'kikiRowTargetSection', 'koujiRowTargetSection', 'standardRowTargetSection', 'setProductTargetSection'].forEach(id => {
       const sel = document.getElementById(id);
       if (!sel) return;
       const cur = sel.value;
@@ -3437,44 +3579,44 @@ const app = (() => {
     'TPY-180W-20': { model: 'KB-2000', qty: 5, unit: '組' },
     'TPY-200W-20': { model: 'KB-2000', qty: 6, unit: '組' },
     'TPY-250W-20': { model: 'KB-2000', qty: 6, unit: '組' },
-    // 便槽・簡易水洗・横型直下（NYU2シリーズ）
-    'NYU2-5':  { model: 'KB-720',  qty: 2, unit: '組' },
-    'NYU2-9':  { model: 'KB-820',  qty: 2, unit: '組' },
-    'NYU2-10': { model: 'KB-960',  qty: 2, unit: '組' },
-    'NYU2-13': { model: 'KB-960',  qty: 2, unit: '組' },
-    'NYU2-16': { model: 'KB-1050', qty: 2, unit: '組' },
-    'NYU2-18': { model: 'KB-1200', qty: 2, unit: '組' },
-    'NYU2-21': { model: 'KB-1200', qty: 2, unit: '組' },
-    'NYU2-25': { model: 'KB-1300', qty: 2, unit: '組' },
-    'NYU2-31': { model: 'KB-1300', qty: 2, unit: '組' },
-    // 便槽・簡易水洗・横型横引き（NYU4シリーズ）
-    'NYU4-5':  { model: 'KB-720',  qty: 2, unit: '組' },
-    'NYU4-9':  { model: 'KB-820',  qty: 2, unit: '組' },
-    'NYU4-10': { model: 'KB-960',  qty: 2, unit: '組' },
-    'NYU4-13': { model: 'KB-960',  qty: 2, unit: '組' },
-    'NYU4-16': { model: 'KB-1050', qty: 2, unit: '組' },
-    'NYU4-18': { model: 'KB-1200', qty: 2, unit: '組' },
-    'NYU4-21': { model: 'KB-1200', qty: 2, unit: '組' },
-    'NYU4-25': { model: 'KB-1300', qty: 2, unit: '組' },
-    'NYU4-31': { model: 'KB-1300', qty: 2, unit: '組' },
-    // 便槽・簡易水洗・横型横引き2連（NYU48シリーズ）
-    'NYU48-5':  { model: 'KB-720',  qty: 2, unit: '組' },
-    'NYU48-9':  { model: 'KB-820',  qty: 2, unit: '組' },
-    'NYU48-10': { model: 'KB-960',  qty: 2, unit: '組' },
-    'NYU48-13': { model: 'KB-960',  qty: 2, unit: '組' },
-    'NYU48-16': { model: 'KB-1050', qty: 2, unit: '組' },
-    'NYU48-18': { model: 'KB-1200', qty: 2, unit: '組' },
-    'NYU48-21': { model: 'KB-1200', qty: 2, unit: '組' },
-    'NYU48-25': { model: 'KB-1300', qty: 2, unit: '組' },
-    'NYU48-31': { model: 'KB-1300', qty: 2, unit: '組' },
-    // 便槽・簡易水洗・横型横引き3連（NYU・Tシリーズ）
-    'NYU・T-9':  { model: 'KB-820',  qty: 2, unit: '組' },
-    'NYU・T-13': { model: 'KB-960',  qty: 2, unit: '組' },
-    'NYU・T-16': { model: 'KB-1050', qty: 2, unit: '組' },
-    'NYU・T-18': { model: 'KB-1200', qty: 2, unit: '組' },
-    'NYU・T-21': { model: 'KB-1200', qty: 2, unit: '組' },
-    'NYU・T-25': { model: 'KB-1300', qty: 2, unit: '組' },
-    'NYU・T-31': { model: 'KB-1300', qty: 2, unit: '組' },
+    // 便槽・簡易水洗・横型直下（NYU2シリーズ）→ KB + SYD-100C
+    'NYU2-5':  { model: 'KB-720',  qty: 2, unit: '組', extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
+    'NYU2-9':  { model: 'KB-820',  qty: 2, unit: '組', extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
+    'NYU2-10': { model: 'KB-960',  qty: 2, unit: '組', extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
+    'NYU2-13': { model: 'KB-960',  qty: 2, unit: '組', extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
+    'NYU2-16': { model: 'KB-1050', qty: 2, unit: '組', extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
+    'NYU2-18': { model: 'KB-1200', qty: 2, unit: '組', extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
+    'NYU2-21': { model: 'KB-1200', qty: 2, unit: '組', extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
+    'NYU2-25': { model: 'KB-1300', qty: 2, unit: '組', extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
+    'NYU2-31': { model: 'KB-1300', qty: 2, unit: '組', extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
+    // 便槽・簡易水洗・横型横引き（NYU4シリーズ）→ KB + SYD-100A
+    'NYU4-5':  { model: 'KB-720',  qty: 2, unit: '組', extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    'NYU4-9':  { model: 'KB-820',  qty: 2, unit: '組', extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    'NYU4-10': { model: 'KB-960',  qty: 2, unit: '組', extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    'NYU4-13': { model: 'KB-960',  qty: 2, unit: '組', extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    'NYU4-16': { model: 'KB-1050', qty: 2, unit: '組', extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    'NYU4-18': { model: 'KB-1200', qty: 2, unit: '組', extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    'NYU4-21': { model: 'KB-1200', qty: 2, unit: '組', extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    'NYU4-25': { model: 'KB-1300', qty: 2, unit: '組', extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    'NYU4-31': { model: 'KB-1300', qty: 2, unit: '組', extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    // 便槽・簡易水洗・横型横引き2連（NYU48シリーズ）→ KB + SYD-100W
+    'NYU48-5':  { model: 'KB-720',  qty: 2, unit: '組', extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    'NYU48-9':  { model: 'KB-820',  qty: 2, unit: '組', extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    'NYU48-10': { model: 'KB-960',  qty: 2, unit: '組', extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    'NYU48-13': { model: 'KB-960',  qty: 2, unit: '組', extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    'NYU48-16': { model: 'KB-1050', qty: 2, unit: '組', extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    'NYU48-18': { model: 'KB-1200', qty: 2, unit: '組', extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    'NYU48-21': { model: 'KB-1200', qty: 2, unit: '組', extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    'NYU48-25': { model: 'KB-1300', qty: 2, unit: '組', extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    'NYU48-31': { model: 'KB-1300', qty: 2, unit: '組', extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    // 便槽・簡易水洗・横型横引き3連（NYU・Tシリーズ）→ KB + SYD-100T
+    'NYU・T-9':  { model: 'KB-820',  qty: 2, unit: '組', extras: [{ model: 'SYD-100T', qty: 1, unit: 'セット' }] },
+    'NYU・T-13': { model: 'KB-960',  qty: 2, unit: '組', extras: [{ model: 'SYD-100T', qty: 1, unit: 'セット' }] },
+    'NYU・T-16': { model: 'KB-1050', qty: 2, unit: '組', extras: [{ model: 'SYD-100T', qty: 1, unit: 'セット' }] },
+    'NYU・T-18': { model: 'KB-1200', qty: 2, unit: '組', extras: [{ model: 'SYD-100T', qty: 1, unit: 'セット' }] },
+    'NYU・T-21': { model: 'KB-1200', qty: 2, unit: '組', extras: [{ model: 'SYD-100T', qty: 1, unit: 'セット' }] },
+    'NYU・T-25': { model: 'KB-1300', qty: 2, unit: '組', extras: [{ model: 'SYD-100T', qty: 1, unit: 'セット' }] },
+    'NYU・T-31': { model: 'KB-1300', qty: 2, unit: '組', extras: [{ model: 'SYD-100T', qty: 1, unit: 'セット' }] },
     // 受水槽・横型（小型）（JYシリーズ）
     'JY-5':  { model: 'KB-720',  qty: 2, unit: '組' },
     'JY-9':  { model: 'KB-820',  qty: 2, unit: '組' },
@@ -4020,6 +4162,34 @@ const app = (() => {
           (r.Name || '').normalize('NFKC').includes(normalizedModel)
         )
       );
+      // オプション品をキャッシュまたは手動で追加するヘルパー
+      function _addAutoOption(optModel, optQty, optUnit, fallbackHinmei) {
+        const nm = optModel.normalize('NFKC');
+        const r = state.frpCache.find(x =>
+          x.field3 === 'オプション部品' && (
+            (x.itemnum || '').normalize('NFKC').trim() === nm ||
+            (x.Name || '').normalize('NFKC').includes(nm)
+          )
+        );
+        if (r) {
+          const prevId = state.frpItems.reduce((m, i) => Math.max(m, i.id), 0);
+          addFrpItem(r);
+          const added = state.frpItems.find(i => i.id > prevId && i.type !== 'soryo');
+          if (added) { added.qty = optQty; added._bandFor = productItem.id; added._bandQtyPer = optQty; }
+        } else {
+          state.frpItems.push({
+            id: state.nextFrpId++, type: 'option',
+            shubetsu: 'オプション部品', chubunrui: '', kashira: '',
+            hinmei: fallbackHinmei, name3: '', optSpec5: '',
+            itemnum: optModel, zuban: '', hinban: '',
+            qty: optQty, unit: optUnit,
+            price: 0, priceA: 0, priceB: 0,
+            soryoKubun: 0, soryoNote: '', specs: [], hinshu: 'opt',
+            _bandFor: productItem.id, _bandQtyPer: optQty,
+          });
+        }
+      }
+
       if (bandRecord) {
         const prevMaxId = state.frpItems.reduce((m, i) => Math.max(m, i.id), 0);
         addFrpItem(bandRecord);
@@ -4030,27 +4200,30 @@ const app = (() => {
           added._bandQtyPer = bandCfg.qty;
         }
       } else {
-        // FRPキャッシュにない場合は手動で追加
-        state.frpItems.push({
-          id: state.nextFrpId++, type: 'option',
-          shubetsu: 'オプション部品', chubunrui: '', kashira: '',
-          hinmei: '仮固定バンドセット', name3: '', optSpec5: '',
-          itemnum: bandCfg.model, zuban: '', hinban: '',
-          qty: bandCfg.qty, unit: bandCfg.unit,
-          price: 0, priceA: 0, priceB: 0,
-          soryoKubun: 0, soryoNote: '', specs: [], hinshu: 'opt',
-          _bandFor: productItem.id, _bandQtyPer: bandCfg.qty,
-        });
-        // 送料を末尾に再ソート
-        const soryo = state.frpItems.filter(i => i.type === 'soryo');
-        const other = state.frpItems.filter(i => i.type !== 'soryo');
-        state.frpItems = [...other, ...soryo];
+        _addAutoOption(bandCfg.model, bandCfg.qty, bandCfg.unit, '仮固定バンドセット');
       }
+
+      // 追加オプション品（臭突管セット等）を自動追加
+      if (bandCfg.extras) {
+        for (const ex of bandCfg.extras) {
+          _addAutoOption(ex.model, ex.qty, ex.unit, ex.model);
+        }
+      }
+
+      // 送料を末尾に再ソート
+      const soryoItems2 = state.frpItems.filter(i => i.type === 'soryo');
+      const otherItems2 = state.frpItems.filter(i => i.type !== 'soryo');
+      state.frpItems = [...otherItems2, ...soryoItems2];
+
       markDirty();
       renderFrpItems();
       updateFrpTotals();
       updateOutput();
-      showToast(`${record.itemnum} → ${bandCfg.model} × ${bandCfg.qty}${bandCfg.unit} を自動追加しました`);
+      const extraNames = (bandCfg.extras || []).map(e => e.model).join('・');
+      const toastMsg = extraNames
+        ? `${record.itemnum} → ${bandCfg.model} × ${bandCfg.qty}${bandCfg.unit}、${extraNames} を自動追加しました`
+        : `${record.itemnum} → ${bandCfg.model} × ${bandCfg.qty}${bandCfg.unit} を自動追加しました`;
+      showToast(toastMsg);
     }
 
     document.getElementById('frpWizardModal').style.display = 'none';
@@ -4509,9 +4682,9 @@ const app = (() => {
         const item = state.frpItems.find(i => i.id === id);
         if (item) {
           item.qty = Number(input.value) || 0;
-          // 紐付き仮固定バンドセットの数量を連動更新
-          const bandItem = state.frpItems.find(i => i._bandFor === id);
-          if (bandItem) bandItem.qty = item.qty * (bandItem._bandQtyPer || 1);
+          // 紐付きオプション品（仮固定バンドセット・臭突管セット等）の数量を連動更新
+          state.frpItems.filter(i => i._bandFor === id)
+            .forEach(i => { i.qty = item.qty * (i._bandQtyPer || 1); });
           renderFrpItems();
           updateFrpTotals();
           updateOutput();
@@ -8658,6 +8831,8 @@ const app = (() => {
     execProductAdd,
     onBuppanCatChange,
     execBuppanStandardAdd,
+    onEiseiCatChange,
+    execEiseiAdd,
     // 見積外工事
     onExclusionChange,
     updateExclusionCount,
