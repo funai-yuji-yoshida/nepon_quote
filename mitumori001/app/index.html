@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>御見積書 PDF生成</title>
   <!-- Zoho Embedded App SDK -->
-  <script src="https://live.zwidgets.com/js-sdk/1.0.5/ZohoEmbededAppSDK.min.js"></script>
+  <script src="https://live.zwidgets.com/js-sdk/1.5/ZohoEmbededAppSDK.min.js"></script>
   <!-- PDFMake 0.1.x（Zohoウィジェット環境ではWeb Workerが使えないため0.1系を使用） -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.72/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.72/vfs_fonts.js"></script>
@@ -404,6 +404,7 @@
                   <div class="cat-tabs">
                     <button class="cat-tab" id="standardSubStandard" onclick="app.switchStandardSub('standard')">農用工事</button>
                     <button class="cat-tab" id="standardSubNetsuki" onclick="app.switchStandardSub('netsuki')">熱機</button>
+                    <button class="cat-tab" id="standardSubEisei" onclick="app.switchStandardSub('eisei')" style="display:none">衛生</button>
                   </div>
                 </div>
               </div>
@@ -536,6 +537,24 @@
             </select>
             <select id="netsukiTargetSection" class="input-standard cat-target-sel"></select>
             <button class="btn-cat-add" onclick="app.execBuppanStandardAdd()">追加</button>
+          </div>
+        </div>
+
+        <!-- 行8: 衛生標準項（衛生タブ選択時に表示） -->
+        <div class="toolbar-main" id="eiseiRow" style="display:none;margin-top:3px;">
+          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
+            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
+          </div>
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;">衛生</button></div>
+            <select id="eiseiCatSelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onEiseiCatChange(this.value)">
+              <option value="">― カテゴリを選択 ―</option>
+            </select>
+            <select id="eiseiModelSelect" class="input-search" style="height:30px;flex:1;min-width:0;">
+              <option value="">― 型式を選択 ―</option>
+            </select>
+            <select id="eiseiTargetSection" class="input-standard cat-target-sel"></select>
+            <button class="btn-cat-add" onclick="app.execEiseiAdd()">追加</button>
           </div>
         </div>
 
