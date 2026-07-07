@@ -3255,7 +3255,7 @@ const app = (() => {
         <span class="spm-preview">${escHtml(preview)}</span>
         <button class="spm-btn spm-edit-btn" onclick="app.showSpecMasterModal(${itemId})">${btnLabel}</button>${deptRefBtn}${resetBtn}${hideBtn}`;
     } else {
-      const _hasModelVal = !!(item.model || item.spec);
+      const _hasModelVal = !!item.model;
       const hideBtn2 = _hasModelVal
         ? (item.printModel === false
             ? `<button class="spm-btn spm-hide-btn spm-hidden-on" onclick="app.toggleModelPrint(${itemId})">型式　印刷OFF</button>`
