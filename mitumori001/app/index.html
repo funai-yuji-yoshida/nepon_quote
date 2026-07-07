@@ -781,6 +781,12 @@
           </div>
 
           <div class="print-detail-option">
+            <span class="print-detail-label">型式の印刷：</span>
+            <button id="btnModelPrintOn" class="spm-btn" onclick="app.setAllModelPrint(true)">全行ON</button>
+            <button id="btnModelPrintOff" class="spm-btn spm-hidden-on" onclick="app.setAllModelPrint(false)">全行OFF</button>
+          </div>
+
+          <div class="print-detail-option">
             <label class="print-detail-label">
               日付形式：
               <select id="dateFormat" onchange="app.updateOutput()" style="margin-left:4px">

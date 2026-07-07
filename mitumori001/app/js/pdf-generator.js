@@ -450,7 +450,8 @@ const QuotationPDF = (() => {
             if (!item.name || !item.name.trim()) return;
             mirrorEntries.push({ type: 'item', item, idx });
             if (!item.machineSpecHidden) {
-              const _modelToShow = (item.machineSpec && item.machineSpec.model) || item.model || item.spec || '';
+              const _modelToShow = (item.machineSpec && item.machineSpec.model)
+                || (item.specMasterContent ? '' : (item.printModel !== false ? (item.model || item.spec || '') : ''));
               if (_modelToShow) {
                 mirrorEntries.push({ type: 'machineSpecModel', model: _modelToShow });
               }
@@ -865,7 +866,7 @@ const QuotationPDF = (() => {
           { text: '', border: [true, false, false, false] },
           { text: buppanDeliveryLabel, alignment: 'center', bold: true, fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
           ...emp(spanMid - 1),
-          { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
+          { text: fmt(dairiGrandTotal), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
         ]);
       }
     } else if (isKoujiDairi) {
@@ -1880,7 +1881,8 @@ const QuotationPDF = (() => {
           ]);
         }
         if (!item.machineSpecHidden) {
-          const _koujiModel = (item.machineSpec && item.machineSpec.model) || item.model || item.spec || '';
+          const _koujiModel = (item.machineSpec && item.machineSpec.model)
+            || (item.specMasterContent ? '' : (item.printModel !== false ? (item.model || item.spec || '') : ''));
           if (_koujiModel) {
             rows.push([{ text: '' }, { text: `　型式　${_koujiModel}`, fontSize: 8 }, ...emp(COLS - 2)]);
           }
@@ -2005,6 +2007,13 @@ const QuotationPDF = (() => {
         const body = [mkRow('合　　計', fmt(grandTotal), true)];
         if (discountAmt > 0) body.push(mkRow('出精値引き', '▲ ' + fmt(discountAmt), false));
         body.push(mkRow('貴社お渡し価格', fmt(Math.max(0, grandTotal - discountAmt)), false));
+        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+      } else if (isBulk) {
+        const bulkBase = dairiTotal != null ? dairiTotal : totalDairi;
+        const isBuppanLocal = (quoteCategory || '').includes('物販');
+        const buppanLabel = (isBuppanLocal && bulkBase < 1000000) ? '販売価格合計' : '貴社お渡し価格';
+        const body = [mkRow('合　　計', fmt(grandTotal), true)];
+        body.push(mkRow(buppanLabel, fmt(bulkBase), false));
         result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else {
         result.push({
@@ -2143,7 +2152,7 @@ const QuotationPDF = (() => {
         // 型式行（熱機アイテムは品名が型式なので省略、品目コード列表示時も省略）
         if (!showProductCode && !item.machineSpecHidden) {
           const _detModel = (item.machineSpec && item.machineSpec.model)
-            || (item.specMasterContent ? '' : (item.model || item.spec || ''));
+            || (item.specMasterContent ? '' : (item.printModel !== false ? (item.model || item.spec || '') : ''));
           if (_detModel) {
             rows.push([{ text: '' }, { text: `　型式　${_detModel}`, fontSize: 7.5, color: '#333' }, ...emp(COLS - 2)]);
           }
@@ -2409,7 +2418,7 @@ const QuotationPDF = (() => {
         }
         // 型式行（商品マスタの型式。品目コード列表示時は重複を避けるため省略）
         if (!item.machineSpecHidden) {
-          if (item.model && !item.machineSpec && !showProductCode) {
+          if (item.model && !item.machineSpec && !showProductCode && item.printModel !== false) {
             rows.push([{ text: '' }, { text: `　型式：${item.model}`, fontSize: 7.5, color: '#333' }, ...emp(COLS - 2)]);
           }
           if (item.machineSpec) {
@@ -2498,26 +2507,44 @@ const QuotationPDF = (() => {
     if (sectionTotals.length > 0) {
       const grandDairi = sectionTotals.reduce((sum, s) =>
         sum + (s.items || []).reduce((ss, i) => ss + dairiItemAmt(i), 0) * (s.secQty || 1), 0);
-      result.push({
-        margin: [0, 0, 0, 0],
-        table: {
-          widths: COL_WIDTHS,
-          body: [[
-            { text: '', border: [true, true, false, true], fillColor: '#e8f0f8' },
-            { text: '合　　計', alignment: 'center', bold: true, colSpan: COLS - 2, border: [false, true, false, true], fillColor: '#e8f0f8' },
-            ...emp(COLS - 3),
-            { text: fmt((useDairi || isShikiOnly) ? grandDairi : grandTotal), alignment: 'right', bold: true, border: [false, true, true, true], fillColor: '#e8f0f8' },
-          ]],
-        },
-        layout: {
-          hLineWidth: () => 0.8,
-          vLineWidth: () => 0.5,
-          paddingLeft:   () => 3,
-          paddingRight:  () => 3,
-          paddingTop:    () => 3,
-          paddingBottom: () => 3,
-        },
-      });
+      const totalLayout = {
+        hLineWidth: () => 0.8,
+        vLineWidth: () => 0.5,
+        paddingLeft:   () => 3,
+        paddingRight:  () => 3,
+        paddingTop:    () => 3,
+        paddingBottom: () => 3,
+      };
+      if (isBulk) {
+        const bulkBase = dairiTotal != null ? dairiTotal : grandDairi;
+        const isBuppanLocal = (quoteCategory || '').includes('物販');
+        const buppanLabel = (isBuppanLocal && bulkBase < 1000000) ? '販売価格合計' : '貴社お渡し価格';
+        const mkRow = (label, val, top) => [
+          { text: '', border: [true, top, false, true], fillColor: '#e8f0f8' },
+          { text: label, alignment: 'center', bold: true, colSpan: COLS - 2, border: [false, top, false, true], fillColor: '#e8f0f8' },
+          ...emp(COLS - 3),
+          { text: val, alignment: 'right', bold: true, border: [false, top, true, true], fillColor: '#e8f0f8' },
+        ];
+        result.push({
+          margin: [0, 0, 0, 0],
+          table: { widths: COL_WIDTHS, body: [mkRow('合　　計', fmt(grandTotal), true), mkRow(buppanLabel, fmt(bulkBase), false)] },
+          layout: totalLayout,
+        });
+      } else {
+        result.push({
+          margin: [0, 0, 0, 0],
+          table: {
+            widths: COL_WIDTHS,
+            body: [[
+              { text: '', border: [true, true, false, true], fillColor: '#e8f0f8' },
+              { text: '合　　計', alignment: 'center', bold: true, colSpan: COLS - 2, border: [false, true, false, true], fillColor: '#e8f0f8' },
+              ...emp(COLS - 3),
+              { text: fmt((useDairi || isShikiOnly) ? grandDairi : grandTotal), alignment: 'right', bold: true, border: [false, true, true, true], fillColor: '#e8f0f8' },
+            ]],
+          },
+          layout: totalLayout,
+        });
+      }
     }
 
     return result;

@@ -3255,10 +3255,11 @@ const app = (() => {
         <span class="spm-preview">${escHtml(preview)}</span>
         <button class="spm-btn spm-edit-btn" onclick="app.showSpecMasterModal(${itemId})">${btnLabel}</button>${deptRefBtn}${resetBtn}${hideBtn}`;
     } else {
-      const hideBtn2 = item.model
-        ? (item.machineSpecHidden
-            ? `<button class="spm-btn spm-hide-btn spm-hidden-on" onclick="app.toggleMachineSpecHidden(${itemId})">印刷OFF</button>`
-            : `<button class="spm-btn spm-hide-btn" onclick="app.toggleMachineSpecHidden(${itemId})">印刷ON</button>`)
+      const _hasModelVal = !!(item.model || item.spec);
+      const hideBtn2 = _hasModelVal
+        ? (item.printModel === false
+            ? `<button class="spm-btn spm-hide-btn spm-hidden-on" onclick="app.toggleModelPrint(${itemId})">型式　印刷OFF</button>`
+            : `<button class="spm-btn spm-hide-btn" onclick="app.toggleModelPrint(${itemId})">型式　印刷ON</button>`)
         : '';
       cell.innerHTML = `<span class="spm-label">機器仕様</span>
         <span class="spm-none">未登録</span>
@@ -3272,6 +3273,35 @@ const app = (() => {
     item.machineSpecHidden = !item.machineSpecHidden;
     updateSpecMasterRow(itemId);
     markDirty();
+  }
+
+  function toggleModelPrint(itemId) {
+    const item = state.sections.flatMap(s => s.items).find(i => i.id === itemId);
+    if (!item) return;
+    item.printModel = item.printModel === false ? true : false;
+    updateSpecMasterRow(itemId);
+    updateOutput();
+    markDirty();
+  }
+
+  function setAllModelPrint(val) {
+    state.sections.forEach(s => s.items.forEach(item => {
+      item.printModel = val;
+      // 機器仕様登録済み行も同期（machineSpecHidden で制御される）
+      if (item.specMasterContent || item.machineSpec) {
+        item.machineSpecHidden = !val;
+      }
+    }));
+    state.sections.flatMap(s => s.items).forEach(item => updateSpecMasterRow(item.id));
+    // グローバルボタンの状態表示を更新（OFFのとき全行OFFを赤表示）
+    const btnOn  = document.getElementById('btnModelPrintOn');
+    const btnOff = document.getElementById('btnModelPrintOff');
+    if (btnOn)  { btnOn.classList.toggle('spm-active-on', val !== false); btnOn.classList.remove('spm-hidden-on'); }
+    if (btnOff) { btnOff.classList.toggle('spm-hidden-on', val === false); btnOff.classList.remove('spm-active-on'); }
+    updateOutput();
+    markDirty();
+    const count = state.sections.flatMap(s => s.items).filter(i => i.model || i.spec || i.specMasterContent || i.machineSpec).length;
+    showToast(`型式・仕様印刷を${val ? 'ON' : 'OFF'}にしました（対象 ${count} 件）`);
   }
 
   let _specMasterItemId = null;
@@ -5263,6 +5293,7 @@ const app = (() => {
       kojiCategory: '',    // 工事カテゴリー名（field18）
       specLines: [],    // 仕様行（テキストのみ）
       machineSpec: null, // {model, specs:[{label,value}]}
+      printModel: false,  // 型式行の印刷ON/OFF
     };
   }
 
@@ -5989,12 +6020,13 @@ const app = (() => {
         row = createItemRowDOM(item);
         tbody.appendChild(row);
         // 商品アイテムまたは機器仕様・型式があるアイテムには機器仕様マスタ行を追加
-        if (item.productId || item.machineSpec || item.specMasterContent || item.model) {
+        if (item.productId || item.machineSpec || item.specMasterContent || item.model || item.spec) {
           const spmRow = createSpecMasterRowDOM(item);
           row.insertAdjacentElement('afterend', spmRow);
           if (item.productId && !item.specMasterLoaded) {
             loadItemSpecMaster(item).then(() => updateSpecMasterRow(item.id));
           } else {
+            if (!item.specMasterLoaded) item.specMasterLoaded = true;
             updateSpecMasterRow(item.id);
           }
         }
@@ -7584,7 +7616,9 @@ const app = (() => {
     const waribikiAmount = (dairiTotal != null && !isBuhanCalc) ? Math.max(0, grandTotal - dairiTotal) : 0;
     // 出精値引き = 割引額 + 調整額
     const discount       = waribikiAmount + adjustAmount;
-    const deliveryPrice  = Math.max(0, grandTotal - discount - buhanDiscTotal);
+    const deliveryPrice  = isBuhanCalc
+      ? Math.max(0, (dairiTotal ?? grandTotal) - buhanDiscTotal)
+      : Math.max(0, grandTotal - discount - buhanDiscTotal);
 
     // state に反映（saveToCRM/buildPdfData で使用）
     state.discount       = discount;
@@ -8862,6 +8896,8 @@ const app = (() => {
     resetToProductSpec,
     applyDeptSpec,
     toggleMachineSpecHidden,
+    toggleModelPrint,
+    setAllModelPrint,
     // 列表示・列幅
     toggleColDropdown,
     setColVisibility,
