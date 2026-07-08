@@ -179,7 +179,7 @@
         <div class="price-layout">
           <div class="price-left">
             <div class="form-row">
-              <label>明細合計（定価）</label>
+              <label>明細合計（希望小売価格）</label>
               <div class="price-group">
                 <span class="currency-sign">¥</span>
                 <span id="basicGrandTotal" class="display-price">0</span>
@@ -599,8 +599,8 @@
               <th class="frp-col-hinshu">品種</th>
               <th class="frp-col-qty">数量</th>
               <th class="frp-col-unit">単位</th>
-              <th class="frp-col-price">定価単価</th>
-              <th class="frp-col-total">定価合計</th>
+              <th class="frp-col-price">希望小売価格単価</th>
+              <th class="frp-col-total">希望小売価格合計</th>
               <th class="frp-col-shikiri">仕切単価</th>
               <th class="frp-col-shikiri-total">仕切合計</th>
               <th class="frp-col-del"></th>
@@ -611,7 +611,7 @@
 
         <div class="frp-footer">
           <div class="frp-totals-row">
-            <span class="frp-footer-label">定価合計：</span>
+            <span class="frp-footer-label">希望小売価格合計：</span>
             <strong id="frpPriceTotal">¥0</strong>
             <span class="frp-footer-label frp-footer-label-right">仕切合計：</span>
             <strong id="frpShikiriTotal">¥0</strong>
@@ -699,7 +699,7 @@
 
           <h4 class="breakdown-title">金額内訳</h4>
           <table class="summary-tbl">
-            <tr><td class="lbl">明細合計（定価）</td><td class="val amount" id="sum-total">¥0</td></tr>
+            <tr><td class="lbl">明細合計（希望小売価格）</td><td class="val amount" id="sum-total">¥0</td></tr>
             <tr id="sum-dairi-row" style="display:none"><td class="lbl">　代理店価格合計</td><td class="val amount" id="sum-dairi" style="color:#1a4d8f">¥0</td></tr>
             <tr><td class="lbl">　値引き額</td><td class="val amount" id="sum-discount" style="color:#c0392b">¥0</td></tr>
             <tr class="row-delivery"><td class="lbl">貴社お渡し価格</td><td class="val amount" id="sum-delivery">¥0</td></tr>
@@ -798,20 +798,20 @@
 
           <div id="pdfPriceModeGroupKouji" class="pdf-price-mode-group" style="display:none">
             <div class="pdf-price-mode-label">印刷価格モード:</div>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="teika" checked onchange="app.updateOutput()"> 1. 定価のみ</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="teika" checked onchange="app.updateOutput()"> 1. 希望小売価格のみ</label>
             <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-bulk" onchange="app.updateOutput()"> 2. 一括仕切</label>
             <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-discount" onchange="app.updateOutput()"> 3. 出精値引き</label>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi" onchange="app.updateOutput()"> 4. 仕切表示（定価も表示）</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi" onchange="app.updateOutput()"> 4. 仕切表示（希望小売価格も表示）</label>
             <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-only" onchange="app.updateOutput()"> 5. 仕切表示のみ</label>
             <div class="pdf-price-mode-desc" id="pdfPriceModeDescKouji"></div>
           </div>
 
           <div id="pdfPriceModeGroup" class="pdf-price-mode-group" style="display:none">
             <div class="pdf-price-mode-label">印刷価格モード:</div>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="teika" checked onchange="app.updateOutput()"> 1. 定価のみ</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="teika" checked onchange="app.updateOutput()"> 1. 希望小売価格のみ</label>
             <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-bulk" onchange="app.updateOutput()"> 2. 一括仕切</label>
             <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-discount" onchange="app.updateOutput()"> 3. 出精値引き</label>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi" onchange="app.updateOutput()"> 4. 仕切表示（定価も表示）</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi" onchange="app.updateOutput()"> 4. 仕切表示（希望小売価格も表示）</label>
             <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-only" onchange="app.updateOutput()"> 5. 仕切表示のみ</label>
             <div class="pdf-price-mode-desc" id="pdfPriceModeDesc"></div>
           </div>
@@ -837,7 +837,14 @@
           <div id="subtotalBothGroup" class="print-detail-option" style="display:none">
             <label class="print-detail-label">
               <input type="checkbox" id="printSubtotalBoth">
-              明細小計行に合計（定価）も表示する
+              明細小計行に合計（希望小売価格）も表示する
+            </label>
+          </div>
+
+          <div id="buppanDeliveryLabelGroup" class="print-detail-option" style="display:none">
+            <label class="print-detail-label">
+              <input type="checkbox" id="useBuppanDeliveryLabel" onchange="app.updateOutput()">
+              お渡し価格を「販売価格合計」で表示する
             </label>
           </div>
 
@@ -1218,7 +1225,7 @@
           <div id="spSaveItemChecklist" style="max-height:220px;overflow-y:auto;border:1px solid #ddd;border-radius:4px"></div>
         </div>
         <div style="margin-top:10px;display:flex;gap:16px;align-items:center;justify-content:flex-end;font-size:13px">
-          <span>定価合計：<strong id="spSaveNormalTotal">0</strong> 円</span>
+          <span>希望小売価格合計：<strong id="spSaveNormalTotal">0</strong> 円</span>
           <label style="font-weight:normal;display:flex;align-items:center;gap:6px">
             セット価格：<input type="number" id="spSaveSetPrice" style="width:100px;padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-size:13px;text-align:right" placeholder="90000" oninput="app.calcSetProductNormal()"> 円
           </label>

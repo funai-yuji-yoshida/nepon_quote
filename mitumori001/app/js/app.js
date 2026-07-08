@@ -2151,9 +2151,12 @@ const app = (() => {
           mainItem = item;
           targetSection.items.push(item);
         } else if (mainItem) {
-          // order=3+: 付属品行
-          mainItem.specLines = mainItem.specLines || [];
-          mainItem.specLines.push(`${r.name}（${r.qty}${r.unit}）`);
+          // order=3+: 付属品行（個別行として追加）
+          const subItem = createItem();
+          subItem.name = r.name;
+          subItem.qty  = r.qty;
+          subItem.unit = r.unit;
+          targetSection.items.push(subItem);
         }
       } else {
         // ── 旧構造（非SBM）──
@@ -2171,9 +2174,12 @@ const app = (() => {
           mainItem = item;
           targetSection.items.push(item);
         } else if (mainItem) {
-          // 付属品行
-          mainItem.specLines = mainItem.specLines || [];
-          mainItem.specLines.push(`${r.name}（${r.qty}${r.unit}）`);
+          // 付属品行（個別行として追加）
+          const subItem = createItem();
+          subItem.name = r.name;
+          subItem.qty  = r.qty;
+          subItem.unit = r.unit;
+          targetSection.items.push(subItem);
         }
       }
     });
@@ -7710,6 +7716,12 @@ const app = (() => {
       const _sbModeV = ([...document.getElementsByName(_sbModeN)].find(r => r.checked)?.value || 'teika');
       subtotalBothGrp.style.display = (dairiTotal != null && _sbModeV === 'dairi') ? '' : 'none';
     }
+    const buppanDeliveryLabelGrp = document.getElementById('buppanDeliveryLabelGroup');
+    if (buppanDeliveryLabelGrp) {
+      const showOpt = isBuhanCalc && dairiTotal != null && dairiTotal < 1000000;
+      buppanDeliveryLabelGrp.style.display = showOpt ? '' : 'none';
+      if (!showOpt) { const cb = document.getElementById('useBuppanDeliveryLabel'); if (cb) cb.checked = false; }
+    }
     const dpHidden = document.getElementById('deliveryPrice');
     if (dpHidden) dpHidden.value = deliveryPrice;
 
@@ -8082,6 +8094,10 @@ const app = (() => {
       printMode:        mode,
       showSubtotalBoth: (() => {
         const cb = document.getElementById('printSubtotalBoth');
+        return cb ? cb.checked : false;
+      })(),
+      useBuppanDeliveryLabel: (() => {
+        const cb = document.getElementById('useBuppanDeliveryLabel');
         return cb ? cb.checked : false;
       })(),
 
@@ -8773,11 +8789,11 @@ const app = (() => {
 
   // ── 印刷価格モード説明 ─────────────────────────────────────────
   const PDF_MODE_DESC = {
-    teika:          '定価のみ印刷。代理店価格列は表示しません。',
-    'dairi-kouji':  '定価に加えて代理店仕切合計（列）を追加表示します。',
-    'dairi-bulk':   '表示は定価。仕切は合計を一括表示。',
-    'dairi-discount': '定価合計から値引き額を差し引いた形式で表示します。',
-    dairi:          '各行に定価及び仕切の単価、合計を表示。',
+    teika:          '希望小売価格のみ印刷。代理店価格列は表示しません。',
+    'dairi-kouji':  '希望小売価格に加えて代理店仕切合計（列）を追加表示します。',
+    'dairi-bulk':   '表示は希望小売価格。仕切は合計を一括表示。',
+    'dairi-discount': '希望小売価格合計から値引き額を差し引いた形式で表示します。',
+    dairi:          '各行に希望小売価格及び仕切の単価、合計を表示。',
     'dairi-only':   '仕切単価・仕切合計のみ表示',
   };
 
