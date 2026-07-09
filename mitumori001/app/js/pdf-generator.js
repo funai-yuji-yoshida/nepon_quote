@@ -293,6 +293,7 @@ const QuotationPDF = (() => {
           showProductCode: data.showProductCodeCover,
           frpMode, frpItems, frpPriceTotal, frpShikiriTotal,
           frpShowZuban: data.frpShowZuban !== false,
+          frpShowSpecs: data.frpShowSpecs !== false,
           frpDiscount:  data.frpDiscount || 0,
           adjustAmount, waribikiAmount,
         }),
@@ -307,10 +308,15 @@ const QuotationPDF = (() => {
                 ? buildKoujiSummaryDetailPages({ sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, roundingEnabled: data.roundingEnabled, showProductCode: data.showProductCode, discount, discountEnabled: data.discountEnabled !== false, adjustAmount, waribikiAmount })
                 : buildKoujiDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, showSubtotalBoth: data.showSubtotalBoth, roundingEnabled: data.roundingEnabled, showProductCode: data.showProductCode, discount, discountEnabled: data.discountEnabled !== false, adjustAmount, waribikiAmount }))
             : (data.printMode === 'simple'
-                ? buildBuppanSagyoSummaryDetailPages({ sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, roundingEnabled: data.roundingEnabled, showProductCode: data.showProductCode, quoteCategory, useBuppanDeliveryLabel: data.useBuppanDeliveryLabel || false })
-                : buildBuppanSagyoDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, showSubtotalBoth: data.showSubtotalBoth, roundingEnabled: data.roundingEnabled, showProductCode: data.showProductCode, quoteCategory, useBuppanDeliveryLabel: data.useBuppanDeliveryLabel || false }))
+                ? buildBuppanSagyoSummaryDetailPages({ sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, roundingEnabled: data.roundingEnabled, showProductCode: data.showProductCode, quoteCategory, useBuppanDeliveryLabel: data.useBuppanDeliveryLabel || false, adjustAmount })
+                : buildBuppanSagyoDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, showSubtotalBoth: data.showSubtotalBoth, roundingEnabled: data.roundingEnabled, showProductCode: data.showProductCode, quoteCategory, useBuppanDeliveryLabel: data.useBuppanDeliveryLabel || false, adjustAmount }))
           ),
         ] : []),
+
+        // FRPモード: 衛生設備セクションが登録されていれば別ページで出力
+        ...(frpMode && sections.some(s => (s.items || []).some(i => (i.name || '').trim()))
+          ? [{ text: '', pageBreak: 'before' }, ...buildEiseiSection({ sections, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, roundingEnabled: data.roundingEnabled || false })]
+          : []),
       ],
     };
   }
@@ -321,7 +327,7 @@ const QuotationPDF = (() => {
     grandTotal, discount, discountEnabled, quoteCategory, deliveryPrice, materialCost, laborCost, legalWelfare, legalRate, anzenCost, buhanDiscTotal = 0,
     mainRate, pdfPriceMode, dairiTotal, showUchiwake, showProductCode = false,
     frpMode, frpItems, frpPriceTotal, frpShikiriTotal,
-    frpShowZuban = true, frpDiscount = 0,
+    frpShowZuban = true, frpShowSpecs = true, frpDiscount = 0,
     adjustAmount = 0, waribikiAmount = 0 }) {
     const isDairiAvailable = mainRate != null || dairiTotal != null;
     const isActiveDairi = pdfPriceMode !== 'teika' && isDairiAvailable;
@@ -472,7 +478,7 @@ const QuotationPDF = (() => {
       frpItems.forEach(item => {
         const subEntries = [];
         if (item.soryoNote) subEntries.push({ type: 'frpNote', text: item.soryoNote });
-        if (item.type !== 'option') {
+        if (frpShowSpecs && item.type !== 'option') {
           (item.specs || []).forEach(spec => subEntries.push({ type: 'frpSpec', text: spec }));
         }
         mirrorEntries.push({ type: 'frpItem', item, hasSubRows: subEntries.length > 0 });
@@ -790,7 +796,7 @@ const QuotationPDF = (() => {
         { text: '', border: [false, true, false, false] },
         { text: fmt(dairiGrandTotal), alignment: 'right', fontSize: itemFs, bold: true, border: [false, true, true, false] },
       ]);
-      if (!isBuppan && discountEnabled && adjustAmount > 0) {
+      if (discountEnabled && adjustAmount > 0) {
         tableRows.push([
           { text: '', border: [true, false, false, false] },
           { text: discountLabel, alignment: 'center', fontSize: itemFs, colSpan: dColSpan, border: [false, false, false, false] },
@@ -800,35 +806,14 @@ const QuotationPDF = (() => {
           { text: '▲ ' + fmt(adjustAmount), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
         ]);
       }
-      if (isBuppan) {
-        if (buhanDiscTotal > 0) {
-          tableRows.push([
-            { text: '', border: [true, false, false, false] },
-            { text: '値引き（明細計）', alignment: 'center', fontSize: itemFs, colSpan: dColSpan, border: [false, false, false, false] },
-            ...dPh,
-            { text: '', border: [false, false, false, false] },
-            { text: '', border: [false, false, false, false] },
-            { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
-          ]);
-        }
-        tableRows.push([
-          { text: '', border: [true, false, false, false] },
-          { text: buppanDeliveryLabel, alignment: 'center', fontSize: itemFs, colSpan: dColSpan, border: [false, false, false, false] },
-          ...dPh,
-          { text: '', border: [false, false, false, false] },
-          { text: '', border: [false, false, false, false] },
-          { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
-        ]);
-      } else {
-        tableRows.push([
-          { text: '', border: [true, false, false, false] },
-          { text: '貴社お渡し価格', alignment: 'center', fontSize: itemFs, colSpan: dColSpan, border: [false, false, false, false] },
-          ...dPh,
-          { text: '', border: [false, false, false, false] },
-          { text: '', border: [false, false, false, false] },
-          { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
-        ]);
-      }
+      tableRows.push([
+        { text: '', border: [true, false, false, false] },
+        { text: buppanDeliveryLabel, alignment: 'center', fontSize: itemFs, colSpan: dColSpan, border: [false, false, false, false] },
+        ...dPh,
+        { text: '', border: [false, false, false, false] },
+        { text: '', border: [false, false, false, false] },
+        { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
+      ]);
     } else if (isBulk) {
       // 6列一括仕切モード
       tableRows.push([
@@ -837,33 +822,15 @@ const QuotationPDF = (() => {
         ...emp(spanMid - 1),
         { text: fmt(grandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
       ]);
-      if (!isBuppan) {
-        tableRows.push([
-          { text: '', border: [true, false, false, false] },
-          { text: '貴社お渡し価格', alignment: 'center', bold: true, fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
-          ...emp(spanMid - 1),
-          { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
-        ]);
-      } else {
-        if (buhanDiscTotal > 0) {
-          tableRows.push([
-            { text: '', border: [true, false, false, false] },
-            { text: '値引き（明細計）', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
-            ...emp(spanMid - 1),
-            { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
-          ]);
-        }
-        tableRows.push([
-          { text: '', border: [true, false, false, false] },
-          { text: buppanDeliveryLabel, alignment: 'center', bold: true, fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
-          ...emp(spanMid - 1),
-          { text: fmt(dairiGrandTotal), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
-        ]);
-      }
+      tableRows.push([
+        { text: '', border: [true, false, false, false] },
+        { text: buppanDeliveryLabel, alignment: 'center', bold: true, fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
+        ...emp(spanMid - 1),
+        { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
+      ]);
     } else if (isKoujiDairi) {
       // 8列工事代理店価格モード (旧動作: 仕切合計のみ表示)
-      const willShowDeliveryPrice = discountEnabled && !isBuppan;
-      if (!(willShowDeliveryPrice && discount === 0)) {
+      if (!(discountEnabled && discount === 0)) {
         tableRows.push([
           { text: '', border: [true, true, false, false] },
           { text: '合　　計', alignment: 'center', bold: true, fontSize: itemFs, colSpan: spanMid, border: [false, true, false, false] },
@@ -871,7 +838,7 @@ const QuotationPDF = (() => {
           { text: fmt(dairiGrandTotal), alignment: 'right', fontSize: itemFs, border: [false, true, true, false] },
         ]);
       }
-      if (discountEnabled && !isBuppan) {
+      if (discountEnabled) {
         if (discount > 0) {
           tableRows.push([
             { text: '', border: [true, false, false, false] },
@@ -880,26 +847,12 @@ const QuotationPDF = (() => {
             { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
           ]);
         }
-        const oshiTop = willShowDeliveryPrice && discount === 0;
+        const oshiTop = discount === 0;
         tableRows.push([
           { text: '', border: [true, oshiTop, false, false] },
-          { text: '貴社お渡し価格', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, oshiTop, false, false] },
+          { text: buppanDeliveryLabel, alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, oshiTop, false, false] },
           ...emp(spanMid - 1),
           { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, oshiTop, true, false] },
-        ]);
-      }
-      if (isBuppan && buhanDiscTotal > 0) {
-        tableRows.push([
-          { text: '', border: [true, false, false, false] },
-          { text: '値引き（明細計）', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
-          ...emp(spanMid - 1),
-          { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
-        ]);
-        tableRows.push([
-          { text: '', border: [true, false, false, false] },
-          { text: buppanDeliveryLabel, alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
-          ...emp(spanMid - 1),
-          { text: fmt(deliveryPrice), alignment: 'right', fontSize: itemFs, bold: true, border: [false, false, true, false] },
         ]);
       }
     } else if (useDiscountStyle) {
@@ -934,20 +887,12 @@ const QuotationPDF = (() => {
         ...emp(spanMid - 1),
         { text: fmt(dairiGrandTotal), alignment: 'right', fontSize: itemFs, bold: true, border: [false, true, true, false] },
       ]);
-      if (!isBuppan && discountEnabled && adjustAmount > 0) {
+      if (discountEnabled && adjustAmount > 0) {
         tableRows.push([
           { text: '', border: [true, false, false, false] },
           { text: discountLabel, alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
           ...emp(spanMid - 1),
           { text: '▲ ' + fmt(adjustAmount), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
-        ]);
-      }
-      if (isBuppan && buhanDiscTotal > 0) {
-        tableRows.push([
-          { text: '', border: [true, false, false, false] },
-          { text: '値引き（明細計）', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
-          ...emp(spanMid - 1),
-          { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
         ]);
       }
       tableRows.push([
@@ -964,20 +909,12 @@ const QuotationPDF = (() => {
         ...emp(spanMid - 1),
         { text: fmt(grandTotal), alignment: 'right', fontSize: itemFs, bold: true, border: [false, true, true, false] },
       ]);
-      if (!isTeika && !isBuppan && discountEnabled && discount > 0) {
+      if (!isTeika && discountEnabled && discount > 0) {
         tableRows.push([
           { text: '', border: [true, false, false, false] },
           { text: discountLabel, alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
           ...emp(spanMid - 1),
           { text: '▲ ' + fmt(discount), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
-        ]);
-      }
-      if (isBuppan && buhanDiscTotal > 0) {
-        tableRows.push([
-          { text: '', border: [true, false, false, false] },
-          { text: '値引き（明細計）', alignment: 'center', fontSize: itemFs, colSpan: spanMid, border: [false, false, false, false] },
-          ...emp(spanMid - 1),
-          { text: '▲ ' + fmt(buhanDiscTotal), alignment: 'right', fontSize: itemFs, noWrap: true, border: [false, false, true, false] },
         ]);
       }
     }
@@ -1180,10 +1117,10 @@ const QuotationPDF = (() => {
                   },
                 ],
               },
-              // 希望小売合計（定価合計）を teika以外のモードで表示
+              // 希望小売合計（定価合計）を teika・仕切のみ以外のモードで表示
               ...(() => {
                 const _teikaTotal = frpMode ? frpPriceTotal : grandTotal;
-                const _showTeika  = !isTeika && _teikaTotal > 0 && _teikaTotal !== displayPrice;
+                const _showTeika  = !isTeika && !isShikiOnly && !isBulk && _teikaTotal > 0 && _teikaTotal !== displayPrice;
                 return _showTeika ? [{
                   columns: [
                     { width: 75, text: '希望小売合計', fontSize: 8, margin: [0, 2, 0, 0] },
@@ -1335,8 +1272,8 @@ const QuotationPDF = (() => {
       { text: '品名',        style: 'tableHeader' },
       { text: '数量',        style: 'tableHeader' },
       { text: '単位',        style: 'tableHeader' },
-      { text: '希望小売単価', style: 'tableHeader' },
-      { text: '希望小売合計', style: 'tableHeader' },
+      { text: '小売単価',     style: 'tableHeader' },
+      { text: '小売合計',     style: 'tableHeader' },
       { text: shikiriLabel,  style: 'tableHeader' },
       { text: shikiriTLabel, style: 'tableHeader' },
     ];
@@ -1497,6 +1434,144 @@ const QuotationPDF = (() => {
     }
 
     return content;
+  }
+
+  // ── FRP衛生設備ページ ─────────────────────────────────────────
+  // 価格なし4列: No / 品名 / 数量 / 単位
+
+  function buildEiseiSection({ sections, mainRate, pdfPriceMode, dairiTotal, roundingEnabled = false }) {
+    const isDairiAvailable = mainRate != null || dairiTotal != null;
+    const useDairi    = (pdfPriceMode === 'dairi' || pdfPriceMode === 'dairi-kouji') && isDairiAvailable;
+    const isBulk      = pdfPriceMode === 'dairi-bulk'  && isDairiAvailable;
+    const isShikiOnly = pdfPriceMode === 'dairi-only'  && isDairiAvailable;
+
+    const dairiUnitFn = (item) => {
+      if (item.finalDairiUnit != null) return item.finalDairiUnit;
+      if (item.priceS != null && item.priceS > 0) return item.priceS;
+      const rate = item.dairiRate ?? mainRate;
+      if (rate == null) return null;
+      const baseUnit = item.unitPrice || (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
+      if (!baseUnit) return null;
+      const auto = Math.round(baseUnit * rate);
+      return roundingEnabled ? roundUp(auto) : auto;
+    };
+    const dairiAmtFn = (item) => {
+      const qty = Number(item.qty) || 1;
+      if (item.finalDairiUnit != null) return item.finalDairiUnit * qty;
+      if (item.priceS != null && item.priceS > 0) return item.priceS * qty;
+      const rate = item.dairiRate ?? mainRate;
+      if (rate == null) return 0;
+      if (roundingEnabled && item.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
+      return Math.round((Number(item.amount) || 0) * rate);
+    };
+    const effectiveUnit = (item) => {
+      if (item.unitPrice) return item.unitPrice;
+      const qty = Number(item.qty) || 1;
+      return Math.round(Number(item.amount) / qty);
+    };
+
+    const COL_WIDTHS = useDairi
+      ? [20, '*', 22, 30, 52, 58, 52, 58]
+      : [22, '*', 36, 30, 58, 58];
+    const COLS = useDairi ? 8 : 6;
+    const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
+
+    const headerRow = useDairi ? [
+      { text: 'No.',    style: 'tableHeader' },
+      { text: '品　　　名', style: 'tableHeader' },
+      { text: '数量',   style: 'tableHeader' },
+      { text: '単位',   style: 'tableHeader' },
+      { text: '単　価', style: 'tableHeader' },
+      { text: '合　計', style: 'tableHeader' },
+      { text: '仕切単価', style: 'tableHeader' },
+      { text: '仕切合計', style: 'tableHeader' },
+    ] : (isBulk || isShikiOnly) ? [
+      { text: 'No.',    style: 'tableHeader' },
+      { text: '品　　　名', style: 'tableHeader' },
+      { text: '数量',   style: 'tableHeader' },
+      { text: '単位',   style: 'tableHeader' },
+      { text: '仕切単価', style: 'tableHeader' },
+      { text: '仕切合計', style: 'tableHeader' },
+    ] : [
+      { text: 'No.',    style: 'tableHeader' },
+      { text: '品　　　名', style: 'tableHeader' },
+      { text: '数量',   style: 'tableHeader' },
+      { text: '単位',   style: 'tableHeader' },
+      { text: '単　価', style: 'tableHeader' },
+      { text: '金　　額', style: 'tableHeader' },
+    ];
+
+    const rows = [headerRow];
+    let rowNo = 1;
+    let hasItems = false;
+
+    sections.forEach(section => {
+      const validItems = (section.items || []).filter(i => (i.name || '').trim());
+      if (validItems.length === 0) return;
+
+      if ((section.name || '').trim()) {
+        rows.push([
+          { text: '',           border: [true, true, false, true], fillColor: '#f0f0f0' },
+          { text: section.name, bold: true, colSpan: COLS - 1,
+            border: [false, true, true, true], fillColor: '#f0f0f0' },
+          ...emp(COLS - 2),
+        ]);
+      }
+
+      validItems.forEach(item => {
+        hasItems = true;
+        const qtyStr = item.qty != null && item.qty !== '' ? String(item.qty) : '';
+        const noCell = { text: String(rowNo++), alignment: 'center', fontSize: 8 };
+        if (useDairi) {
+          rows.push([
+            noCell,
+            { text: item.name || '' },
+            { text: qtyStr, alignment: 'right' },
+            { text: item.unit || '', alignment: 'center' },
+            { text: fmt(effectiveUnit(item)), alignment: 'right' },
+            { text: fmt(Number(item.amount) || 0), alignment: 'right' },
+            { text: fmt(dairiUnitFn(item)), alignment: 'right' },
+            { text: fmt(dairiAmtFn(item)), alignment: 'right' },
+          ]);
+        } else {
+          rows.push([
+            noCell,
+            { text: item.name || '' },
+            { text: qtyStr, alignment: 'right' },
+            { text: item.unit || '', alignment: 'center' },
+            { text: (isBulk || isShikiOnly) ? (dairiUnitFn(item) != null ? fmt(dairiUnitFn(item)) : '') : fmt(effectiveUnit(item)), alignment: 'right' },
+            { text: (isBulk || isShikiOnly) ? fmt(dairiAmtFn(item)) : fmt(Number(item.amount) || 0), alignment: 'right' },
+          ]);
+        }
+        (item.specLines || []).filter(l => (l || '').trim()).forEach(line => {
+          rows.push([
+            { text: '' },
+            { text: line, fontSize: 7.5, color: '#444', margin: [8, 0, 0, 0] },
+            ...emp(COLS - 2),
+          ]);
+        });
+      });
+    });
+
+    if (!hasItems) return [];
+
+    return [
+      { text: '衛生設備', bold: true, fontSize: 10, margin: [0, 0, 0, 4] },
+      {
+        table: { widths: COL_WIDTHS, body: rows },
+        layout: {
+          hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length) ? 0.8 : 0.3,
+          vLineWidth: () => 0.5,
+          paddingLeft:   () => 3,
+          paddingRight:  () => 3,
+          paddingTop:    () => 2,
+          paddingBottom: () => 2,
+          hLineColor: () => '#555',
+          vLineColor: () => '#888',
+        },
+        margin: [0, 0, 0, 0],
+      },
+    ];
   }
 
   // ── 2ページ目以降（見積まとめモード・工事）────────────────────
@@ -1743,6 +1818,19 @@ const QuotationPDF = (() => {
           body.push(mkTotalRow('貴社お渡し価格', fmt(Math.max(0, grandTotal - discount)), false));
         }
         result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+      } else if (isDiscountStyle) {
+        const adjAmt = discountEnabled ? discount : 0;
+        const body = [mkTotalRow('合　　計', fmt(grandTotal), true)];
+        if (adjAmt > 0) body.push(mkTotalRow('出精値引き', '▲ ' + fmt(adjAmt), false));
+        body.push(mkTotalRow('貴社お渡し価格', fmt(Math.max(0, grandTotal - adjAmt)), false));
+        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+      } else if (isShikiOnly) {
+        const shikiBase = dairiTotal != null ? dairiTotal : totalDairi;
+        const shikiAdj = discountEnabled ? adjustAmount : 0;
+        const body = [mkTotalRow('合　　計', fmt(shikiBase), true)];
+        if (shikiAdj > 0) body.push(mkTotalRow('出精値引き', '▲ ' + fmt(shikiAdj), false));
+        body.push(mkTotalRow('貴社お渡し価格', fmt(Math.max(0, shikiBase - shikiAdj)), false));
+        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else {
         result.push({
           margin: [0, 0, 0, 0],
@@ -1765,7 +1853,7 @@ const QuotationPDF = (() => {
 
   // ── 2ページ目以降（見積まとめモード・物販/作業）────────────────
 
-  function buildBuppanSagyoSummaryDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, roundingEnabled, showProductCode, quoteCategory, useBuppanDeliveryLabel = false }) {
+  function buildBuppanSagyoSummaryDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, roundingEnabled, showProductCode, quoteCategory, useBuppanDeliveryLabel = false, adjustAmount = 0 }) {
     const useDairi = (pdfPriceMode === 'dairi' || pdfPriceMode === 'dairi-kouji') && (mainRate != null || dairiTotal != null);
     const isBulk = pdfPriceMode === 'dairi-bulk' && (mainRate != null || dairiTotal != null);
     const isShikiOnly = pdfPriceMode === 'dairi-only' && (mainRate != null || dairiTotal != null);
@@ -1996,14 +2084,15 @@ const QuotationPDF = (() => {
         { text: val, alignment: 'right', bold: true, border: [false, topBorder, true, true], fillColor: '#e8f0f8' },
       ];
       if (isDiscountStyle) {
-        // 出精値引きモード: 定価合計 → 出精値引き（自動計算）→ 貴社お渡し価格（仕切合計）
-        const autoDisc = Math.max(0, grandTotal - totalDairi);
+        // 出精値引きモード: 定価合計 → 出精値引き（仕切差額＋調整額）→ 貴社お渡し価格
+        const autoDisc = Math.max(0, grandTotal - totalDairi) + adjustAmount;
+        const deliveryVal = Math.max(0, totalDairi - adjustAmount);
         const body = [mkRow('合　　計', fmt(grandTotal), true)];
         if (autoDisc > 0) body.push(mkRow('出精値引き', '▲ ' + fmt(autoDisc), false));
-        body.push(mkRow('貴社お渡し価格', fmt(totalDairi), false));
+        body.push(mkRow('貴社お渡し価格', fmt(deliveryVal), false));
         result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else if (isBulk) {
-        const bulkBase = dairiTotal != null ? dairiTotal : totalDairi;
+        const bulkBase = Math.max(0, (dairiTotal != null ? dairiTotal : totalDairi) - adjustAmount);
         const isBuppanLocal = (quoteCategory || '').includes('物販');
         const buppanLabel = (isBuppanLocal && useBuppanDeliveryLabel) ? '販売価格合計' : '貴社お渡し価格';
         const body = [mkRow('合　　計', fmt(grandTotal), true)];
@@ -2018,17 +2107,34 @@ const QuotationPDF = (() => {
           { text: '', border: [false, top, false, true], fillColor: '#e8f0f8' },
           { text: v2, alignment: 'right', bold: true, border: [false, top, true, true], fillColor: '#e8f0f8' },
         ];
+        const dairiBody = [mkRow2('合　　計', fmt(grandTotal), fmt(totalDairi), true)];
+        if (adjustAmount > 0) {
+          const adjLabel = (quoteCategory || '').includes('工事') ? '出精値引き' : '値引き額';
+          const isBuppanLocal = (quoteCategory || '').includes('物販');
+          const buppanLabel = (isBuppanLocal && useBuppanDeliveryLabel) ? '販売価格合計' : '貴社お渡し価格';
+          dairiBody.push(mkRow2(adjLabel, '', '▲ ' + fmt(adjustAmount), false));
+          dairiBody.push(mkRow2(buppanLabel, '', fmt(Math.max(0, totalDairi - adjustAmount)), false));
+        }
         result.push({
           margin: [0, 0, 0, 0],
-          table: { widths: COL_WIDTHS, body: [mkRow2('合　　計', fmt(grandTotal), fmt(totalDairi), true)] },
+          table: { widths: COL_WIDTHS, body: dairiBody },
           layout: totalLayout,
         });
+      } else if (isShikiOnly) {
+        const isoDelivery = Math.max(0, totalDairi - adjustAmount);
+        const isBuppanLocal = (quoteCategory || '').includes('物販');
+        const buppanLabel = (isBuppanLocal && useBuppanDeliveryLabel) ? '販売価格合計' : '貴社お渡し価格';
+        const adjLabel = (quoteCategory || '').includes('工事') ? '出精値引き' : '値引き額';
+        const body = [mkRow('合　　計', fmt(totalDairi), true)];
+        if (adjustAmount > 0) body.push(mkRow(adjLabel, '▲ ' + fmt(adjustAmount), false));
+        body.push(mkRow(buppanLabel, fmt(isoDelivery), false));
+        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else {
         result.push({
           margin: [0, 0, 0, 0],
           table: {
             widths: COL_WIDTHS,
-            body: [mkRow('合　　計', fmt(isShikiOnly ? totalDairi : grandTotal), true)],
+            body: [mkRow('合　　計', fmt(grandTotal), true)],
           },
           layout: totalLayout,
         });
@@ -2278,11 +2384,12 @@ const QuotationPDF = (() => {
         { text: val, alignment: 'right', bold: true, border: [false, topBorder, true, true], fillColor: '#e8f0f8' },
       ];
       if (isDiscountStyle) {
-        // 出精値引きモード: 定価合計 → 出精値引き（自動計算）→ 貴社お渡し価格（仕切合計）
-        const autoDisc = Math.max(0, grandTotal - grandDairi);
+        // 出精値引きモード: 定価合計 → 出精値引き（waribikiAmount+adjustAmount）→ 貴社お渡し価格
+        const autoDisc = discountEnabled ? discount : 0;
+        const deliveryVal = Math.max(0, grandTotal - autoDisc);
         const body = [mkRow('合　　計', fmt(grandTotal), true)];
         if (autoDisc > 0) body.push(mkRow('出精値引き', '▲ ' + fmt(autoDisc), false));
-        body.push(mkRow('貴社お渡し価格', fmt(grandDairi), false));
+        body.push(mkRow('貴社お渡し価格', fmt(deliveryVal), false));
         result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else if (isBulk) {
         // 一括仕切モード: 合計(定価) → 貴社お渡し価格(仕切合計-調整額)
@@ -2307,12 +2414,19 @@ const QuotationPDF = (() => {
           body.push(mkRow('貴社お渡し価格', fmt(Math.max(0, grandTotal - discount)), false));
         }
         result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+      } else if (isShikiOnly) {
+        const shikiBase = dairiTotal != null ? dairiTotal : grandDairi;
+        const shikiAdj = discountEnabled ? adjustAmount : 0;
+        const body = [mkRow('合　　計', fmt(shikiBase), true)];
+        if (shikiAdj > 0) body.push(mkRow('出精値引き', '▲ ' + fmt(shikiAdj), false));
+        body.push(mkRow('貴社お渡し価格', fmt(Math.max(0, shikiBase - shikiAdj)), false));
+        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else {
         result.push({
           margin: [0, 0, 0, 0],
           table: {
             widths: COL_WIDTHS,
-            body: [mkRow('合　　計', fmt(isShikiOnly ? grandDairi : grandTotal), true)],
+            body: [mkRow('合　　計', fmt(grandTotal), true)],
           },
           layout: totalLayout,
         });
@@ -2324,7 +2438,7 @@ const QuotationPDF = (() => {
 
   // ── 2ページ目以降（明細書・物販/作業）──────────────────────────
 
-  function buildBuppanSagyoDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, showSubtotalBoth, roundingEnabled, showProductCode, quoteCategory, useBuppanDeliveryLabel = false }) {
+  function buildBuppanSagyoDetailPages({ sectionTotals, grandTotal, mainRate, pdfPriceMode, dairiTotal, showSubtotalBoth, roundingEnabled, showProductCode, quoteCategory, useBuppanDeliveryLabel = false, adjustAmount = 0 }) {
     const useDairi = (pdfPriceMode === 'dairi' || pdfPriceMode === 'dairi-kouji') && (mainRate != null || dairiTotal != null);
     const isBulk = pdfPriceMode === 'dairi-bulk' && (mainRate != null || dairiTotal != null);
     const isShikiOnly = pdfPriceMode === 'dairi-only' && (mainRate != null || dairiTotal != null);
@@ -2544,13 +2658,14 @@ const QuotationPDF = (() => {
         { text: val, alignment: 'right', bold: true, border: [false, top, true, true], fillColor: '#e8f0f8' },
       ];
       if (isDiscountStyle) {
-        const autoDisc = Math.max(0, grandTotal - grandDairi);
+        const autoDisc = Math.max(0, grandTotal - grandDairi) + adjustAmount;
+        const deliveryVal = Math.max(0, grandDairi - adjustAmount);
         const body = [mkRow('合　　計', fmt(grandTotal), true)];
         if (autoDisc > 0) body.push(mkRow('出精値引き', '▲ ' + fmt(autoDisc), false));
-        body.push(mkRow('貴社お渡し価格', fmt(grandDairi), false));
+        body.push(mkRow('貴社お渡し価格', fmt(deliveryVal), false));
         result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else if (isBulk) {
-        const bulkBase = dairiTotal != null ? dairiTotal : grandDairi;
+        const bulkBase = Math.max(0, (dairiTotal != null ? dairiTotal : grandDairi) - adjustAmount);
         const isBuppanLocal = (quoteCategory || '').includes('物販');
         const buppanLabel = (isBuppanLocal && useBuppanDeliveryLabel) ? '販売価格合計' : '貴社お渡し価格';
         result.push({
@@ -2558,6 +2673,23 @@ const QuotationPDF = (() => {
           table: { widths: COL_WIDTHS, body: [mkRow('合　　計', fmt(grandTotal), true), mkRow(buppanLabel, fmt(bulkBase), false)] },
           layout: totalLayout,
         });
+      } else if (isShikiOnly) {
+        const isoDelivery = Math.max(0, grandDairi - adjustAmount);
+        const isBuppanLocal = (quoteCategory || '').includes('物販');
+        const buppanLabel2 = (isBuppanLocal && useBuppanDeliveryLabel) ? '販売価格合計' : '貴社お渡し価格';
+        const adjLabel = (quoteCategory || '').includes('工事') ? '出精値引き' : '値引き額';
+        const body2 = [mkRow('合　　計', fmt(grandDairi), true)];
+        if (adjustAmount > 0) body2.push(mkRow(adjLabel, '▲ ' + fmt(adjustAmount), false));
+        body2.push(mkRow(buppanLabel2, fmt(isoDelivery), false));
+        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body: body2 }, layout: totalLayout });
+      } else if (useDairi && adjustAmount > 0) {
+        const adjLabel = (quoteCategory || '').includes('工事') ? '出精値引き' : '値引き額';
+        const isBuppanLocal3 = (quoteCategory || '').includes('物販');
+        const buppanLabel3 = (isBuppanLocal3 && useBuppanDeliveryLabel) ? '販売価格合計' : '貴社お渡し価格';
+        const body3 = [mkRow('合　　計', fmt(grandDairi), true)];
+        body3.push(mkRow(adjLabel, '▲ ' + fmt(adjustAmount), false));
+        body3.push(mkRow(buppanLabel3, fmt(Math.max(0, grandDairi - adjustAmount)), false));
+        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body: body3 }, layout: totalLayout });
       } else {
         result.push({
           margin: [0, 0, 0, 0],
@@ -2567,7 +2699,7 @@ const QuotationPDF = (() => {
               { text: '', border: [true, true, false, true], fillColor: '#e8f0f8' },
               { text: '合　　計', alignment: 'center', bold: true, colSpan: COLS - 2, border: [false, true, false, true], fillColor: '#e8f0f8' },
               ...emp(COLS - 3),
-              { text: fmt((useDairi || isShikiOnly) ? grandDairi : grandTotal), alignment: 'right', bold: true, border: [false, true, true, true], fillColor: '#e8f0f8' },
+              { text: fmt(useDairi ? grandDairi : grandTotal), alignment: 'right', bold: true, border: [false, true, true, true], fillColor: '#e8f0f8' },
             ]],
           },
           layout: totalLayout,

@@ -179,21 +179,21 @@
         <div class="price-layout">
           <div class="price-left">
             <div class="form-row">
-              <label>明細合計（希望小売価格）</label>
+              <label style="white-space: nowrap; width: auto;">①明細合計（希望小売価格）</label>
               <div class="price-group">
                 <span class="currency-sign">¥</span>
                 <span id="basicGrandTotal" class="display-price">0</span>
               </div>
             </div>
             <div class="form-row" id="rowDairiTotal" style="display:none">
-              <label>代理店価格合計</label>
+              <label style="white-space: nowrap; width: auto;">②代理店価格合計</label>
               <div class="price-group">
                 <span class="currency-sign">¥</span>
                 <span id="basicDairiTotal" class="display-price" style="color:#1a4d8f">0</span>
               </div>
             </div>
             <div class="form-row" id="rowWaribiki" style="display:none">
-              <label>　割引額</label>
+              <label style="white-space: nowrap; width: auto;">③割引額<span style="font-size:11px; color:#888; margin-left:4px;">※①ー②</span></label>
               <div class="price-group">
                 <span class="currency-sign" style="color:#c0392b">▲</span>
                 <span id="basicWaribikiAmount" class="display-price" style="color:#c0392b">0</span>
@@ -400,13 +400,7 @@
                 <div class="cat-panel" id="catPanel-kanzai" style="display:none"></div>
                 <div class="cat-panel" id="catPanel-denzai" style="display:none"></div>
                 <div class="cat-panel" id="catPanel-kouji" style="display:none"></div>
-                <div class="cat-panel" id="catPanel-standard" style="display:none">
-                  <div class="cat-tabs">
-                    <button class="cat-tab" id="standardSubStandard" onclick="app.switchStandardSub('standard')">農用工事</button>
-                    <button class="cat-tab" id="standardSubNetsuki" onclick="app.switchStandardSub('netsuki')">熱機</button>
-                    <button class="cat-tab" id="standardSubEisei" onclick="app.switchStandardSub('eisei')" style="display:none">衛生</button>
-                  </div>
-                </div>
+                <div class="cat-panel" id="catPanel-standard" style="display:none"></div>
               </div>
               <select id="commonTargetSection" class="input-standard cat-target-sel"></select>
               <button class="btn-cat-add" id="btnCommonAdd" onclick="app.execCatAdd()">追加</button>
@@ -506,12 +500,26 @@
         </div>
 
         <!-- 行6: 標準項選択行（標準項タブ選択時に表示） -->
+        <!-- 標準項サブタブ行（標準項タブ選択時に表示） -->
+        <div class="toolbar-main" id="standardSubRow" style="display:none;margin-top:3px;">
+          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
+            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
+          </div>
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+            <div class="cat-tabs">
+              <button class="cat-tab" id="standardSubStandard" onclick="app.switchStandardSub('standard')">農用工事</button>
+              <button class="cat-tab" id="standardSubNetsuki" onclick="app.switchStandardSub('netsuki')">熱機</button>
+              <button class="cat-tab" id="standardSubEisei" onclick="app.switchStandardSub('eisei')">衛生</button>
+            </div>
+          </div>
+        </div>
+
         <div class="toolbar-main" id="standardRow" style="display:none;margin-top:3px;">
           <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
             <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
           </div>
           <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
-            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;">標準項</button></div>
+            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;background:#1a56db;color:#fff;border-color:#1a56db;">農用工事</button></div>
             <select id="standardModelSelect" class="input-search" style="height:30px;width:200px;flex-shrink:0;">
               <option value="">型式を選択...</option>
             </select>
@@ -528,7 +536,7 @@
             <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
           </div>
           <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
-            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;">熱機</button></div>
+            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;background:#1a56db;color:#fff;border-color:#1a56db;">熱機</button></div>
             <select id="buppanStdCategorySelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onBuppanCatChange(this.value)">
               <option value="">― カテゴリを選択 ―</option>
             </select>
@@ -537,24 +545,6 @@
             </select>
             <select id="netsukiTargetSection" class="input-standard cat-target-sel"></select>
             <button class="btn-cat-add" onclick="app.execBuppanStandardAdd()">追加</button>
-          </div>
-        </div>
-
-        <!-- 行8: 衛生標準項（衛生タブ選択時に表示） -->
-        <div class="toolbar-main" id="eiseiRow" style="display:none;margin-top:3px;">
-          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
-            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
-          </div>
-          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
-            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;">衛生</button></div>
-            <select id="eiseiCatSelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onEiseiCatChange(this.value)">
-              <option value="">― カテゴリを選択 ―</option>
-            </select>
-            <select id="eiseiModelSelect" class="input-search" style="height:30px;flex:1;min-width:0;">
-              <option value="">― 型式を選択 ―</option>
-            </select>
-            <select id="eiseiTargetSection" class="input-standard cat-target-sel"></select>
-            <button class="btn-cat-add" onclick="app.execEiseiAdd()">追加</button>
           </div>
         </div>
 
@@ -599,8 +589,8 @@
               <th class="frp-col-hinshu">品種</th>
               <th class="frp-col-qty">数量</th>
               <th class="frp-col-unit">単位</th>
-              <th class="frp-col-price">希望小売価格単価</th>
-              <th class="frp-col-total">希望小売価格合計</th>
+              <th class="frp-col-price">小売価格単価</th>
+              <th class="frp-col-total">小売価格合計</th>
               <th class="frp-col-shikiri">仕切単価</th>
               <th class="frp-col-shikiri-total">仕切合計</th>
               <th class="frp-col-del"></th>
@@ -611,9 +601,9 @@
 
         <div class="frp-footer">
           <div class="frp-totals-row">
-            <span class="frp-footer-label">希望小売価格合計：</span>
+            <span class="frp-footer-label">①小売価格合計：</span>
             <strong id="frpPriceTotal">¥0</strong>
-            <span class="frp-footer-label frp-footer-label-right">仕切合計：</span>
+            <span class="frp-footer-label frp-footer-label-right">②仕切合計：</span>
             <strong id="frpShikiriTotal">¥0</strong>
           </div>
           <div class="frp-discount-row">
@@ -624,6 +614,28 @@
           <div class="frp-grand-row">
             <span class="frp-footer-label">御見積金額（税別）：</span>
             <strong id="frpGrandTotal">¥0</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- 衛生標準項ツールバー（FRPモード時のみ表示・frpContainer直下に固定配置） -->
+      <div class="items-toolbar" id="eiseiRow" style="display:none; position:relative;">
+        <div class="toolbar-main" style="margin-top:3px;">
+          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
+            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
+          </div>
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;background:#1a56db;color:#fff;border-color:#1a56db;">衛生</button></div>
+            <select id="eiseiChuSelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onEiseiChuChange(this.value)">
+              <option value="">― 中項目を選択 ―</option>
+            </select>
+            <select id="eiseiShoSelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onEiseiShoChange(this.value)">
+              <option value="">― 小項目を選択 ―</option>
+            </select>
+            <select id="eiseiModelSelect" class="input-search" style="height:30px;flex:1;min-width:0;">
+              <option value="">― 型式を選択 ―</option>
+            </select>
+            <button class="btn-cat-add" onclick="app.execEiseiAdd()">追加</button>
           </div>
         </div>
       </div>
@@ -798,20 +810,20 @@
 
           <div id="pdfPriceModeGroupKouji" class="pdf-price-mode-group" style="display:none">
             <div class="pdf-price-mode-label">印刷価格モード:</div>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="teika" checked onchange="app.updateOutput()"> 1. 希望小売価格のみ</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="teika" checked onchange="app.updateOutput()"> 1. 小売価格のみ</label>
             <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-bulk" onchange="app.updateOutput()"> 2. 一括仕切</label>
             <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-discount" onchange="app.updateOutput()"> 3. 出精値引き</label>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi" onchange="app.updateOutput()"> 4. 仕切表示（希望小売価格も表示）</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi" onchange="app.updateOutput()"> 4. 仕切表示（小売価格も表示）</label>
             <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-only" onchange="app.updateOutput()"> 5. 仕切表示のみ</label>
             <div class="pdf-price-mode-desc" id="pdfPriceModeDescKouji"></div>
           </div>
 
           <div id="pdfPriceModeGroup" class="pdf-price-mode-group" style="display:none">
             <div class="pdf-price-mode-label">印刷価格モード:</div>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="teika" checked onchange="app.updateOutput()"> 1. 希望小売価格のみ</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="teika" checked onchange="app.updateOutput()"> 1. 小売価格のみ</label>
             <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-bulk" onchange="app.updateOutput()"> 2. 一括仕切</label>
             <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-discount" onchange="app.updateOutput()"> 3. 出精値引き</label>
-            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi" onchange="app.updateOutput()"> 4. 仕切表示（希望小売価格も表示）</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi" onchange="app.updateOutput()"> 4. 仕切表示（小売価格も表示）</label>
             <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-only" onchange="app.updateOutput()"> 5. 仕切表示のみ</label>
             <div class="pdf-price-mode-desc" id="pdfPriceModeDesc"></div>
           </div>
@@ -1292,12 +1304,52 @@
           <label style="min-width:100px">図番を印刷する</label>
           <input type="checkbox" id="frpSettingsZuban" checked>
         </div>
-        <div class="modal-form-row" style="flex-direction:column;align-items:stretch;gap:6px">
-          <label>枠外文言</label>
-          <textarea id="frpSettingsFooter" class="frp-footer-textarea" rows="14"></textarea>
+        <div class="modal-form-row">
+          <label style="min-width:100px">仕様を印刷する</label>
+          <input type="checkbox" id="frpSettingsSpecs" checked>
+        </div>
+        <div style="margin-top:8px">
+          <div style="font-size:12px;font-weight:bold;margin-bottom:6px;color:#555">枠外文言</div>
+          <div id="frpSection0" style="margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
+              <input type="checkbox" id="frpSection0Enabled" checked>
+              <span style="font-size:11px;font-weight:bold">----</span>
+              <input type="text" id="frpSection0Title" style="font-size:11px;font-weight:bold;border:1px solid #ccc;border-radius:3px;padding:1px 4px;flex:1">
+              <span style="font-size:11px;font-weight:bold">----</span>
+            </div>
+            <textarea id="frpSection0Text" class="frp-footer-textarea" rows="4" style="font-size:11px"></textarea>
+          </div>
+          <div id="frpSection1" style="margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
+              <input type="checkbox" id="frpSection1Enabled" checked>
+              <span style="font-size:11px;font-weight:bold">----</span>
+              <input type="text" id="frpSection1Title" style="font-size:11px;font-weight:bold;border:1px solid #ccc;border-radius:3px;padding:1px 4px;flex:1">
+              <span style="font-size:11px;font-weight:bold">----</span>
+            </div>
+            <textarea id="frpSection1Text" class="frp-footer-textarea" rows="4" style="font-size:11px"></textarea>
+          </div>
+          <div id="frpSection2" style="margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
+              <input type="checkbox" id="frpSection2Enabled" checked>
+              <span style="font-size:11px;font-weight:bold">----</span>
+              <input type="text" id="frpSection2Title" style="font-size:11px;font-weight:bold;border:1px solid #ccc;border-radius:3px;padding:1px 4px;flex:1">
+              <span style="font-size:11px;font-weight:bold">----</span>
+            </div>
+            <textarea id="frpSection2Text" class="frp-footer-textarea" rows="3" style="font-size:11px"></textarea>
+          </div>
+          <div id="frpSection3" style="margin-bottom:4px">
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
+              <input type="checkbox" id="frpSection3Enabled" checked>
+              <span style="font-size:11px;font-weight:bold">----</span>
+              <input type="text" id="frpSection3Title" style="font-size:11px;font-weight:bold;border:1px solid #ccc;border-radius:3px;padding:1px 4px;flex:1">
+              <span style="font-size:11px;font-weight:bold">----</span>
+            </div>
+            <textarea id="frpSection3Text" class="frp-footer-textarea" rows="3" style="font-size:11px"></textarea>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
+        <button class="btn-secondary" onclick="app.resetFrpSettings()">↩ 初期値へ戻す</button>
         <button class="btn-secondary"
                 onclick="document.getElementById('frpSettingsModal').style.display='none'">キャンセル</button>
         <button class="btn-primary" onclick="app.saveFrpSettings()">💾 保存</button>

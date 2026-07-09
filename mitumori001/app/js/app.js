@@ -25,8 +25,8 @@ const app = (() => {
     { col: 'col-dairi-unit',    label: '代理店単価',  def: false, buhanDef: true },
     { col: 'col-final-dairi',    label: '最終代理店単価', def: false, sagyo: true },
     { col: 'col-dairi',          label: '代理店価格',  def: false, buhanDef: true },
-    { col: 'col-buhan-discount', label: '値引き',      def: true,  buhan: true, buhanDef: false },
-    { col: 'col-hanbaika',       label: '販売価格',    def: true,  buhan: true },
+    { col: 'col-buhan-discount', label: '値引き',      def: false, disabled: true },
+    { col: 'col-hanbaika',       label: '販売価格',    def: false, disabled: true },
     { col: 'col-genka',         label: '原価',      def: false, buhanDef: true },
     { col: 'col-genka-amount',  label: '原価合計',  def: false, buhanDef: true },
     { col: 'col-gensui-kubun',  label: '減衰区分',  def: false },
@@ -70,7 +70,7 @@ const app = (() => {
     const isSagyo = (state.quoteCategory || '').includes('作業');
     const isBuhan = (state.quoteCategory || '').includes('物販');
     style.textContent = COL_DEFS
-      .filter(c => !c.always && (!colState[c.col] || (c.sagyo && !isSagyo) || (c.buhan && !isBuhan)))
+      .filter(c => !c.always && (c.disabled || !colState[c.col] || (c.sagyo && !isSagyo) || (c.buhan && !isBuhan)))
       .map(c => `.items-table .${c.col} { display: none; }`)
       .join('\n');
   }
@@ -991,6 +991,7 @@ const app = (() => {
     kanzai:         [],       // 管材マスタ（CustomModule18 から取得）
     denzai:         [],       // 電材マスタ（CustomModule19 から取得）
     buppanStandard: [],       // 物販標準項マスタ（CustomModule26 から取得）
+    eiseiCache:     [],       // 衛生マスタ（CustomModule30 から取得）
     kiki:           [],       // 工事用機器リスト（CustomModule23 から取得）
     pendingKanzai:  null,     // 管材選択済み・追加待ち
     pendingDenzai:  null,     // 電材選択済み・追加待ち
@@ -1011,8 +1012,10 @@ const app = (() => {
     nextFrpId:   1,       // FRP行ID連番
     frpHz:       '50Hz',  // Hz設定（設定画面で変更可）
     frpDiscount: 0,       // 出精値引き（円）
-    frpFooterText: '',    // 枠外文言
+    frpFooterSections:  null,  // 枠外文言セクション（loadFrpSettingsで初期化）
+    _frpSettingsRaw:    null,  // quote.FRP_JSON の parse 結果
     frpShowZuban:  true,  // 図番印刷ON/OFF
+    frpShowSpecs:  true,  // 仕様印刷ON/OFF
     frpCache:      null,  // FRPモジュール全件キャッシュ
     customerAccountId: null, // Quote.Account_Name.id（Account_Number取得用）
     frpDealerCode: null,     // 代理店コード（Account_Number 上4桁）
@@ -1258,6 +1261,10 @@ const app = (() => {
     state.purchaseRate = quote.purchase_rate != null ? Number(quote.purchase_rate) : null;
 
     // JSON カスタムフィールドから復元（セクション構造・全明細）
+    // FRP設定JSONをstateに保持（loadFrpSettings()で参照）
+    try { state._frpSettingsRaw = quote.FRP_JSON ? JSON.parse(quote.FRP_JSON) : null; }
+    catch (e) { state._frpSettingsRaw = null; }
+
     const savedJson = quote.JSON || '';
     if (savedJson) {
       try {
@@ -1323,6 +1330,7 @@ const app = (() => {
     loadDenzai();
     initDenzaiSelects();
     loadBuppanStandard();
+    loadEisei();
     loadKiki();
     loadCurrentUser();
 
@@ -1419,9 +1427,8 @@ const app = (() => {
     if (isSagyo) {
       if (chkNaiyaku)  chkNaiyaku.checked  = true;
     }
-    // 物販: 値引き額行を非表示
     const rowDiscountEl = document.getElementById('rowDiscount');
-    if (rowDiscountEl) rowDiscountEl.style.display = isBuhan ? 'none' : '';
+    if (rowDiscountEl) rowDiscountEl.style.display = '';
     // 作業のとき値引き額チェックボックスを表示
     const chkDiscEl  = document.getElementById('chkDiscountEnabled');
     const discAmtEl  = document.getElementById('discountAmount');
@@ -1512,6 +1519,7 @@ const app = (() => {
     updateOutput();
     // FRPモードUI適用
     if (state.frpMode) {
+      loadFrpSettings();
       applyFrpModeUI();
       renderFrpItems();
       updateFrpTotals();
@@ -2190,98 +2198,153 @@ const app = (() => {
     showToast(`No.${targetSection.no} に ${model} を追加しました`);
   }
 
-  function execEiseiAdd() {
+  async function execEiseiAdd() {
     const model = document.getElementById('eiseiModelSelect')?.value || '';
     if (!model) { showToast('型式を選択してください', 'warn'); return; }
 
-    if (state.sections.length === 0) addSection();
+    const matched = state.eiseiCache
+      .filter(r => r.model === model)
+      .sort((a, b) => a.order - b.order);
 
-    const targetVal = document.getElementById('eiseiTargetSection')?.value || 'last';
-    let targetSection;
-    if (targetVal === 'last') {
-      targetSection = state.sections[state.sections.length - 1];
-    } else {
-      const targetId = Number(targetVal);
-      targetSection = state.sections.find(s => s.id === targetId) || state.sections[state.sections.length - 1];
+    if (matched.length === 0) {
+      showToast(`型式「${model}」の衛生標準項が見つかりません`, 'warn');
+      return;
     }
+
+    if (state.sections.length === 0) addSection();
+    const targetSection = state.sections[state.sections.length - 1];
 
     const lastItem = targetSection.items[targetSection.items.length - 1];
     if (lastItem && !lastItem.name && !lastItem.spec && !lastItem.unitPrice && !lastItem.amount) {
       targetSection.items.pop();
     }
 
-    const matched = state.buppanStandard
-      .filter(r => r.shubetsu === '衛生' && r.model === model)
-      .sort((a, b) => a.order - b.order);
+    const mainRecord = matched.find(r => r.order === 1);
+    if (!mainRecord) return;
 
-    if (matched.length === 0) {
-      showToast(`型式「${model}」の標準項が見つかりません`, 'warn');
-      return;
-    }
-
-    const isNetsukiStructure = matched.some(r => !!r.spec);
-
-    let mainItem = null;
-    matched.forEach(r => {
-      if (isNetsukiStructure) {
-        if (r.order === 1) {
-          const header = createItem();
-          header.name            = r.name;
-          header.qty             = '';
-          header.unit            = '';
-          header.isNetsukiHeader = true;
-          targetSection.items.push(header);
-        } else if (r.order === 2 && !mainItem) {
-          const item = createItem();
-          item.isNetsukiMain = true;
-          item.name           = r.name;
-          item.spec           = r.hinban || '';
-          item.qty            = r.qty;
-          item.unit           = r.unit;
-          item.unitPrice      = r.teika  || null;
-          item.amount         = (r.teika || 0) * r.qty;
-          item.genka          = r.shikiri;
-          item.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
-          if (r.spec) {
-            const cleanedSpec = r.spec.split('\n')
-              .map(l => l.split('\t').map(t => t.trim()).filter(t => t).join('　'))
-              .filter(l => l).join('\n');
-            item.model              = r.model || '';
-            item.specMasterContent  = cleanedSpec;
-            item.specMasterLoaded   = true;
-            item.specMasterFromProducts = true;
-            _applySpecToMachineSpec(item);
-          }
-          mainItem = item;
-          targetSection.items.push(item);
-        } else if (mainItem) {
-          mainItem.specLines = mainItem.specLines || [];
-          mainItem.specLines.push(`${r.name}（${r.qty}${r.unit}）`);
-        }
-      } else {
-        if (r.order === 1) {
-          const item = createItem();
-          item.name           = r.name;
-          item.spec           = r.hinban || '';
-          item.qty            = r.qty;
-          item.unit           = r.unit;
-          item.unitPrice      = r.teika  || null;
-          item.amount         = (r.teika || 0) * r.qty;
-          item.genka          = r.shikiri;
-          item.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
-          mainItem = item;
-          targetSection.items.push(item);
-        } else if (mainItem) {
-          mainItem.specLines = mainItem.specLines || [];
-          mainItem.specLines.push(`${r.name}（${r.qty}${r.unit}）`);
-        }
+    // 商品マスタから商品コード・価格を取得（半角→全角変換してProduct_Nameで検索）
+    let productCode = '';
+    let unitPrice   = null;
+    let genka       = 0;
+    let priceS      = 0;
+    try {
+      // 大文字小文字混在に対応: 全て大文字に統一してから全角変換
+      const fwModel = model.toUpperCase()
+        .replace(/[A-Z]/g, c => String.fromCharCode(c.charCodeAt(0) + 0xFEE0))
+        .replace(/[0-9]/g, c => String.fromCharCode(c.charCodeAt(0) + 0xFEE0))
+        .replace(/-/g, '－');
+      const res = await ZOHO.CRM.API.searchRecord({
+        Entity: 'Products', Type: 'criteria',
+        Query: `(Product_Name:equals:${fwModel})`,
+        page: 1, per_page: 1,
+      });
+      if (res && res.data && res.data[0]) {
+        const p    = res.data[0];
+        productCode = p.Product_Code || '';
+        unitPrice   = Number(p.Unit_Price) || null;
+        genka       = Number(p.field1)     || 0;
+        priceS      = Number(p.field)      || 0;   // 最低仕切
       }
-    });
+    } catch(e) { /* 商品マスタに存在しない場合は空のまま */ }
+
+    const item = createItem();
+    item.name        = mainRecord.model + (mainRecord.hinban ? '　セット品番　' + mainRecord.hinban : '');
+    item.unit        = '式';
+    item.spec        = productCode;
+    item.productCode = productCode;
+    item.qty         = 1;
+    item.unitPrice   = unitPrice;
+    item.amount      = unitPrice || 0;
+    item.genka       = genka;
+    item.priceS      = priceS;
+    item.specLines   = matched
+      .filter(r => r.order !== 1)
+      .sort((a, b) => a.order - b.order)
+      .map(r => r.name);
+    targetSection.items.push(item);
 
     markDirty();
     renderSections();
     updateOutput();
     showToast(`No.${targetSection.no} に ${model} を追加しました`);
+  }
+
+  // ── 衛生マスタ（CustomModule30）────────────────────────────────
+
+  async function loadEisei() {
+    if (!zohoReady) return;
+    try {
+      const data = await fetchAllRecords('CustomModule30', 'field5');
+      state.eiseiCache = data.map(r => ({
+        id:     r.id,
+        name:   r.Name    || '',  // 衛生名
+        model:  r.field   || '',  // セット型式
+        hinban: r.field1  || '',  // セット品番
+        note:   r.field2  || '',  // 注意ポップ
+        chu:    r.field3  || '',  // 中項目
+        sho:    r.field4  || '',  // 小項目
+        order:  Number(r.field5) || 99,  // 順番
+      }));
+      console.log(`衛生マスタ ${state.eiseiCache.length} 件読み込み`);
+      buildEiseiChuSelect();
+    } catch (e) {
+      console.warn('衛生マスタ取得失敗:', e);
+    }
+  }
+
+  function buildEiseiChuSelect() {
+    const sel = document.getElementById('eiseiChuSelect');
+    if (!sel) return;
+    const chuList = [...new Set(
+      state.eiseiCache.map(r => r.chu).filter(Boolean)
+    )].reverse();
+    while (sel.options.length > 1) sel.remove(1);
+    chuList.forEach(chu => {
+      const opt = document.createElement('option');
+      opt.value = chu;
+      opt.textContent = chu;
+      sel.appendChild(opt);
+    });
+  }
+
+  function onEiseiChuChange(chu) {
+    const shoSel   = document.getElementById('eiseiShoSelect');
+    const modelSel = document.getElementById('eiseiModelSelect');
+    if (!shoSel || !modelSel) return;
+    while (shoSel.options.length   > 1) shoSel.remove(1);
+    while (modelSel.options.length > 1) modelSel.remove(1);
+    shoSel.value   = '';
+    modelSel.value = '';
+    if (!chu) return;
+    const shoList = [...new Set(
+      state.eiseiCache.filter(r => r.chu === chu).map(r => r.sho).filter(Boolean)
+    )].reverse();
+    shoList.forEach(sho => {
+      const opt = document.createElement('option');
+      opt.value = sho;
+      opt.textContent = sho;
+      shoSel.appendChild(opt);
+    });
+  }
+
+  function onEiseiShoChange(sho) {
+    const modelSel = document.getElementById('eiseiModelSelect');
+    if (!modelSel) return;
+    while (modelSel.options.length > 1) modelSel.remove(1);
+    modelSel.value = '';
+    if (!sho) return;
+    const models = [...new Set(
+      state.eiseiCache
+        .filter(r => r.sho === sho && r.order === 1)
+        .map(r => r.model)
+        .filter(Boolean)
+    )].reverse();
+    models.forEach(model => {
+      const opt = document.createElement('option');
+      opt.value = model;
+      opt.textContent = model;
+      modelSel.appendChild(opt);
+    });
   }
 
   // ── 工事用機器リスト（CustomModule23）────────────────────────────
@@ -2544,6 +2607,9 @@ const app = (() => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
+    // 標準項サブタブ行: 標準項タブ選択時のみ表示
+    const standardSubRowEl = document.getElementById('standardSubRow');
+    if (standardSubRowEl) standardSubRowEl.style.display = cat === 'standard' ? '' : 'none';
     // 標準項以外に切替時はサブタブのアクティブ状態をリセット
     if (cat !== 'standard') {
       document.getElementById('standardSubNetsuki')?.classList.remove('active');
@@ -4266,48 +4332,58 @@ const app = (() => {
     if (!bandCfg) showToast(`${record.Name || record.itemnum || '製品'} を追加しました`);
   }
 
-  const FRP_DEFAULT_FOOTER = `----ご注文について----
-・ご注文の際は、仕様の最終確認として添付図面内に「OKサイン」を記載し
+  const FRP_DEFAULT_SECTIONS = [
+    {
+      title: 'ご注文について',
+      enabled: true,
+      text: `・ご注文の際は、仕様の最終確認として添付図面内に「OKサイン」を記載し
 　ご注文書とあわせてFAX下さいますようお願いいたします。
 ・OKサイン図面のFAXを頂き次第、製作開始します。
 　また当商品は受注製作品のため、OKサイン図面受信後の製品の仕様変更・返品・
 　キャンセルはお受けいたしかねます。あらかじめご了承くださいますようお願い
-　申し上げます。
-
-----ご発注後の出荷日延期について----
-　ご発注後の出荷日延期につきましては、弊社保管スペースの都合により、当初ご
+　申し上げます。`,
+    },
+    {
+      title: 'ご発注後の出荷日延期について',
+      enabled: true,
+      text: `　ご発注後の出荷日延期につきましては、弊社保管スペースの都合により、当初ご
 　指定の出荷予定日（または生産完了日）から1か月以内の範囲で承ります。なお、
 　この期間内であっても、月を跨ぐ変更となる場合には、保管および調整にかかる
 　費用として10,000円（税別）を別途頂戴いたします。あらかじめご了承ください
-　ますようお願い申し上げます。
-
-----決算月に関する出荷について----
-　弊社決算月（3月・6月・9月・12月）に出荷予定の案件につきましては、上記に
+　ますようお願い申し上げます。`,
+    },
+    {
+      title: '決算月に関する出荷について',
+      enabled: true,
+      text: `　弊社決算月（3月・6月・9月・12月）に出荷予定の案件につきましては、上記に
 　かかわらず、当該月内での出荷完了をお願いしております。そのため、1か月以内
-　の延期であっても、決算月を跨ぐ出荷延期はお受けいたしかねます。
-
-----アフターサービスについて----
-・納入後の故障や不具合に関する修理対応につきましては、着脱装置が付いていない
+　の延期であっても、決算月を跨ぐ出荷延期はお受けいたしかねます。`,
+    },
+    {
+      title: 'アフターサービスについて',
+      enabled: true,
+      text: `・納入後の故障や不具合に関する修理対応につきましては、着脱装置が付いていない
 　型式は対応をお断りさせていただく場合がございますので、あらかじめご了承くだ
-　さいますようお願い申し上げます。`;
+　さいますようお願い申し上げます。`,
+    },
+  ];
 
   function loadFrpSettings() {
-    const key = `frp_settings_${state.shoka || 'default'}`;
-    try {
-      const saved = JSON.parse(localStorage.getItem(key) || 'null');
-      if (saved) {
-        state.frpHz         = saved.hz         || '50Hz';
-        state.frpShowZuban  = saved.showZuban  !== false;
-        state.frpFooterText = saved.footerText || FRP_DEFAULT_FOOTER;
-      } else {
-        state.frpHz         = '50Hz';
-        state.frpShowZuban  = true;
-        state.frpFooterText = FRP_DEFAULT_FOOTER;
-      }
-    } catch (e) {
-      state.frpHz         = '50Hz';
-      state.frpShowZuban  = true;
-      state.frpFooterText = FRP_DEFAULT_FOOTER;
+    const saved = state._frpSettingsRaw;
+    if (saved) {
+      state.frpHz        = saved.hz        || '50Hz';
+      state.frpShowZuban = saved.showZuban !== false;
+      state.frpShowSpecs = saved.showSpecs !== false;
+      state.frpFooterSections = FRP_DEFAULT_SECTIONS.map((def, i) => {
+        const s = saved.footerSections?.[i];
+        return s ? { title: s.title ?? def.title, enabled: s.enabled !== false, text: s.text ?? def.text }
+                 : { ...def };
+      });
+    } else {
+      state.frpHz             = '50Hz';
+      state.frpShowZuban      = true;
+      state.frpShowSpecs      = true;
+      state.frpFooterSections = FRP_DEFAULT_SECTIONS.map(s => ({ ...s }));
     }
   }
 
@@ -4321,31 +4397,85 @@ const app = (() => {
     const zubanCb = document.getElementById('frpSettingsZuban');
     if (zubanCb) zubanCb.checked = state.frpShowZuban !== false;
 
-    const ta = document.getElementById('frpSettingsFooter');
-    if (ta) ta.value = state.frpFooterText || FRP_DEFAULT_FOOTER;
+    const specsCb = document.getElementById('frpSettingsSpecs');
+    if (specsCb) specsCb.checked = state.frpShowSpecs !== false;
+
+    const sections = state.frpFooterSections || FRP_DEFAULT_SECTIONS.map(s => ({ ...s }));
+    sections.forEach((sec, i) => {
+      const cb    = document.getElementById(`frpSection${i}Enabled`);
+      const title = document.getElementById(`frpSection${i}Title`);
+      const ta    = document.getElementById(`frpSection${i}Text`);
+      if (cb)    cb.checked    = sec.enabled !== false;
+      if (title) title.value   = sec.title   ?? FRP_DEFAULT_SECTIONS[i].title;
+      if (ta)    ta.value      = sec.text     ?? '';
+    });
 
     modal.style.display = '';
   }
 
-  function saveFrpSettings() {
-    const hzRadio = document.querySelector('input[name="frpSettingsHz"]:checked');
-    const hz      = hzRadio?.value || '50Hz';
-    const zubanCb = document.getElementById('frpSettingsZuban');
-    const ta      = document.getElementById('frpSettingsFooter');
+  async function saveFrpSettings() {
+    if (!state.quoteId) { showToast('見積レコードが未ロードです', 'warn'); return; }
 
-    state.frpHz         = hz;
-    state.frpShowZuban  = zubanCb ? zubanCb.checked : true;
-    state.frpFooterText = ta ? ta.value : FRP_DEFAULT_FOOTER;
+    const hzRadio  = document.querySelector('input[name="frpSettingsHz"]:checked');
+    const zubanCb  = document.getElementById('frpSettingsZuban');
+    const specsCb2 = document.getElementById('frpSettingsSpecs');
 
-    const key = `frp_settings_${state.shoka || 'default'}`;
-    localStorage.setItem(key, JSON.stringify({
-      hz:         state.frpHz,
-      showZuban:  state.frpShowZuban,
-      footerText: state.frpFooterText,
-    }));
+    state.frpHz        = hzRadio?.value || '50Hz';
+    state.frpShowZuban = zubanCb  ? zubanCb.checked  : true;
+    state.frpShowSpecs = specsCb2 ? specsCb2.checked : true;
 
-    document.getElementById('frpSettingsModal').style.display = 'none';
-    showToast('FRP設定を保存しました');
+    state.frpFooterSections = FRP_DEFAULT_SECTIONS.map((def, i) => {
+      const cb    = document.getElementById(`frpSection${i}Enabled`);
+      const title = document.getElementById(`frpSection${i}Title`);
+      const ta    = document.getElementById(`frpSection${i}Text`);
+      return {
+        title:   (title ? title.value.trim() : '') || def.title,
+        enabled: cb ? cb.checked : true,
+        text:    ta ? ta.value   : def.text,
+      };
+    });
+
+    const frpJson = JSON.stringify({
+      hz:             state.frpHz,
+      showZuban:      state.frpShowZuban,
+      showSpecs:      state.frpShowSpecs,
+      footerSections: state.frpFooterSections,
+    });
+
+    try {
+      const res = await ZOHO.CRM.API.updateRecord({
+        Entity:  'Quotes',
+        APIData: { id: state.quoteId, FRP_JSON: frpJson },
+        Trigger: [],
+      });
+      const code = res?.data?.[0]?.code;
+      if (code === 'SUCCESS') {
+        state._frpSettingsRaw = JSON.parse(frpJson);
+        document.getElementById('frpSettingsModal').style.display = 'none';
+        showToast('FRP設定を保存しました');
+      } else {
+        showToast('FRP設定の保存に失敗しました: ' + (res?.data?.[0]?.message || code), 'err');
+      }
+    } catch (e) {
+      showToast('FRP設定の保存エラー: ' + (e?.message || String(e)), 'err');
+    }
+  }
+
+  function resetFrpSettings() {
+    FRP_DEFAULT_SECTIONS.forEach((def, i) => {
+      const cb    = document.getElementById(`frpSection${i}Enabled`);
+      const title = document.getElementById(`frpSection${i}Title`);
+      const ta    = document.getElementById(`frpSection${i}Text`);
+      if (cb)    cb.checked  = def.enabled !== false;
+      if (title) title.value = def.title;
+      if (ta)    ta.value    = def.text;
+    });
+    const zubanCb  = document.getElementById('frpSettingsZuban');
+    const specsCb2 = document.getElementById('frpSettingsSpecs');
+    document.querySelectorAll('input[name="frpSettingsHz"]').forEach(r => { r.checked = r.value === '50Hz'; });
+    if (zubanCb)  zubanCb.checked  = true;
+    if (specsCb2) specsCb2.checked = true;
+    showToast('初期値に戻しました（保存するには「保存」を押してください）', 'warn');
   }
 
   function switchFrpMode() {
@@ -4401,10 +4531,14 @@ const app = (() => {
     const gensuiSummary     = document.getElementById('gensuiSummary');
 
     if (frpContainer)      frpContainer.style.display      = frpOn ? '' : 'none';
-    if (sectionsContainer) sectionsContainer.style.display = frpOn ? 'none' : '';
+    if (sectionsContainer) sectionsContainer.style.display = '';
     if (noSectionsMsg)     noSectionsMsg.style.display     = frpOn ? 'none' : '';
     if (itemsToolbar)      itemsToolbar.style.display      = frpOn ? 'none' : '';
     if (gensuiSummary)     gensuiSummary.style.display     = frpOn ? 'none' : '';
+
+    // 衛生ツールバー: FRPモードのみ表示
+    const eiseiRowEl = document.getElementById('eiseiRow');
+    if (eiseiRowEl) eiseiRowEl.style.display = frpOn ? '' : 'none';
 
     const btn   = document.getElementById('btnFrpMode');
     const label = document.getElementById('frpModeLabel');
@@ -4614,6 +4748,9 @@ const app = (() => {
                    value="${escHtml(item.itemnum || '')}"
                    data-frp-id="${item.id}" data-field="itemnum">
             ${zubanHtml}
+            ${(item.specLines && item.specLines.length)
+              ? item.specLines.map(l => `<div class="frp-spec-line">${escHtml(l)}</div>`).join('')
+              : ''}
             `}
           </td>
           <td class="frp-col-hinshu">
@@ -7410,17 +7547,15 @@ const app = (() => {
     const dairiVal  = block.querySelector('.dairi-subtotal-val');
     if (dairiWrap && dairiVal) {
       if (hasDairiRate) {
-        const isBuhanSub = (state.quoteCategory || '').includes('物販');
         const dairiSubtotal = sec.items.reduce((sum, i) => {
           const qty   = Number(i.qty) || 1;
           const dUnit = effectiveFinalDairiUnit(i);
           if (dUnit == null) return sum;
-          const disc = isBuhanSub ? (i.buhanDiscount != null ? i.buhanDiscount : 0) : 0;
-          return sum + dUnit * qty - disc;
+          return sum + dUnit * qty;
         }, 0);
         dairiVal.textContent = '¥' + dairiSubtotal.toLocaleString('ja-JP');
         const labelEl = dairiWrap.querySelector('.dairi-subtotal-label');
-        if (labelEl) labelEl.textContent = isBuhanSub ? '販売価格' : '代理店';
+        if (labelEl) labelEl.textContent = '代理店';
         dairiWrap.style.display = '';
       } else {
         dairiWrap.style.display = 'none';
@@ -7454,23 +7589,41 @@ const app = (() => {
       const frpItemsSafe     = state.frpItems || [];
       const frpPriceTotal    = frpItemsSafe.reduce((s, i) => s + i.price * (Number(i.qty)||1), 0);
       const frpShikiriTotal  = frpItemsSafe.reduce((s, i) => s + (i.priceA||0) * (Number(i.qty)||1), 0);
-      state.deliveryPrice    = frpShikiriTotal;
-      state.dairiTotal       = frpShikiriTotal;
 
-      const frpGrandTotal = Math.max(0, frpShikiriTotal - (state.frpDiscount || 0));
-      const frpAraRi     = frpGrandTotal; // 原価データなし = 0 のため 粗利 = 御見積金額
-      const frpAraRiRate = frpGrandTotal > 0 ? 100.0 : 0;
-      setText('basicGrandTotal',   frpPriceTotal.toLocaleString('ja-JP'));
-      setText('basicDairiTotal',   frpShikiriTotal.toLocaleString('ja-JP'));
-      setText('basicDeliveryPrice', frpGrandTotal.toLocaleString('ja-JP'));
-      setText('basicGenkaTotal',   '0');
-      setText('basicAraRi',        frpAraRi.toLocaleString('ja-JP'));
-      setText('basicAraRiRate',    frpAraRiRate.toFixed(1) + '%');
+      // ③割引額 = ①小売価格合計 - ②仕切合計
+      const frpWaribiki   = Math.max(0, frpPriceTotal - frpShikiriTotal);
+      // 調整額（基本情報の入力値）
+      const adjustAmount  = state.discountEnabled !== false ? (Number(getValue('discountAmount')) || 0) : 0;
+      // 出精値引き = ③割引額 + 調整額
+      const frpDiscount2  = frpWaribiki + adjustAmount;
+      // 貴社お渡し価格 = ② - 調整額
+      const frpDelivery   = Math.max(0, frpShikiriTotal - adjustAmount);
+
+      state.dairiTotal       = frpShikiriTotal;
+      state.waribikiAmount   = frpWaribiki;
+      state.adjustAmount     = adjustAmount;
+      state.deliveryPrice    = frpDelivery;
+
+      const frpAraRi     = frpDelivery;
+      const frpAraRiRate = frpDelivery > 0 ? 100.0 : 0;
+      setText('basicGrandTotal',      frpPriceTotal.toLocaleString('ja-JP'));
+      setText('basicDairiTotal',      frpShikiriTotal.toLocaleString('ja-JP'));
+      setText('basicWaribikiAmount',  frpWaribiki.toLocaleString('ja-JP'));
+      setText('basicSesseiWabiki',    frpDiscount2.toLocaleString('ja-JP'));
+      setText('basicDeliveryPrice',   frpDelivery.toLocaleString('ja-JP'));
+      setText('basicGenkaTotal',      '0');
+      setText('basicAraRi',           frpAraRi.toLocaleString('ja-JP'));
+      setText('basicAraRiRate',       frpAraRiRate.toFixed(1) + '%');
+
+      const rowWaribikiEl = document.getElementById('rowWaribiki');
+      if (rowWaribikiEl) rowWaribikiEl.style.display = frpWaribiki > 0 ? '' : 'none';
+      const rowSesseiWabikiEl = document.getElementById('rowSesseiWabiki');
+      if (rowSesseiWabikiEl) rowSesseiWabikiEl.style.display = frpWaribiki > 0 ? '' : 'none';
 
       const rowDairi = document.getElementById('rowDairiTotal');
       if (rowDairi) rowDairi.style.display = '';
       const dpHidden = document.getElementById('deliveryPrice');
-      if (dpHidden) dpHidden.value = frpShikiriTotal;
+      if (dpHidden) dpHidden.value = frpDelivery;
       const pdfModeGrp = document.getElementById('pdfPriceModeGroup');
       if (pdfModeGrp) pdfModeGrp.style.display = '';
       const pdfModeGrpKoujiF = document.getElementById('pdfPriceModeGroupKouji');
@@ -7558,12 +7711,11 @@ const app = (() => {
             const qty   = Number(i.qty) || 1;
             const dUnit = effectiveFinalDairiUnit(i);
             if (dUnit == null) return sum;
-            const disc = isBuhanCalc ? (i.buhanDiscount != null ? i.buhanDiscount : 0) : 0;
-            return sum + dUnit * qty - disc;
+            return sum + dUnit * qty;
           }, 0);
           dairiVal2.textContent = '¥' + (dairiSub2 * secQtyVal).toLocaleString('ja-JP');
           const labelEl2 = dairiWrap2.querySelector('.dairi-subtotal-label');
-          if (labelEl2) labelEl2.textContent = isBuhanCalc ? '販売価格' : '代理店';
+          if (labelEl2) labelEl2.textContent = '代理店';
           dairiWrap2.style.display = '';
         } else {
           dairiWrap2.style.display = 'none';
@@ -7609,22 +7761,14 @@ const app = (() => {
     // 作業↔工事 カテゴリ閾値チェック（100万円、仕切価格基準）
     checkCategoryThreshold(dairiTotal != null ? dairiTotal : grandTotal);
 
-    // 値引き額（物販は明細値引き合計、作業はチェックボックス制御、その他は手入力）
-    const buhanDiscTotal = isBuhanCalc
-      ? sections.reduce((sum, s) => {
-          const secQty = Math.max(1, Number(s.secQty) || 1);
-          return sum + s.items.reduce((ss, i) => ss + (i.buhanDiscount != null ? i.buhanDiscount : 0), 0) * secQty;
-        }, 0)
-      : 0;
-    state.buhanDiscTotal = buhanDiscTotal;
-    const adjustAmount   = isBuhanCalc ? 0 : (state.discountEnabled !== false ? (Number(getValue('discountAmount')) || 0) : 0);
+    const buhanDiscTotal = 0;
+    state.buhanDiscTotal = 0;
+    const adjustAmount   = state.discountEnabled !== false ? (Number(getValue('discountAmount')) || 0) : 0;
     // 割引額 = 定価合計 - 代理店価格合計（代理店価格がある場合のみ）
-    const waribikiAmount = (dairiTotal != null && !isBuhanCalc) ? Math.max(0, grandTotal - dairiTotal) : 0;
+    const waribikiAmount = dairiTotal != null ? Math.max(0, grandTotal - dairiTotal) : 0;
     // 出精値引き = 割引額 + 調整額
     const discount       = waribikiAmount + adjustAmount;
-    const deliveryPrice  = isBuhanCalc
-      ? Math.max(0, (dairiTotal ?? grandTotal) - buhanDiscTotal)
-      : Math.max(0, grandTotal - discount - buhanDiscTotal);
+    const deliveryPrice  = Math.max(0, grandTotal - discount);
 
     // state に反映（saveToCRM/buildPdfData で使用）
     state.discount       = discount;
@@ -7650,12 +7794,10 @@ const app = (() => {
       const footerDairiWrap = document.getElementById('footerDairiWrap');
       if (footerDairiWrap) {
         if (dairiTotal != null) {
-          const isBuhanFooter = isBuhanCalc && buhanDiscTotal > 0;
-          const isSagyoFooter = !isBuhanCalc && discount > 0;
-          const showDelivery  = isBuhanFooter || isSagyoFooter;
+          const showDelivery = discount > 0;
           setText('footerDairi', '¥' + (showDelivery ? deliveryPrice : dairiTotal).toLocaleString('ja-JP'));
           const footerLabelEl = document.getElementById('footerDairiLabel');
-          if (footerLabelEl) footerLabelEl.textContent = isBuhanFooter ? '販売価格' : (isSagyoFooter ? '貴社お渡し' : '代理店');
+          if (footerLabelEl) footerLabelEl.textContent = showDelivery ? '貴社お渡し' : '代理店';
           footerDairiWrap.style.display = '';
         } else {
           footerDairiWrap.style.display = 'none';
@@ -7685,20 +7827,17 @@ const app = (() => {
     const rowDairi = document.getElementById('rowDairiTotal');
     if (rowDairi) rowDairi.style.display = dairiTotal != null ? '' : 'none';
     setText('basicDairiTotal', dairiTotal != null ? dairiTotal.toLocaleString('ja-JP') : '0');
-    // 割引額行（代理店価格あり・非物販の場合のみ表示）
+    // 割引額行（代理店価格あり場合に表示）
     const rowWaribikiEl = document.getElementById('rowWaribiki');
-    if (rowWaribikiEl) rowWaribikiEl.style.display = (dairiTotal != null && !isBuhanCalc) ? '' : 'none';
+    if (rowWaribikiEl) rowWaribikiEl.style.display = dairiTotal != null ? '' : 'none';
     setText('basicWaribikiAmount', waribikiAmount.toLocaleString('ja-JP'));
     // 出精値引き合計行
     const rowSesseiWabikiEl = document.getElementById('rowSesseiWabiki');
-    if (rowSesseiWabikiEl) rowSesseiWabikiEl.style.display = (dairiTotal != null && !isBuhanCalc) ? '' : 'none';
+    if (rowSesseiWabikiEl) rowSesseiWabikiEl.style.display = dairiTotal != null ? '' : 'none';
     setText('basicSesseiWabiki', discount.toLocaleString('ja-JP'));
-    // 物販: 値引き（明細計）行
+    // 値引き（明細計）行（廃止のため常時非表示）
     const rowBuhanDiscEl = document.getElementById('rowBuhanDiscount');
-    if (rowBuhanDiscEl) {
-      rowBuhanDiscEl.style.display = (isBuhanCalc && buhanDiscTotal > 0) ? '' : 'none';
-      setText('basicBuhanDiscount', buhanDiscTotal.toLocaleString('ja-JP'));
-    }
+    if (rowBuhanDiscEl) rowBuhanDiscEl.style.display = 'none';
     setText('basicDeliveryPrice', deliveryPrice.toLocaleString('ja-JP'));
     // 貴社お渡し価格行：代理店価格が未設定のとき非表示
     const rowDeliveryCalc = document.querySelector('.row-delivery-calc');
@@ -8064,7 +8203,7 @@ const app = (() => {
       adjustAmount:    state.adjustAmount || 0,
       waribikiAmount:  state.waribikiAmount || 0,
       discountEnabled: state.discountEnabled !== false,
-      buhanDiscTotal:  state.buhanDiscTotal || 0,
+      buhanDiscTotal:  0,
       quoteCategory:   state.quoteCategory || '',
       printCover:      (() => {
         const cb = document.getElementById('printCoverPage');
@@ -8107,8 +8246,15 @@ const app = (() => {
       frpAB:         state.frpAB    || 'A',
       frpItems:      state.frpMode ? (state.frpItems || []) : undefined,
       frpDiscount:   state.frpMode ? (state.frpDiscount || 0) : 0,
-      frpFooterText: state.frpMode ? (state.frpFooterText || '') : '',
+      frpFooterText: state.frpMode ? (() => {
+        const secs = state.frpFooterSections || [];
+        return secs
+          .filter(s => s.enabled !== false && (s.text || '').trim())
+          .map(s => `----${s.title}----\n${s.text}`)
+          .join('\n\n');
+      })() : '',
       frpShowZuban:  state.frpMode ? (state.frpShowZuban !== false) : true,
+      frpShowSpecs:  state.frpMode ? (state.frpShowSpecs !== false) : true,
       frpArea:       state.frpMode ? (state.frpArea || undefined) : undefined,
       frpDealerCode: state.frpMode ? (state.frpDealerCode || undefined) : undefined,
       dateFormat: getValue('dateFormat') || 'seireki',
@@ -8363,10 +8509,20 @@ const app = (() => {
         seqNo:         state.seqNo,
         revision:      state.revision,
         exclusions:    state.exclusions,
-        remarks:         state.remarks   || undefined,
-        discount:        state.discountEnabled !== false ? (state.discount || undefined) : undefined,
-        discountEnabled: state.discountEnabled === false ? false : undefined,
-        subformRowIds:   newIds.length  ? newIds : undefined,
+        remarks:          state.remarks        || undefined,
+        discount:         state.adjustAmount   || undefined,
+        adjustAmount:     state.adjustAmount   || undefined,
+        discountEnabled:  state.discountEnabled === false ? false : undefined,
+        subformRowIds:    newIds.length ? newIds : undefined,
+        // FRP
+        frpMode:          state.frpMode || undefined,
+        frpAB:            state.frpMode ? state.frpAB : undefined,
+        frpItems:         state.frpMode && state.frpItems.length ? state.frpItems : undefined,
+        frpArea:          state.frpMode ? (state.frpArea || undefined) : undefined,
+        frpDealerCode:    state.frpMode ? (state.frpDealerCode || undefined) : undefined,
+        roundingEnabled:  state.roundingEnabled || undefined,
+        shochoName:       state.shochoName      || undefined,
+        branchKey:        state.branchKey        || undefined,
       });
       await ZOHO.CRM.API.updateRecord({
         Entity:  'Quotes',
@@ -8789,11 +8945,11 @@ const app = (() => {
 
   // ── 印刷価格モード説明 ─────────────────────────────────────────
   const PDF_MODE_DESC = {
-    teika:          '希望小売価格のみ印刷。代理店価格列は表示しません。',
-    'dairi-kouji':  '希望小売価格に加えて代理店仕切合計（列）を追加表示します。',
-    'dairi-bulk':   '表示は希望小売価格。仕切は合計を一括表示。',
-    'dairi-discount': '希望小売価格合計から値引き額を差し引いた形式で表示します。',
-    dairi:          '各行に希望小売価格及び仕切の単価、合計を表示。',
+    teika:          '小売価格のみ印刷。代理店価格列は表示しません。',
+    'dairi-kouji':  '小売価格に加えて代理店仕切合計（列）を追加表示します。',
+    'dairi-bulk':   '表示は小売価格。仕切は合計を一括表示。',
+    'dairi-discount': '小売価格合計から値引き額を差し引いた形式で表示します。',
+    dairi:          '各行に小売価格及び仕切の単価、合計を表示。',
     'dairi-only':   '仕切単価・仕切合計のみ表示',
   };
 
@@ -8882,6 +9038,8 @@ const app = (() => {
     onBuppanCatChange,
     execBuppanStandardAdd,
     onEiseiCatChange,
+    onEiseiChuChange,
+    onEiseiShoChange,
     execEiseiAdd,
     // 見積外工事
     onExclusionChange,
@@ -8965,6 +9123,7 @@ const app = (() => {
     _frpWizardSearchStep5,
     openFrpSettings,
     saveFrpSettings,
+    resetFrpSettings,
     // 代理店単価ロック解除・SABCランク選択
     onPriceRankChange,
     clearDairiUnitPrice,
