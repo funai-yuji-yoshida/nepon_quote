@@ -7776,6 +7776,33 @@ const app = (() => {
     state.waribikiAmount = waribikiAmount;
     state.deliveryPrice = deliveryPrice;
 
+    // per-section 代理店価格小計に調整額を按分反映
+    if (dairiTotal != null && dairiTotal > 0 && adjustAmount > 0) {
+      const secBlocks = Array.from(container?.querySelectorAll('[data-section-id]') || []);
+      const visibleBlocks = secBlocks.filter(b => {
+        const dw = b.querySelector('.dairi-subtotal-wrap');
+        return dw && dw.style.display !== 'none';
+      });
+      let allocated = 0;
+      visibleBlocks.forEach((b, idx) => {
+        const dVal = b.querySelector('.dairi-subtotal-val');
+        if (!dVal) return;
+        const secId = Number(b.dataset.sectionId);
+        const sec = sections.find(s => s.id === secId);
+        if (!sec) return;
+        const secQty = Math.max(1, Number(sec.secQty) || 1);
+        const rawDairi = sec.items.reduce((sum, i) => {
+          const qty = Number(i.qty) || 1;
+          const dUnit = effectiveFinalDairiUnit(i);
+          return sum + (dUnit != null ? dUnit * qty : 0);
+        }, 0) * secQty;
+        const isLast = idx === visibleBlocks.length - 1;
+        const portion = isLast ? (adjustAmount - allocated) : Math.round(adjustAmount * rawDairi / dairiTotal);
+        allocated += portion;
+        dVal.textContent = '¥' + (rawDairi - portion).toLocaleString('ja-JP');
+      });
+    }
+
     // 原価合計
     const genkaTotal = sections.reduce((sum, s) => {
       const secQty = Math.max(1, Number(s.secQty) || 1);
@@ -7826,11 +7853,11 @@ const app = (() => {
     // 代理店価格合計行の表示切替
     const rowDairi = document.getElementById('rowDairiTotal');
     if (rowDairi) rowDairi.style.display = dairiTotal != null ? '' : 'none';
-    setText('basicDairiTotal', dairiTotal != null ? dairiTotal.toLocaleString('ja-JP') : '0');
+    setText('basicDairiTotal', dairiTotal != null ? (dairiTotal - adjustAmount).toLocaleString('ja-JP') : '0');
     // 割引額行（代理店価格あり場合に表示）
     const rowWaribikiEl = document.getElementById('rowWaribiki');
     if (rowWaribikiEl) rowWaribikiEl.style.display = dairiTotal != null ? '' : 'none';
-    setText('basicWaribikiAmount', waribikiAmount.toLocaleString('ja-JP'));
+    setText('basicWaribikiAmount', discount.toLocaleString('ja-JP'));
     // 出精値引き合計行
     const rowSesseiWabikiEl = document.getElementById('rowSesseiWabiki');
     if (rowSesseiWabikiEl) rowSesseiWabikiEl.style.display = dairiTotal != null ? '' : 'none';
@@ -7897,7 +7924,7 @@ const app = (() => {
     setText('sum-total',      '¥' + grandTotal.toLocaleString('ja-JP'));
     const sumDairiRow = document.getElementById('sum-dairi-row');
     if (sumDairiRow) sumDairiRow.style.display = dairiTotal != null ? '' : 'none';
-    setText('sum-dairi',      dairiTotal != null ? '¥' + dairiTotal.toLocaleString('ja-JP') : '¥0');
+    setText('sum-dairi',      dairiTotal != null ? '¥' + (dairiTotal - adjustAmount).toLocaleString('ja-JP') : '¥0');
     setText('sum-discount',   discount > 0 ? '¥' + discount.toLocaleString('ja-JP') : '¥0');
     const rowDeliverySum = document.querySelector('tr.row-delivery');
     if (rowDeliverySum) rowDeliverySum.style.display = dairiTotal != null ? '' : 'none';
@@ -8710,8 +8737,9 @@ const app = (() => {
     const araRiBase = (state.deliveryPrice > 0) ? state.deliveryPrice : grandTotal;
     const araRi     = araRiBase - grandGenka;
     const araRiRate = araRiBase > 0 ? araRi / araRiBase * 100 : null;
+    const adjustAmount = state.discountEnabled !== false ? (state.adjustAmount || 0) : 0;
     const dairiStr  = rate != null
-      ? `<span class="sgf-sep">／</span><span class="sgf-item"><span class="sgf-label">代理店合計</span> <span>¥${fmtN(grandDairi)}</span></span>`
+      ? `<span class="sgf-sep">／</span><span class="sgf-item"><span class="sgf-label">代理店合計</span> <span>¥${fmtN(grandDairi - adjustAmount)}</span></span>`
       : '';
     const genkaStr  = grandGenka > 0
       ? `<span class="sgf-sep">／</span><span class="sgf-item"><span class="sgf-label">原価合計</span> <span>¥${fmtN(grandGenka)}</span></span>`

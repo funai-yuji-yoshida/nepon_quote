@@ -548,6 +548,26 @@
           </div>
         </div>
 
+        <!-- 衛生標準項選択行 -->
+        <div class="toolbar-main" id="eiseiRow" style="display:none;margin-top:3px;">
+          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
+            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
+          </div>
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;background:#1a56db;color:#fff;border-color:#1a56db;">衛生</button></div>
+            <select id="eiseiChuSelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onEiseiChuChange(this.value)">
+              <option value="">― 中項目を選択 ―</option>
+            </select>
+            <select id="eiseiShoSelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onEiseiShoChange(this.value)">
+              <option value="">― 小項目を選択 ―</option>
+            </select>
+            <select id="eiseiModelSelect" class="input-search" style="height:30px;flex:1;min-width:0;">
+              <option value="">― 型式を選択 ―</option>
+            </select>
+            <button class="btn-cat-add" onclick="app.execEiseiAdd()">追加</button>
+          </div>
+        </div>
+
         <!-- 既存関数との互換用（非表示） -->
         <select id="productTargetSection" style="display:none"></select>
         <select id="kikiTargetSection" style="display:none"></select>
@@ -614,28 +634,6 @@
           <div class="frp-grand-row">
             <span class="frp-footer-label">御見積金額（税別）：</span>
             <strong id="frpGrandTotal">¥0</strong>
-          </div>
-        </div>
-      </div>
-
-      <!-- 衛生標準項ツールバー（FRPモード時のみ表示・frpContainer直下に固定配置） -->
-      <div class="items-toolbar" id="eiseiRow" style="display:none; position:relative;">
-        <div class="toolbar-main" style="margin-top:3px;">
-          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
-            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
-          </div>
-          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
-            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;background:#1a56db;color:#fff;border-color:#1a56db;">衛生</button></div>
-            <select id="eiseiChuSelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onEiseiChuChange(this.value)">
-              <option value="">― 中項目を選択 ―</option>
-            </select>
-            <select id="eiseiShoSelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onEiseiShoChange(this.value)">
-              <option value="">― 小項目を選択 ―</option>
-            </select>
-            <select id="eiseiModelSelect" class="input-search" style="height:30px;flex:1;min-width:0;">
-              <option value="">― 型式を選択 ―</option>
-            </select>
-            <button class="btn-cat-add" onclick="app.execEiseiAdd()">追加</button>
           </div>
         </div>
       </div>
