@@ -611,7 +611,7 @@ const QuotationPDF = (() => {
       } else if (entry.type === 'sectionHeader') {
         const s = entry.s;
         const row = [
-          { text: String(s.no || ''), alignment: 'center', fontSize: itemFs },
+          { text: sectionTotals.length === 1 ? '' : String(s.no || ''), alignment: 'center', fontSize: itemFs },
           { text: s.name, bold: true, fontSize: itemFs },
           ...emptyPc(itemFs),
           { text: '', fontSize: itemFs }, { text: '', fontSize: itemFs },
@@ -1917,8 +1917,8 @@ const QuotationPDF = (() => {
 
       if ((section.name || '').trim()) {
         rows.push([
-          { text: String(section.no || sIdx + 1), alignment: 'center', style: 'sectionHdr' },
-          { text: `※${section.name}`, style: 'sectionHdr', colSpan: COLS - 1 },
+          { text: sectionTotals.length === 1 ? '' : String(section.no || sIdx + 1), alignment: 'center', style: 'sectionHdr' },
+          { text: section.name, style: 'sectionHdr', colSpan: COLS - 1 },
           ...emp(COLS - 2),
         ]);
       }
@@ -2514,8 +2514,8 @@ const QuotationPDF = (() => {
 
       if ((section.name || '').trim()) {
         rows.push([
-          { text: String(section.no || sIdx + 1), alignment: 'center', style: 'sectionHdr' },
-          { text: `※${section.name}`, style: 'sectionHdr', colSpan: COLS - 1 },
+          { text: sectionTotals.length === 1 ? '' : String(section.no || sIdx + 1), alignment: 'center', style: 'sectionHdr' },
+          { text: section.name, style: 'sectionHdr', colSpan: COLS - 1 },
           ...emp(COLS - 2),
         ]);
       }
