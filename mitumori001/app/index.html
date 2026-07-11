@@ -316,9 +316,37 @@
       </div>
 
       <div class="form-section">
-        <div class="form-row">
-          <label>備考</label>
-          <textarea id="remarks" class="input-remarks" rows="4" placeholder="備考を入力（PDF に反映されます）"></textarea>
+        <div class="form-row" style="align-items:flex-start;">
+          <label style="padding-top:4px;">備考</label>
+          <div style="display:flex;gap:0;flex:1;min-width:0;">
+            <!-- 左：備考textarea＋チェックボックス -->
+            <div style="display:flex;flex-direction:column;gap:4px;flex:0 0 60%;min-width:0;">
+              <textarea id="remarks" class="input-remarks" rows="4" style="max-width:none;width:100%;" placeholder="備考を入力（PDF に反映されます）"></textarea>
+              <label style="font-weight:normal;display:flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap;">
+                <input type="checkbox" id="remarkTableEnabled">
+                備考欄の下に缶体温度設定テーブルを追加する（PDF反映）
+              </label>
+            </div>
+            <!-- 右：定型文パネル -->
+            <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:0;border-left:1px solid #ddd;padding-left:8px;margin-left:8px;">
+              <div style="font-size:12px;color:#555;">定型文</div>
+              <div style="display:flex;flex-wrap:wrap;gap:3px;">
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(1)">1</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(2)">2</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(3)">3</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(4)">4</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(5)">5</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(6)">6</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(7)">7</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(8)">8</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(9)">9</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(10)">10</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(11)">11</button>
+              </div>
+              <div id="remarkPreviewBox" style="flex:1;min-height:48px;max-height:80px;overflow-y:auto;border:1px solid #ccc;border-radius:4px;padding:3px 6px;font-size:11px;color:#333;background:#fafafa;white-space:pre-wrap;line-height:1.5;"></div>
+              <button class="btn-remark-insert" onclick="app.insertSelectedRemark()" style="width:100%;">挿入</button>
+            </div>
+          </div>
         </div>
       </div>
 

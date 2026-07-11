@@ -1241,6 +1241,37 @@ const QuotationPDF = (() => {
         },
       ] : []),
 
+      // ── 缶体温度設定テーブル（チェックON時のみ）─────────────────
+      ...(data.remarkTableEnabled ? [{
+        margin: [4, cellPad * 2, 0, 0],
+        table: {
+          widths: ['auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+          body: [
+            [
+              { text: 'リモコン表示', bold: true, fontSize: itemFs, alignment: 'center' },
+              { text: '1', fontSize: itemFs, alignment: 'center' },
+              { text: '2', fontSize: itemFs, alignment: 'center' },
+              { text: '3', fontSize: itemFs, alignment: 'center' },
+              { text: '4', fontSize: itemFs, alignment: 'center' },
+              { text: '5', fontSize: itemFs, alignment: 'center' },
+              { text: '6', fontSize: itemFs, alignment: 'center' },
+              { text: '7', fontSize: itemFs, alignment: 'center' },
+            ],
+            [
+              { text: '目安温度', bold: true, fontSize: itemFs, alignment: 'center' },
+              { text: '13℃', fontSize: itemFs, alignment: 'center' },
+              { text: '23℃', fontSize: itemFs, alignment: 'center' },
+              { text: '34℃', fontSize: itemFs, alignment: 'center' },
+              { text: '43℃', fontSize: itemFs, alignment: 'center' },
+              { text: '48℃', fontSize: itemFs, alignment: 'center' },
+              { text: '70℃', fontSize: itemFs, alignment: 'center' },
+              { text: '83.5℃', fontSize: itemFs, alignment: 'center' },
+            ],
+          ],
+        },
+        layout: 'lightHorizontalLines',
+      }] : []),
+
       // FRPモード: 枠外文言を2列レイアウトで鏡ページ末尾に追加
       ...(frpMode && data.frpFooterText ? (() => {
         const sections = data.frpFooterText.split(/\n\n+/);

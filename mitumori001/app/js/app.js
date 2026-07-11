@@ -1020,7 +1020,8 @@ const app = (() => {
     customerAccountId: null, // Quote.Account_Name.id（Account_Number取得用）
     frpDealerCode: null,     // 代理店コード（Account_Number 上4桁）
     frpArea:       null,     // 選択中エリア名
-    roundingEnabled: false, // 切り上げ表示モード
+    roundingEnabled: false,    // 切り上げ表示モード
+    remarkTableEnabled: false, // 缶体温度設定テーブルを備考下に追加
     _thresholdSide: null,  // 閾値判定キャッシュ（'over'|'under'|null）
   };
 
@@ -1285,6 +1286,10 @@ const app = (() => {
         }
         // 切り上げモード復元
         state.roundingEnabled  = parsed.roundingEnabled  || false;
+        // 缶体温度設定テーブル復元
+        state.remarkTableEnabled = parsed.remarkTableEnabled || false;
+        const remarkTableCb = document.getElementById('remarkTableEnabled');
+        if (remarkTableCb) remarkTableCb.checked = state.remarkTableEnabled;
         // 値引き額チェックボックス復元（作業時のみ保存される）
         if (parsed.discountEnabled === false) state.discountEnabled = false;
         // 所長名復元
@@ -2196,6 +2201,43 @@ const app = (() => {
     renderSections();
     updateOutput();
     showToast(`No.${targetSection.no} に ${model} を追加しました`);
+  }
+
+  // ── 備考プリセット ───────────────────────────────────────────
+  const REMARK_PRESETS = [
+    'ご指定納入日より納品が遅れる際には保管費用が発生する場合がございます。',
+    '本見積書には、法定福利費を含んでおります。',
+    '路線便の配達です。時間指定別途です。',
+    '・路線便の配達です。時間指定別途です。\n・試運転調整費及び設定値変更作業等は費用別途です。\n・缶体設定温度（目安）は1～7段階のデジタル設定です。\n注記：\n・標高1000ｍを超える高地でご使用いただく場合は別途設定の切り替え（有償）が必要となります。\n・標高1500ｍを超える高地での使用は不具合が発生する可能性が高く、推奨いたしません。',
+    '集合煙突NGです。本見積製品の煙突は1対1で施工をお願いします。',
+    'バルブ類は含まれておりません。',
+    '保温・ラッキングは含んでおりません。',
+    '内部配管は現地施工にてお願いいたします。',
+    'ソケット取付追加の場合は費用別途です。',
+    '・記載以外の部品及び交換作業別途です。\n・点検作業は平日になります。夜間・休日作業別途です。\n・本見積書には、法定福利費が含まれています。\n・見積記載事項以外別途です。\n・消費税等別途です。',
+    '・缶体燃焼室内部清掃作業別途です。',
+  ];
+
+  let _remarkPresetSelected = 0;
+
+  function selectRemarkPreset(n) {
+    _remarkPresetSelected = n;
+    const text = REMARK_PRESETS[n - 1] || '';
+    const preview = document.getElementById('remarkPreviewBox');
+    if (preview) preview.textContent = text;
+    document.querySelectorAll('.btn-remark-preset').forEach((btn, i) => {
+      btn.classList.toggle('is-selected', i + 1 === n);
+    });
+  }
+
+  function insertSelectedRemark() {
+    const text = _remarkPresetSelected ? REMARK_PRESETS[_remarkPresetSelected - 1] : '';
+    if (!text) { showToast('定型文を選択してください', 'warn'); return; }
+    const el = document.getElementById('remarks');
+    if (!el) return;
+    const cur = el.value;
+    el.value = cur ? cur + '\n' + text : text;
+    el.dispatchEvent(new Event('input'));
   }
 
   async function execEiseiAdd() {
@@ -8061,6 +8103,7 @@ const app = (() => {
     state.paymentTerm    = getValue('paymentTerm');
     state.validDays      = getValue('validDays') || '';
     state.remarks        = getValue('remarks') || '';
+    state.remarkTableEnabled = document.getElementById('remarkTableEnabled')?.checked || false;
     state.discount       = Number(getValue('discountAmount')) || 0;
     state.laborCost      = getValue('laborCost') ? Number(getValue('laborCost')) : null;
     state.anzenCost      = Number(getValue('anzenCost')) || 0;
@@ -8268,6 +8311,7 @@ const app = (() => {
       })(),
 
       roundingEnabled: state.roundingEnabled || false,
+      remarkTableEnabled: state.remarkTableEnabled || false,
 
       frpMode:       state.frpMode  || false,
       frpAB:         state.frpAB    || 'A',
@@ -8410,6 +8454,7 @@ const app = (() => {
         frpArea:        state.frpMode ? (state.frpArea || undefined) : undefined,
         frpDealerCode:  state.frpMode ? (state.frpDealerCode || undefined) : undefined,
         roundingEnabled:  state.roundingEnabled  || undefined,
+        remarkTableEnabled: state.remarkTableEnabled || undefined,
         discountEnabled:  state.discountEnabled === false ? false : undefined,
         shochoName:       state.shochoName       || undefined,
         branchKey:        state.branchKey         || undefined,
@@ -8548,6 +8593,7 @@ const app = (() => {
         frpArea:          state.frpMode ? (state.frpArea || undefined) : undefined,
         frpDealerCode:    state.frpMode ? (state.frpDealerCode || undefined) : undefined,
         roundingEnabled:  state.roundingEnabled || undefined,
+        remarkTableEnabled: state.remarkTableEnabled || undefined,
         shochoName:       state.shochoName      || undefined,
         branchKey:        state.branchKey        || undefined,
       });
@@ -9156,6 +9202,9 @@ const app = (() => {
     onPriceRankChange,
     clearDairiUnitPrice,
     clearFinalDairiUnit,
+    // 備考プリセット
+    selectRemarkPreset,
+    insertSelectedRemark,
     // 切り上げ表示
     toggleRounding,
     // デバッグ・テスト用

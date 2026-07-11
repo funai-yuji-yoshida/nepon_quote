@@ -549,6 +549,35 @@ button {
 }
 .btn-cat-add:hover { background: #1b5e20; }
 
+.btn-remark-preset {
+  padding: 2px 7px;
+  font-size: 12px;
+  background: #f0f4ff;
+  color: #1a4d8f;
+  border: 1px solid #aac0e8;
+  border-radius: 4px;
+  cursor: pointer;
+  line-height: 1.6;
+}
+.btn-remark-preset:hover { background: #dce8ff; }
+.btn-remark-preset.is-selected {
+  background: #1a4d8f;
+  color: #fff;
+  border-color: #1a4d8f;
+}
+.btn-remark-insert {
+  padding: 3px 10px;
+  font-size: 12px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+.btn-remark-insert:hover { background: #1b5e20; }
+
 /* 右ツールエリア */
 .toolbar-right {
   margin-left: auto;
