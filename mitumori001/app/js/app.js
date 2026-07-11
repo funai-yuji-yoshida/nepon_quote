@@ -2184,6 +2184,8 @@ const app = (() => {
           item.amount         = (r.teika || 0) * r.qty;
           item.genka          = r.shikiri;
           item.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
+          item.model          = model;
+          item.printModel     = true;
           mainItem = item;
           targetSection.items.push(item);
         } else if (mainItem) {
@@ -8123,6 +8125,11 @@ const app = (() => {
       if (!confirm('見積番号が未設定です。このまま生成しますか？')) return;
     }
 
+    const _adjWarn = (state.discountEnabled !== false) ? (Number(getValue('discountAmount')) || 0) : 0;
+    if (_adjWarn > 0) {
+      if (!confirm(`⚠️ 調整額 ¥${_adjWarn.toLocaleString('ja-JP')} が残っています。\n\n調整額は各明細行の単価で調整し、印刷前に 0 円にしてください。\n\nこのまま印刷しますか？`)) return;
+    }
+
     // 原価未入力チェック（停止中）
     // const missingGenkaItems = state.sections.flatMap(sec =>
     //   (sec.items || []).filter(item => !item.genka).map(item => item.name || '（名称未入力）')
@@ -8173,6 +8180,12 @@ const app = (() => {
 
   async function previewPDF(mode = 'detail') {
     readFormToState();
+
+    const _adjWarn = (state.discountEnabled !== false) ? (Number(getValue('discountAmount')) || 0) : 0;
+    if (_adjWarn > 0) {
+      if (!confirm(`⚠️ 調整額 ¥${_adjWarn.toLocaleString('ja-JP')} が残っています。\n\n調整額は各明細行の単価で調整し、印刷前に 0 円にしてください。\n\nこのままプレビューしますか？`)) return;
+    }
+
     const modal   = document.getElementById('pdfPreviewModal');
     const frame   = document.getElementById('pdfPreviewFrame');
     const loading = document.getElementById('pdfPreviewLoading');

@@ -456,10 +456,12 @@ const QuotationPDF = (() => {
             if (!item.name || !item.name.trim()) return;
             mirrorEntries.push({ type: 'item', item, idx });
             if (!item.machineSpecHidden) {
-              const _modelToShow = (item.machineSpec && item.machineSpec.model)
-                || (item.specMasterContent ? '' : (item.printModel !== false ? (item.model || item.spec || '') : ''));
-              if (_modelToShow) {
-                mirrorEntries.push({ type: 'machineSpecModel', model: _modelToShow });
+              // machineSpec アイテムは品名が型式名そのものなので型式行は出さない
+              if (!item.machineSpec) {
+                const _modelToShow = item.specMasterContent ? '' : (item.printModel !== false ? (item.model || item.spec || '') : '');
+                if (_modelToShow) {
+                  mirrorEntries.push({ type: 'machineSpecModel', model: _modelToShow });
+                }
               }
               if (item.machineSpec) {
                 mirrorEntries.push({ type: 'machineSpecHeader' });
@@ -658,10 +660,10 @@ const QuotationPDF = (() => {
         tableRows.push(row);
       } else {
         const item = entry.item;
-        // 熱機ヘッダー行（タイトル）: No.・数量・単位・単価・金額なし
+        // 熱機ヘッダー行（タイトル）: 数量・単位・単価・金額なし、No.あり
         if (item.isNetsukiHeader) {
           const row = [
-            { text: '', fontSize: itemFs },
+            { text: String(rowNo++), alignment: 'right', fontSize: itemFs },
             { text: item.name || '', fontSize: itemFs },
             ...(showProductCode ? [{ text: '', fontSize: itemFs }] : []),
             { text: '', fontSize: itemFs }, { text: '', fontSize: itemFs },
@@ -671,7 +673,8 @@ const QuotationPDF = (() => {
           tableRows.push(row);
           return;
         }
-        const rowNoText = String(rowNo++);
+        // machineSpec アイテムは型式ON/OFF問わず番号なし
+        const rowNoText = item.machineSpec ? '' : String(rowNo++);
         const row = [
           { text: rowNoText, alignment: 'right', fontSize: itemFs },
           { text: item.name || '', fontSize: itemFs },
@@ -2264,13 +2267,16 @@ const QuotationPDF = (() => {
       (section.items || []).forEach(item => {
         const qtyStr = item.qty != null && item.qty !== '' ? String(item.qty) : '';
 
-        // 熱機ヘッダー行（品名のみ、No.・数量・価格なし）
+        // 熱機ヘッダー行（品名のみ、数量・価格なし・No.あり）
         if (item.isNetsukiHeader) {
-          rows.push([{ text: '' }, { text: item.name || '' }, ...emp(COLS - 2)]);
+          rows.push([{ text: String(itemNo++), alignment: 'right' }, { text: item.name || '' }, ...emp(COLS - 2)]);
           return;
         }
 
-        const noCell = { text: String(itemNo++), alignment: 'right' };
+        // machineSpec アイテムは型式ON/OFF問わず番号なし
+        const noCell = item.machineSpec
+          ? { text: '', alignment: 'right' }
+          : { text: String(itemNo++), alignment: 'right' };
         if (useDairi) {
           rows.push([
             noCell,
@@ -2294,10 +2300,9 @@ const QuotationPDF = (() => {
             { text: (isBulk || isShikiOnly) ? fmt(dairiItemAmt(item)) : fmt(item.amount), alignment: 'right' },
           ]);
         }
-        // 型式行（熱機アイテムは品名が型式なので省略、品目コード列表示時も省略）
-        if (!showProductCode && !item.machineSpecHidden) {
-          const _detModel = (item.machineSpec && item.machineSpec.model)
-            || (item.specMasterContent ? '' : (item.printModel !== false ? (item.model || item.spec || '') : ''));
+        // 型式行（machineSpecアイテムは品名が型式名・品目コード列表示時は省略）
+        if (!showProductCode && !item.machineSpecHidden && !item.machineSpec) {
+          const _detModel = item.specMasterContent ? '' : (item.printModel !== false ? (item.model || item.spec || '') : '');
           if (_detModel) {
             rows.push([{ text: '' }, { text: `　型式　${_detModel}`, fontSize: 7.5, color: '#333' }, ...emp(COLS - 2)]);
           }
@@ -2553,13 +2558,16 @@ const QuotationPDF = (() => {
 
       let itemNo = 1;
       (section.items || []).forEach(item => {
-        // 熱機ヘッダー行（タイトル）: No.・数量・価格なし
+        // 熱機ヘッダー行（タイトル）: 数量・価格なし・No.あり
         if (item.isNetsukiHeader) {
-          rows.push([{ text: '' }, { text: item.name || '' }, ...emp(COLS - 2)]);
+          rows.push([{ text: String(itemNo++), alignment: 'center', fontSize: 8 }, { text: item.name || '' }, ...emp(COLS - 2)]);
           return;
         }
         const qtyStr = item.qty != null && item.qty !== '' ? String(item.qty) : '';
-        const noCell = { text: String(itemNo++), alignment: 'center', fontSize: 8 };
+        // machineSpec アイテムは型式ON/OFF問わず番号なし
+        const noCell = item.machineSpec
+          ? { text: '', alignment: 'center', fontSize: 8 }
+          : { text: String(itemNo++), alignment: 'center', fontSize: 8 };
         if (useDairi) {
           rows.push([
             noCell,
@@ -2583,13 +2591,13 @@ const QuotationPDF = (() => {
             { text: (isBulk || isShikiOnly) ? fmt(dairiItemAmt(item)) : fmt(item.amount), alignment: 'right' },
           ]);
         }
-        // 型式行（商品マスタの型式。品目コード列表示時は重複を避けるため省略）
+        // 型式行（商品マスタの型式。品目コード列表示時・machineSpecアイテムは省略）
         if (!item.machineSpecHidden) {
           if (item.model && !item.machineSpec && !showProductCode && item.printModel !== false) {
             rows.push([{ text: '' }, { text: `　型式：${item.model}`, fontSize: 7.5, color: '#333' }, ...emp(COLS - 2)]);
           }
           if (item.machineSpec) {
-            rows.push([{ text: '' }, { text: `　型式　${item.machineSpec.model}`, fontSize: 8 }, ...emp(COLS - 2)]);
+            // machineSpecアイテムは品名が型式名なので型式行は出さない
             (item.machineSpec.specs || []).forEach(spec => {
               rows.push([{ text: '' }, { text: `${spec.label}：${spec.value}`, fontSize: 7.5, color: '#444', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
             });
