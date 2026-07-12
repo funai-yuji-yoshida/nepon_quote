@@ -1761,10 +1761,21 @@ const app = (() => {
         // criteria starts_with 検索（word検索は部分一致しないケースがあるため）
         // Zoho は「－」「＿」をトークン区切りとして扱うため、トークン境界をまたぐ前方一致はヒットしない
         // 例: starts_with:AWH-1501S では AWH-1501SA_1 はヒットしない（1501SA≠1501S）
-        // 対策: 最後の区切り文字より前のプレフィックス（例: AWH）でも検索し、ローカルフィルタで絞る
+        // 対策1: 最後の区切り文字より前のプレフィックス（例: AWH）でも検索し、ローカルフィルタで絞る
         const lastDelimIdx = Math.max(q.lastIndexOf('－'), q.lastIndexOf('＿'));
         const qPrefix = lastDelimIdx > 0 ? q.slice(0, lastDelimIdx) : null;
         const qPrefixPart = qPrefix ? `or(Product_Name:starts_with:${qPrefix})` : '';
+        // 対策2: 漢字⇔仮名の境界でも分割して前方一致（例: 煙突セット → 煙突）
+        const _isKanji = c => c >= '一' && c <= '鿿';
+        const _isKana  = c => c >= '぀' && c <= 'ヿ';
+        const _jaBoundary = (() => {
+          for (let i = 1; i < q.length; i++) {
+            if ((_isKanji(q[i-1]) && _isKana(q[i])) || (_isKana(q[i-1]) && _isKanji(q[i]))) return i;
+          }
+          return -1;
+        })();
+        const qJaPrefix = _jaBoundary > 0 ? q.slice(0, _jaBoundary) : null;
+        const qJaPrefixPart = (qJaPrefix && qJaPrefix !== qPrefix) ? `or(Product_Name:starts_with:${qJaPrefix})` : '';
         const rawExtra = raw !== q
           ? `or(Product_Name:starts_with:${raw})or(Product_Code:starts_with:${raw})or(field2:starts_with:${raw})`
           : '';
@@ -1793,30 +1804,48 @@ const app = (() => {
           specContent: p.field13 || '',
           source: 'product',
         });
-        // criteria検索（コード・型式の前方一致）とword検索（名前の含む検索）を並列実行して結合
-        const [criteriaRes, wordRes] = await Promise.all([
+        // 検索戦略:
+        // 1. criteria: 名前前方一致（日本語境界・区切り記号プレフィックス対応）
+        // 2. word: 全文検索（Zohoトークン分割でAND検索）
+        // 3. kana: 漢字-仮名境界のカナ部分でword検索（「セット」など）
+        const _criteriaQuery = `((Product_Name:starts_with:${q})${qPrefixPart}${qJaPrefixPart}or(Product_Code:starts_with:${q})or(field2:starts_with:${q})${rawExtra})`;
+        const kanaSuffix = qJaPrefix ? q.slice(qJaPrefix.length) : '';
+        console.log('[search] q:', q, ' raw:', raw, ' kana:', kanaSuffix);
+        const [criteriaRes, wordRes, kanaRes] = await Promise.all([
           ZOHO.CRM.API.searchRecord({
             Entity: 'Products', Type: 'criteria',
-            Query: `((Product_Name:starts_with:${q})${qPrefixPart}or(Product_Code:starts_with:${q})or(field2:starts_with:${q})${rawExtra})`,
+            Query: _criteriaQuery,
             page: 1, per_page: 100,
-          }).catch(() => null),
+          }).catch(e => { console.log('[search] criteria error:', e); return null; }),
           ZOHO.CRM.API.searchRecord({
             Entity: 'Products', Type: 'word',
             Query: raw,
             page: 1, per_page: 100,
-          }).catch(() => null),
+          }).catch(e => { console.log('[search] word error:', e); return null; }),
+          kanaSuffix ? ZOHO.CRM.API.searchRecord({
+            Entity: 'Products', Type: 'word',
+            Query: kanaSuffix,
+            page: 1, per_page: 100,
+          }).catch(e => { console.log('[search] kana error:', e); return null; }) : Promise.resolve(null),
         ]);
+        console.log('[search] criteria:', criteriaRes?.data?.length ?? 'null', ' word:', wordRes?.data?.length ?? 'null', ' kana:', kanaRes?.data?.length ?? 'null');
         const seen = new Set();
-        const allData = [...(criteriaRes?.data || []), ...(wordRes?.data || [])];
+        const allData = [
+          ...(criteriaRes?.data || []),
+          ...(wordRes?.data || []),
+          ...(kanaRes?.data || []),
+        ];
         products = allData.filter(p => {
           if (!matchesSearch(p)) return false;
           if (seen.has(p.id)) return false;
           seen.add(p.id);
           return true;
         }).map(mapProduct);
+        console.log('[search] after filter:', products.length);
       }
       if (products.length === 0) { dd.style.display = 'none'; return; }
       state.searchResults = products;
+      console.log('[search] building dropdown for', products.length, 'items');
       dd.innerHTML = products.map((item, idx) => `
         <div class="product-item" data-idx="${idx}">
           <div style="flex:1;min-width:0">
@@ -1834,6 +1863,7 @@ const app = (() => {
           if (product) selectProduct(product);
         });
       });
+      console.log('[search] showing dropdown');
       dd.style.display = 'block';
     } catch (e) {
       console.error('商品検索エラー:', e);
@@ -8127,7 +8157,10 @@ const app = (() => {
 
     const _adjWarn = (state.discountEnabled !== false) ? (Number(getValue('discountAmount')) || 0) : 0;
     if (_adjWarn > 0) {
-      if (!confirm(`⚠️ 調整額 ¥${_adjWarn.toLocaleString('ja-JP')} が残っています。\n\n調整額は各明細行の単価で調整し、印刷前に 0 円にしてください。\n\nこのまま印刷しますか？`)) return;
+      const _modeN = (!state.frpMode && (state.quoteCategory || '').includes('工事')) ? 'pdfPriceModeKouji' : 'pdfPriceMode';
+      const _modeV = ([...document.getElementsByName(_modeN)].find(r => r.checked)?.value || 'teika');
+      if ((_modeV === 'dairi-bulk' || _modeV === 'dairi-discount') &&
+          !confirm('調整額が投入されています！\nこのまま印刷しますか？')) return;
     }
 
     // 原価未入力チェック（停止中）
@@ -8183,7 +8216,10 @@ const app = (() => {
 
     const _adjWarn = (state.discountEnabled !== false) ? (Number(getValue('discountAmount')) || 0) : 0;
     if (_adjWarn > 0) {
-      if (!confirm(`⚠️ 調整額 ¥${_adjWarn.toLocaleString('ja-JP')} が残っています。\n\n調整額は各明細行の単価で調整し、印刷前に 0 円にしてください。\n\nこのままプレビューしますか？`)) return;
+      const _modeN = (!state.frpMode && (state.quoteCategory || '').includes('工事')) ? 'pdfPriceModeKouji' : 'pdfPriceMode';
+      const _modeV = ([...document.getElementsByName(_modeN)].find(r => r.checked)?.value || 'teika');
+      if ((_modeV === 'dairi-bulk' || _modeV === 'dairi-discount') &&
+          !confirm('調整額が投入されています！\nこのままプレビューしますか？')) return;
     }
 
     const modal   = document.getElementById('pdfPreviewModal');
