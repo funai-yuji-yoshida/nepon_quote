@@ -1810,25 +1810,23 @@ const app = (() => {
         // 3. kana: 漢字-仮名境界のカナ部分でword検索（「セット」など）
         const _criteriaQuery = `((Product_Name:starts_with:${q})${qPrefixPart}${qJaPrefixPart}or(Product_Code:starts_with:${q})or(field2:starts_with:${q})${rawExtra})`;
         const kanaSuffix = qJaPrefix ? q.slice(qJaPrefix.length) : '';
-        console.log('[search] q:', q, ' raw:', raw, ' kana:', kanaSuffix);
         const [criteriaRes, wordRes, kanaRes] = await Promise.all([
           ZOHO.CRM.API.searchRecord({
             Entity: 'Products', Type: 'criteria',
             Query: _criteriaQuery,
             page: 1, per_page: 100,
-          }).catch(e => { console.log('[search] criteria error:', e); return null; }),
+          }).catch(() => null),
           ZOHO.CRM.API.searchRecord({
             Entity: 'Products', Type: 'word',
             Query: raw,
             page: 1, per_page: 100,
-          }).catch(e => { console.log('[search] word error:', e); return null; }),
+          }).catch(() => null),
           kanaSuffix ? ZOHO.CRM.API.searchRecord({
             Entity: 'Products', Type: 'word',
             Query: kanaSuffix,
             page: 1, per_page: 100,
-          }).catch(e => { console.log('[search] kana error:', e); return null; }) : Promise.resolve(null),
+          }).catch(() => null) : Promise.resolve(null),
         ]);
-        console.log('[search] criteria:', criteriaRes?.data?.length ?? 'null', ' word:', wordRes?.data?.length ?? 'null', ' kana:', kanaRes?.data?.length ?? 'null');
         const seen = new Set();
         const allData = [
           ...(criteriaRes?.data || []),
@@ -1841,11 +1839,9 @@ const app = (() => {
           seen.add(p.id);
           return true;
         }).map(mapProduct);
-        console.log('[search] after filter:', products.length);
       }
       if (products.length === 0) { dd.style.display = 'none'; return; }
       state.searchResults = products;
-      console.log('[search] building dropdown for', products.length, 'items');
       dd.innerHTML = products.map((item, idx) => `
         <div class="product-item" data-idx="${idx}">
           <div style="flex:1;min-width:0">
@@ -1863,7 +1859,6 @@ const app = (() => {
           if (product) selectProduct(product);
         });
       });
-      console.log('[search] showing dropdown');
       dd.style.display = 'block';
     } catch (e) {
       console.error('商品検索エラー:', e);
@@ -2859,10 +2854,6 @@ const app = (() => {
       item.priceA    = product.priceA || 0;
       item.priceB    = product.priceB || 0;
       item.priceC    = product.priceC || 0;
-      if (item.priceA > 0 || item.priceB > 0 || item.priceC > 0 || item.priceS > 0) {
-        item.priceRank = 'A';
-        if (item.priceA > 0) item.dairiUnitPrice = item.priceA;
-      }
       targetSection.items.push(item);
 
       if (product.code) {
