@@ -81,7 +81,7 @@ const app = (() => {
     if (dd.style.display !== 'none') { dd.style.display = 'none'; return; }
     const isSagyoDd = (state.quoteCategory || '').includes('作業');
     const isBuhanDd = (state.quoteCategory || '').includes('物販');
-    dd.innerHTML = COL_DEFS.filter(c => !c.always && (!c.sagyo || isSagyoDd) && (!c.buhan || isBuhanDd)).map(c => `
+    dd.innerHTML = COL_DEFS.filter(c => !c.always && !c.disabled && (!c.sagyo || isSagyoDd) && (!c.buhan || isBuhanDd)).map(c => `
       <label class="col-dd-item">
         <input type="checkbox" ${colState[c.col] ? 'checked' : ''}
                onchange="app.setColVisibility('${c.col}', this.checked)">
@@ -969,6 +969,7 @@ const app = (() => {
     remarks:        '',
     discount:        0,
     adjustAmount:    0,
+    baseAdjustAmount: 0,
     waribikiAmount:  0,
     discountEnabled: true,
     deliveryPrice:  0,
@@ -1067,7 +1068,10 @@ const app = (() => {
     document.getElementById('sectionsContainer').addEventListener('change', onItemInput);
 
     // イベント: 値引き額・労務費・法定福利費率 変更 → 即時再計算
-    document.getElementById('discountAmount').addEventListener('input', updateOutput);
+    document.getElementById('discountAmount').addEventListener('input', function () {
+      state.baseAdjustAmount = Number(this.value) || 0;
+      updateOutput();
+    });
     document.getElementById('chkDiscountEnabled').addEventListener('change', function () {
       state.discountEnabled = this.checked;
       const amountEl = document.getElementById('discountAmount');
@@ -1481,6 +1485,7 @@ const app = (() => {
       if (discAmtEl2) discAmtEl2.disabled = !chkDiscEl2.checked;
     }
     setValue('discountAmount',  state.discountEnabled !== false ? (state.adjustAmount || '') : '');
+    state.baseAdjustAmount = state.adjustAmount || 0;
     setValue('laborCost',       state.laborCost || '');
     setValue('anzenCost',       state.anzenCost || '');
     setValue('legalWelfareRate',state.legalWelfareRate);
@@ -8011,11 +8016,96 @@ const app = (() => {
 
     updateQuoteNoBadge();
     checkMultipleRates();
+    updateAdjustHint();
     // 各セクションのセクション内掛率チェックも更新
     state.sections.forEach(sec => {
       const block = document.querySelector(`.section-block[data-section-id="${sec.id}"]`);
       if (block) updateSectionRateWarn(sec, block);
     });
+  }
+
+  // ── 残調整額ヒント ────────────────────────────────────────────────
+  function updateAdjustHint() {
+    const bar = document.getElementById('adjustHintBar');
+    if (!bar) return;
+    const adjustAmount = state.adjustAmount || 0;
+    if (adjustAmount <= 0 || state.frpMode) { bar.style.display = 'none'; return; }
+    const hintInput = document.getElementById('adjustHintAmountInput');
+    if (hintInput && hintInput !== document.activeElement) {
+      hintInput.value = adjustAmount;
+    }
+
+    // 元の調整額（ユーザーが入力した基準値）を使って「調整済み」を計算
+    const baseAdjust = state.baseAdjustAmount > 0 ? state.baseAdjustAmount : adjustAmount;
+
+    let totalLocked = 0;
+    state.sections.forEach(sec => {
+      (sec.items || []).forEach(item => {
+        if (item.dairiUnitPrice == null) return;
+        const rate = item.dairiRate ?? state.mainRate;
+        if (rate == null) return;
+        const baseUnit = item.unitPrice != null ? item.unitPrice
+          : (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
+        if (baseUnit == null) return;
+        let autoUnit = Math.round(baseUnit * rate);
+        if (state.roundingEnabled) autoUnit = roundUp(autoUnit);
+        const diff = autoUnit - item.dairiUnitPrice;
+        if (diff > 0) totalLocked += diff * (Number(item.qty) || 1);
+      });
+    });
+
+    const done = Math.min(totalLocked, baseAdjust);
+    const rest = Math.max(0, baseAdjust - done);
+    const pct  = Math.min(100, baseAdjust > 0 ? Math.round(done / baseAdjust * 100) : 0);
+    const fmt  = v => '¥' + v.toLocaleString('ja-JP');
+
+    state._adjustRest = rest;
+
+    setText('adjustHintDone', fmt(done));
+    setText('adjustHintRest', fmt(rest));
+    const restEl = document.getElementById('adjustHintRest');
+    if (restEl) restEl.classList.toggle('done', rest === 0);
+    const prog = document.getElementById('adjustHintProgress');
+    if (prog) prog.style.width = pct + '%';
+
+    // 残額更新ボタン: 残 > 0 かつ 残 < 元の調整額
+    const syncWrap = document.getElementById('adjustHintSyncWrap');
+    if (syncWrap) {
+      if (rest > 0 && rest < baseAdjust) {
+        document.getElementById('adjustHintSyncLabel').textContent = fmt(rest);
+        syncWrap.style.display = '';
+      } else {
+        syncWrap.style.display = 'none';
+      }
+    }
+    // 調整完了ボタン: 残 = 0
+    const resetWrap = document.getElementById('adjustHintResetWrap');
+    if (resetWrap) resetWrap.style.display = rest === 0 ? '' : 'none';
+
+    bar.style.display = '';
+  }
+
+  function resetAdjustAmount() {
+    state.baseAdjustAmount = 0;
+    const discEl = document.getElementById('discountAmount');
+    if (discEl) { discEl.value = ''; updateOutput(); }
+  }
+
+  function updateAdjustAmountToRest() {
+    const rest = state._adjustRest;
+    if (!rest || rest <= 0) return;
+    const discEl = document.getElementById('discountAmount');
+    if (!discEl) return;
+    discEl.value = rest;
+    // baseAdjustAmount は更新しない（元の基準額を保持してdone計算を継続）
+    updateOutput();
+  }
+
+  function syncAdjustAmountFromHint(value) {
+    const discEl = document.getElementById('discountAmount');
+    if (!discEl) return;
+    discEl.value = value || '';
+    discEl.dispatchEvent(new Event('input'));
   }
 
   // ── 掛率複数検知 ───────────────────────────────────────────────────
@@ -9255,6 +9345,10 @@ const app = (() => {
     insertSelectedRemark,
     // 切り上げ表示
     toggleRounding,
+    // 調整額
+    resetAdjustAmount,
+    updateAdjustAmountToRest,
+    syncAdjustAmountFromHint,
     // デバッグ・テスト用
     _state: state,
     _renderFrpItems: renderFrpItems,

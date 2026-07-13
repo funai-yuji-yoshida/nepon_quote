@@ -698,6 +698,29 @@
 
       <div id="multiRateWarn" class="multi-rate-warn" style="display:none"></div>
 
+      <!-- 残調整額ヒントバー（調整額 > 0 のときのみ表示） -->
+      <div id="adjustHintBar" class="adjust-hint-bar" style="display:none">
+        <div class="adjust-hint-row">
+          <span class="adjust-hint-item">調整額 ¥<input type="number" id="adjustHintAmountInput" class="adjust-hint-input" min="0" placeholder="0" oninput="app.syncAdjustAmountFromHint(this.value)"></span>
+          <span class="adjust-hint-sep">→</span>
+          <span class="adjust-hint-item">調整済み <strong id="adjustHintDone">¥0</strong></span>
+          <span class="adjust-hint-sep">／</span>
+          <span class="adjust-hint-item adjust-hint-rest-wrap">残 <strong id="adjustHintRest" class="adjust-hint-rest">¥0</strong></span>
+        </div>
+        <div class="adjust-hint-track">
+          <div id="adjustHintProgress" class="adjust-hint-progress" style="width:0%"></div>
+        </div>
+        <div class="adjust-hint-note">🔒 行の代理店単価を手動値引きすると「調整済み」が増えます。</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:5px;">
+          <div id="adjustHintSyncWrap" style="display:none;">
+            <button class="btn-adjust-sync" onclick="app.updateAdjustAmountToRest()">↩ 調整額を残額 <span id="adjustHintSyncLabel">¥0</span> に更新</button>
+          </div>
+          <div id="adjustHintResetWrap" style="display:none;">
+            <button class="btn-adjust-reset" onclick="app.resetAdjustAmount()">✔ 調整完了 — 調整額を 0 に戻す</button>
+          </div>
+        </div>
+      </div>
+
       <div id="itemsFooterBar" class="items-footer-bar">
         <span class="footer-item footer-total"><span class="footer-label">合計</span> <strong id="footerTotal">¥0</strong></span>
         <span id="footerDairiWrap" style="display:none">

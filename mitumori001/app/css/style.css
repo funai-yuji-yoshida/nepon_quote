@@ -2195,6 +2195,23 @@ input.item-gensui-b::-webkit-inner-spin-button {
 /* 掛率複数検知 警告バナー */
 .multi-rate-warn { background:#fff3cd; border:1px solid #ffc107; border-radius:4px; padding:5px 12px; font-size:12px; color:#7d5a00; margin:4px 0 0; }
 
+/* 残調整額ヒントバー */
+.adjust-hint-bar { background:#f0f4ff; border:1px solid #c0d0f0; border-radius:4px; padding:8px 12px; margin:4px 0 0; }
+.adjust-hint-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.adjust-hint-item { font-size:13px; color:#333; }
+.adjust-hint-item strong { font-size:14px; margin-left:4px; }
+.adjust-hint-sep { color:#999; font-size:12px; }
+.adjust-hint-rest { color:#c00; font-weight:bold; }
+.adjust-hint-rest.done { color:#090; }
+.adjust-hint-track { background:#dde5f5; border-radius:4px; height:6px; margin:6px 0 4px; overflow:hidden; }
+.adjust-hint-progress { background:#1a56db; height:100%; border-radius:4px; transition:width .3s; }
+.adjust-hint-note { font-size:11px; color:#666; margin-top:2px; }
+.btn-adjust-reset { background:#1a56db; color:#fff; border:none; border-radius:4px; padding:4px 10px; font-size:12px; cursor:pointer; }
+.btn-adjust-reset:hover { background:#1647c4; }
+.btn-adjust-sync { background:#0e9f6e; color:#fff; border:none; border-radius:4px; padding:4px 10px; font-size:12px; cursor:pointer; }
+.btn-adjust-sync:hover { background:#057a55; }
+.adjust-hint-input { width:72px; border:1px solid #b0c4de; border-radius:3px; padding:1px 4px; font-size:14px; font-weight:bold; text-align:right; color:#333; }
+
 /* 見積明細フッター集計バー（作業のみ表示） */
 .items-footer-bar {
   display: flex;

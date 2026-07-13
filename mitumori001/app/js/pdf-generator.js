@@ -673,8 +673,7 @@ const QuotationPDF = (() => {
           tableRows.push(row);
           return;
         }
-        // machineSpec アイテムは型式ON/OFF問わず番号なし
-        const rowNoText = item.machineSpec ? '' : String(rowNo++);
+        const rowNoText = String(rowNo++);
         const row = [
           { text: rowNoText, alignment: 'right', fontSize: itemFs },
           { text: item.name || '', fontSize: itemFs },
@@ -2242,10 +2241,7 @@ const QuotationPDF = (() => {
           return;
         }
 
-        // machineSpec アイテムは型式ON/OFF問わず番号なし
-        const noCell = item.machineSpec
-          ? { text: '', alignment: 'right' }
-          : { text: String(itemNo++), alignment: 'right' };
+        const noCell = { text: String(itemNo++), alignment: 'right' };
         if (useDairi) {
           rows.push([
             noCell,
@@ -2528,10 +2524,7 @@ const QuotationPDF = (() => {
           return;
         }
         const qtyStr = item.qty != null && item.qty !== '' ? String(item.qty) : '';
-        // machineSpec アイテムは型式ON/OFF問わず番号なし
-        const noCell = item.machineSpec
-          ? { text: '', alignment: 'center', fontSize: 8 }
-          : { text: String(itemNo++), alignment: 'center', fontSize: 8 };
+        const noCell = { text: String(itemNo++), alignment: 'center', fontSize: 8 };
         if (useDairi) {
           rows.push([
             noCell,
