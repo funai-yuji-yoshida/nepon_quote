@@ -4843,7 +4843,14 @@ const app = (() => {
                    min="0" step="1" data-frp-id="${item.id}" data-field="price">
           </td>
           <td class="frp-col-total" style="text-align:right">${fmtFrp(priceTotal)}</td>
-          <td class="frp-col-rate">${rateTxt}</td>
+          <td class="frp-col-rate">
+            ${item.type === 'soryo'
+              ? `<span style="color:#aaa">—</span>`
+              : `<input type="number" class="frp-rate-input"
+                   value="${item.frpRate != null ? item.frpRate : (rateVal != null ? (rateVal / 100) : '')}"
+                   min="0" max="2" step="0.001" placeholder="—"
+                   data-frp-id="${item.id}">`}
+          </td>
           <td class="frp-col-shikiri">
             <input type="number" class="frp-price-input" value="${shikiri || ''}"
                    min="0" step="1" data-frp-id="${item.id}" data-field="shikiri">
@@ -4959,6 +4966,12 @@ const app = (() => {
           if (totalCell) totalCell.textContent = fmtFrp(val * qty);
         } else {
           item.priceA = val;
+          // 掛率を逆算して表示更新
+          if (item.price > 0) {
+            item.frpRate = Math.round(val / item.price * 1000) / 1000;
+            const rateInput = row.querySelector('.frp-rate-input');
+            if (rateInput) rateInput.value = item.frpRate;
+          }
           const shikiriTotalCell = row.querySelector('.frp-col-shikiri-total');
           if (shikiriTotalCell) shikiriTotalCell.textContent = fmtFrp(val * qty);
         }
@@ -5005,12 +5018,38 @@ const app = (() => {
           const rateRow = FRP_AREA_RATES.find(r => r.code === state.frpDealerCode && r.area === state.frpArea);
           if (rateRow && rateRow[item.hinshu] != null) {
             const rate = rateRow[item.hinshu];
-            item.priceA = Math.round((item.price || 0) * rate / 100);
-            item.priceB = Math.round((item.price || 0) * rate / 100);
+            item.frpRate = rate / 100;
+            item.priceA  = Math.round((item.price || 0) * item.frpRate);
+            item.priceB  = Math.round((item.price || 0) * item.frpRate);
             renderFrpItems();
             updateFrpTotals();
           }
         }
+        updateOutput();
+        markDirty();
+      });
+    });
+
+    // 掛率入力イベント
+    tbody.querySelectorAll('.frp-rate-input').forEach(input => {
+      input.addEventListener('change', () => {
+        const id   = Number(input.dataset.frpId);
+        const item = state.frpItems.find(i => i.id === id);
+        if (!item) return;
+        const rate = parseFloat(input.value);
+        const qty  = Number(item.qty) || 1;
+        const row  = input.closest('tr');
+        if (!isNaN(rate) && rate > 0) {
+          item.frpRate = rate;
+          item.priceA  = Math.round((item.price || 0) * rate);
+        } else {
+          item.frpRate = null;
+        }
+        const shikiriInput = row.querySelector('.frp-price-input[data-field="shikiri"]');
+        if (shikiriInput) shikiriInput.value = item.priceA || '';
+        const shikiriTotalCell = row.querySelector('.frp-col-shikiri-total');
+        if (shikiriTotalCell) shikiriTotalCell.textContent = fmtFrp((item.priceA || 0) * qty);
+        updateFrpTotals();
         updateOutput();
         markDirty();
       });
@@ -5092,7 +5131,8 @@ const app = (() => {
       if (!item.hinshu) return;
       const rate = rateRow[item.hinshu];
       if (rate == null) return;
-      item.priceA = Math.round((item.price || 0) * rate / 100);
+      item.frpRate = rate / 100;
+      item.priceA  = Math.round((item.price || 0) * item.frpRate);
     });
 
     renderFrpItems();
@@ -5559,7 +5599,8 @@ const app = (() => {
     if (!sec) return;
 
     sec.items.forEach(item => {
-      item.dairiRate = rate;
+      item.dairiRate    = rate;
+      item._dairiManual = false;
     });
 
     renderSection(sec, block);
@@ -5599,7 +5640,8 @@ const app = (() => {
     // 全明細行の dairiRate を更新
     state.sections.forEach(sec => {
       sec.items.forEach(item => {
-        item.dairiRate = mainRateVal;
+        item.dairiRate    = mainRateVal;
+        item._dairiManual = false;
       });
     });
 
@@ -5834,10 +5876,15 @@ const app = (() => {
       item.dairiRate = rateVal !== '' ? Number(rateVal) : null;
     }
 
-    // 掛率変更時: 代理店単価欄を再計算して即時更新（手動上書きなしの場合のみ）
-    if (e.target === dairiRateEl && item.dairiUnitPrice == null) {
+    // 掛率変更時: 手動上書きをクリアして代理店単価を再計算
+    if (e.target === dairiRateEl) {
+      item.dairiUnitPrice = null;
+      item._dairiManual   = false;
       const dairiUnitElR = row.querySelector('.item-dairi-unit');
       if (dairiUnitElR) {
+        dairiUnitElR.classList.remove('is-manual');
+        const dairiUnitLockR = row.querySelector('.btn-dairi-unit-lock');
+        if (dairiUnitLockR) dairiUnitLockR.style.display = 'none';
         const newUnit = effectiveDairiUnit(item);
         dairiUnitElR.value = newUnit != null ? Number(newUnit).toLocaleString('ja-JP') : '';
       }
@@ -5851,10 +5898,12 @@ const app = (() => {
       if (raw === '') {
         // 空欄 → 手動解除（自動計算に戻す）
         item.dairiUnitPrice = null;
+        item._dairiManual   = false;
         dairiUnitEl2.classList.remove('is-manual');
         if (dairiUnitLock2) dairiUnitLock2.style.display = 'none';
       } else {
         item.dairiUnitPrice = Number(raw) || 0;
+        item._dairiManual   = true;
         dairiUnitEl2.classList.add('is-manual');
         if (dairiUnitLock2) dairiUnitLock2.style.display = '';
       }
@@ -6294,7 +6343,7 @@ const app = (() => {
       const dairiUnitEl   = row.querySelector('.item-dairi-unit');
       const dairiUnitLock = row.querySelector('.btn-dairi-unit-lock');
       if (dairiUnitEl && dairiUnitEl !== document.activeElement) {
-        const isManual    = item.dairiUnitPrice != null;
+        const isManual    = item._dairiManual === true;
         const displayUnit = effectiveDairiUnit(item);
         dairiUnitEl.value = displayUnit != null ? Number(displayUnit).toLocaleString('ja-JP') : '';
         const isAutoRounded = state.roundingEnabled && !isManual;
@@ -7903,11 +7952,11 @@ const app = (() => {
     // 代理店価格合計行の表示切替
     const rowDairi = document.getElementById('rowDairiTotal');
     if (rowDairi) rowDairi.style.display = dairiTotal != null ? '' : 'none';
-    setText('basicDairiTotal', dairiTotal != null ? (dairiTotal - adjustAmount).toLocaleString('ja-JP') : '0');
+    setText('basicDairiTotal', dairiTotal != null ? dairiTotal.toLocaleString('ja-JP') : '0');
     // 割引額行（代理店価格あり場合に表示）
     const rowWaribikiEl = document.getElementById('rowWaribiki');
     if (rowWaribikiEl) rowWaribikiEl.style.display = dairiTotal != null ? '' : 'none';
-    setText('basicWaribikiAmount', discount.toLocaleString('ja-JP'));
+    setText('basicWaribikiAmount', waribikiAmount.toLocaleString('ja-JP'));
     // 出精値引き合計行
     const rowSesseiWabikiEl = document.getElementById('rowSesseiWabiki');
     if (rowSesseiWabikiEl) rowSesseiWabikiEl.style.display = dairiTotal != null ? '' : 'none';
@@ -7974,7 +8023,7 @@ const app = (() => {
     setText('sum-total',      '¥' + grandTotal.toLocaleString('ja-JP'));
     const sumDairiRow = document.getElementById('sum-dairi-row');
     if (sumDairiRow) sumDairiRow.style.display = dairiTotal != null ? '' : 'none';
-    setText('sum-dairi',      dairiTotal != null ? '¥' + (dairiTotal - adjustAmount).toLocaleString('ja-JP') : '¥0');
+    setText('sum-dairi',      dairiTotal != null ? '¥' + dairiTotal.toLocaleString('ja-JP') : '¥0');
     setText('sum-discount',   discount > 0 ? '¥' + discount.toLocaleString('ja-JP') : '¥0');
     const rowDeliverySum = document.querySelector('tr.row-delivery');
     if (rowDeliverySum) rowDeliverySum.style.display = dairiTotal != null ? '' : 'none';
@@ -9020,17 +9069,23 @@ const app = (() => {
     return                      Math.ceil(price / 1000) * 1000;
   }
 
-  // 代理店単価の有効値（手動設定 > 切り上げ自動 > 通常自動）
+  // 代理店単価の有効値（ユーザー手動設定 > 掛率計算 > マスタ仕切り価格）
   function effectiveDairiUnit(item) {
-    if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
+    // ユーザーが明示的に手動入力した場合のみ手動値を優先
+    if (item._dairiManual === true && item.dairiUnitPrice != null) return item.dairiUnitPrice;
     const rate = item.dairiRate ?? state.mainRate;
-    if (rate == null) return null;
-    // unitPriceがnullのとき amount/qty から単価を逆算（qty≥2で金額のみ入力した場合の修正）
-    const baseUnit = item.unitPrice != null ? item.unitPrice
-      : (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
-    if (baseUnit == null) return null;
-    const auto = Math.round(baseUnit * rate);
-    return state.roundingEnabled ? roundUp(auto) : auto;
+    if (rate != null) {
+      // unitPriceがnullのとき amount/qty から単価を逆算
+      const baseUnit = item.unitPrice != null ? item.unitPrice
+        : (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
+      if (baseUnit != null) {
+        const auto = Math.round(baseUnit * rate);
+        return state.roundingEnabled ? roundUp(auto) : auto;
+      }
+    }
+    // 掛率なし → マスタ仕切り価格をフォールバック
+    if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
+    return null;
   }
 
   function effectiveFinalDairiUnit(item) {
@@ -9090,6 +9145,7 @@ const app = (() => {
     const prices = { S: item.priceS || 0, A: item.priceA || 0, B: item.priceB || 0, C: item.priceC || 0 };
     const selected = el.value ? prices[el.value] : 0;
     item.dairiUnitPrice = selected > 0 ? selected : (item.unitPrice || null);
+    item._dairiManual   = item.dairiUnitPrice != null;
     markDirty();
     if (block) renderSection(sec, block);
     updateOutput();
@@ -9103,6 +9159,7 @@ const app = (() => {
     const item  = sec?.items.find(i => i.id === Number(row.dataset.itemId));
     if (!item) return;
     item.dairiUnitPrice = null;
+    item._dairiManual   = false;
     item.priceRank = '';
     const rankEl = row.querySelector('.item-price-rank');
     if (rankEl) rankEl.value = '';

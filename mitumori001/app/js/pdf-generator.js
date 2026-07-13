@@ -339,7 +339,7 @@ const QuotationPDF = (() => {
     const roundingEnabled = data.roundingEnabled || false;
     const dairiUnit = (item) => {
       if (item?.finalDairiUnit != null) return item.finalDairiUnit;
-      if (item?.dairiUnitPrice != null) return item.dairiUnitPrice;
+      if (item?._dairiManual === true && item.dairiUnitPrice != null) return item.dairiUnitPrice;
       const rate = (item?.dairiRate ?? mainRate) ?? mainRate;
       if (rate == null) return null;
       const baseUnit = item?.unitPrice != null ? item.unitPrice
@@ -351,7 +351,7 @@ const QuotationPDF = (() => {
     const dairi = (v, item) => {
       const qty = Number(item?.qty) || 1;
       if (item?.finalDairiUnit != null) return item.finalDairiUnit * qty;
-      if (item?.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
+      if (item?._dairiManual === true && item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
       const rate = (item?.dairiRate ?? mainRate) ?? mainRate;
       if (rate == null) return 0;
       if (roundingEnabled && item?.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
@@ -591,7 +591,7 @@ const QuotationPDF = (() => {
         const dairiSubtotal = (s.items || []).reduce((sum, i) => {
           const qty = Number(i.qty) || 1;
           if (i.finalDairiUnit != null) return sum + i.finalDairiUnit * qty;
-          if (i.dairiUnitPrice != null) return sum + i.dairiUnitPrice * qty;
+          if (i._dairiManual === true && i.dairiUnitPrice != null) return sum + i.dairiUnitPrice * qty;
           const rate = (i.dairiRate ?? mainRate) ?? mainRate;
           return sum + (rate != null ? Math.round((Number(i.amount) || 0) * rate) : 0);
         }, 0);
@@ -709,7 +709,7 @@ const QuotationPDF = (() => {
     const dairiGrandTotal = data.dairiTotal || sectionTotals.reduce((sum, s) =>
       sum + (s.items || []).reduce((ss, i) => {
         const qty = Number(i.qty) || 1;
-        if (i.dairiUnitPrice != null) return ss + i.dairiUnitPrice * qty;
+        if (i._dairiManual === true && i.dairiUnitPrice != null) return ss + i.dairiUnitPrice * qty;
         return ss + Math.round((Number(i.amount) || 0) * ((i.dairiRate ?? mainRate) ?? mainRate));
       }, 0) * (s.secQty || 1), 0);
     // 物販で代理店価格合計100万未満の場合のみ「販売価格合計」、それ以外は「貴社お渡し価格」
@@ -1597,7 +1597,7 @@ const QuotationPDF = (() => {
     const isShikiOnly     = pdfPriceMode === 'dairi-only'     && (mainRate != null || dairiTotal != null);
     const isDiscountStyle = pdfPriceMode === 'dairi-discount' && (mainRate != null || dairiTotal != null);
     const dairiItemUnit = (item) => {
-      if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
+      if (item._dairiManual === true && item.dairiUnitPrice != null) return item.dairiUnitPrice;
       const rate = item.dairiRate ?? mainRate;
       if (rate == null) return null;
       const baseUnit = item.unitPrice || (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
@@ -1608,7 +1608,7 @@ const QuotationPDF = (() => {
     const dairiItemAmt = (item) => {
       const qty = Number(item.qty) || 1;
       if (item.finalDairiUnit != null) return item.finalDairiUnit * qty;
-      if (item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
+      if (item._dairiManual === true && item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
       const rate = item.dairiRate ?? mainRate;
       if (rate == null) return 0;
       if (roundingEnabled && item.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
@@ -1869,7 +1869,7 @@ const QuotationPDF = (() => {
     const isShikiOnly = pdfPriceMode === 'dairi-only' && (mainRate != null || dairiTotal != null);
     const isDiscountStyle = pdfPriceMode === 'dairi-discount' && (mainRate != null || dairiTotal != null);
     const dairiItemUnit = (item) => {
-      if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
+      if (item._dairiManual === true && item.dairiUnitPrice != null) return item.dairiUnitPrice;
       const rate = item.dairiRate ?? mainRate;
       if (rate == null) return null;
       const baseUnit = item.unitPrice || (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
@@ -1880,7 +1880,7 @@ const QuotationPDF = (() => {
     const dairiItemAmt = (item) => {
       const qty = Number(item.qty) || 1;
       if (item.finalDairiUnit != null) return item.finalDairiUnit * qty;
-      if (item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
+      if (item._dairiManual === true && item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
       const rate = item.dairiRate ?? mainRate;
       if (rate == null) return 0;
       if (roundingEnabled && item.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
@@ -2155,7 +2155,7 @@ const QuotationPDF = (() => {
     const isDiscountStyle = pdfPriceMode === 'dairi-discount' && (mainRate != null || dairiTotal != null);
     const dairiItemUnit = (item) => {
       if (item.finalDairiUnit != null) return item.finalDairiUnit;
-      if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
+      if (item._dairiManual === true && item.dairiUnitPrice != null) return item.dairiUnitPrice;
       const rate = item.dairiRate ?? mainRate;
       if (rate == null) return null;
       const baseUnit = item.unitPrice || (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
@@ -2166,7 +2166,7 @@ const QuotationPDF = (() => {
     const dairiItemAmt = (item) => {
       const qty = Number(item.qty) || 1;
       if (item.finalDairiUnit != null) return item.finalDairiUnit * qty;
-      if (item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
+      if (item._dairiManual === true && item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
       const rate = item.dairiRate ?? mainRate;
       if (rate == null) return 0;
       if (roundingEnabled && item.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
@@ -2441,7 +2441,7 @@ const QuotationPDF = (() => {
     const isDiscountStyle = pdfPriceMode === 'dairi-discount' && (mainRate != null || dairiTotal != null);
     const dairiItemUnit = (item) => {
       if (item.finalDairiUnit != null) return item.finalDairiUnit;
-      if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
+      if (item._dairiManual === true && item.dairiUnitPrice != null) return item.dairiUnitPrice;
       const rate = item.dairiRate ?? mainRate;
       if (rate == null) return null;
       const baseUnit = item.unitPrice || (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
@@ -2452,7 +2452,7 @@ const QuotationPDF = (() => {
     const dairiItemAmt = (item) => {
       const qty = Number(item.qty) || 1;
       if (item.finalDairiUnit != null) return item.finalDairiUnit * qty;
-      if (item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
+      if (item._dairiManual === true && item.dairiUnitPrice != null) return item.dairiUnitPrice * qty;
       const rate = item.dairiRate ?? mainRate;
       if (rate == null) return 0;
       if (roundingEnabled && item.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
@@ -2718,11 +2718,11 @@ const QuotationPDF = (() => {
     const rate      = data.mainRate;
 
     const dairiItemAmt  = item => {
-      if (item.dairiUnitPrice != null) return item.dairiUnitPrice * (Number(item.qty) || 1);
+      if (item._dairiManual === true && item.dairiUnitPrice != null) return item.dairiUnitPrice * (Number(item.qty) || 1);
       return Math.round((Number(item.amount) || 0) * rate);
     };
     const dairiItemUnit = item => {
-      if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
+      if (item._dairiManual === true && item.dairiUnitPrice != null) return item.dairiUnitPrice;
       return item.unitPrice ? Math.round(Number(item.unitPrice) * rate) : null;
     };
 
