@@ -4694,7 +4694,8 @@ const app = (() => {
     if (item.hinshu && state.frpDealerCode && state.frpArea) {
       const rateRow = FRP_AREA_RATES.find(r => r.code === state.frpDealerCode && r.area === state.frpArea);
       if (rateRow && rateRow[item.hinshu] != null) {
-        item.priceA = Math.round((item.price || 0) * rateRow[item.hinshu] / 100);
+        item.frpRate = rateRow[item.hinshu] / 100;
+        item.priceA  = Math.round((item.price || 0) * item.frpRate);
       }
     }
 
@@ -5032,6 +5033,21 @@ const app = (() => {
 
     // 掛率入力イベント
     tbody.querySelectorAll('.frp-rate-input').forEach(input => {
+      // inputイベント: 入力中にstateへ即反映（他のinputが renderFrpItems を呼んでも値が消えない）
+      input.addEventListener('input', () => {
+        const id   = Number(input.dataset.frpId);
+        const item = state.frpItems.find(i => i.id === id);
+        if (!item) return;
+        const rate = parseFloat(input.value);
+        if (!isNaN(rate) && rate > 0) {
+          item.frpRate = rate;
+          item.priceA  = Math.round((item.price || 0) * rate);
+        } else {
+          item.frpRate = null;
+          item.priceA  = 0;
+        }
+      });
+      // changeイベント: フォーカスが外れたときにUI全体を更新
       input.addEventListener('change', () => {
         const id   = Number(input.dataset.frpId);
         const item = state.frpItems.find(i => i.id === id);
@@ -5044,6 +5060,7 @@ const app = (() => {
           item.priceA  = Math.round((item.price || 0) * rate);
         } else {
           item.frpRate = null;
+          item.priceA  = 0;
         }
         const shikiriInput = row.querySelector('.frp-price-input[data-field="shikiri"]');
         if (shikiriInput) shikiriInput.value = item.priceA || '';
@@ -7767,7 +7784,7 @@ const app = (() => {
       setText('sum-total',     '¥' + frpPriceTotal.toLocaleString('ja-JP'));
       setText('sum-dairi',     '¥' + frpShikiriTotal.toLocaleString('ja-JP'));
       setText('sum-discount',  '¥0');
-      setText('sum-delivery',  '¥' + frpShikiriTotal.toLocaleString('ja-JP'));
+      setText('sum-delivery',  '¥' + frpDelivery.toLocaleString('ja-JP'));
       setText('sum-material',  '―');
       setText('sum-labor',     '―');
       setText('sum-welfare',   '―');
