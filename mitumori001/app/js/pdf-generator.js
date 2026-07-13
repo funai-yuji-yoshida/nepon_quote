@@ -244,7 +244,7 @@ const QuotationPDF = (() => {
 
       styles: {
         docTitle:    { fontSize: 22, bold: true, characterSpacing: 8 },
-        tableHeader: { bold: true, alignment: 'center', fontSize: 8 },
+        tableHeader: { bold: true, alignment: 'center', fontSize: 8, noWrap: true },
         sectionHdr:  { bold: true, fontSize: 8.5 },
         amountBig:   { fontSize: 18, bold: true },
         subtotalRow: { bold: true, fillColor: '#f8f8f8' },
@@ -374,7 +374,7 @@ const QuotationPDF = (() => {
     // 代理店モード: 8列（単価・合計・仕切単価・仕切合計）、定価モード: 6列
     // FRPモード: 定価のみ=6列（定価単価・定価合計）、仕切あり=8列（定価単価・定価合計・仕切単価・仕切合計）
     const COL_WIDTHS = frpMode
-      ? (isTeika ? [22, '*', 25, 20, 58, 58] : [22, '*', 25, 20, 45, 45, 50, 50])
+      ? (isTeika ? [22, '*', 25, 20, 58, 58] : [22, '*', 25, 20, 58, 58, 50, 50])
       : (showProductCode
         ? (useDairi ? [22, '*', 50, 24, 30, 52, 58, 52, 58] : [22, '*', 50, 36, 30, 58, 58])
         : (useDairi ? [22, '*', 24, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58]));
@@ -1278,7 +1278,7 @@ const QuotationPDF = (() => {
 
   function buildFrpDetailPages({ quoteNoStr, frpItems, frpPriceTotal, frpShikiriTotal,
       frpDiscount = 0, frpFooterText = '', frpShowZuban = true }) {
-    const COL_WIDTHS    = [22, '*', 25, 20, 45, 45, 50, 50];
+    const COL_WIDTHS    = [22, '*', 25, 20, 58, 58, 50, 50];
     const shikiriLabel  = '仕切単価';
     const shikiriTLabel = '仕切合計';
 
@@ -1311,7 +1311,7 @@ const QuotationPDF = (() => {
         if (line3) nameParts.push({ text: line3, fontSize: 8, color: '#333' });
       } else {
         if (item.hinmei)  nameParts.push({ text: item.hinmei, bold: true, fontSize: 9 });
-        if (item.itemnum) nameParts.push({ text: item.itemnum, fontSize: 8, color: '#333' });
+        if (item.itemnum) nameParts.push({ text: item.itemnum, bold: true, fontSize: 9, color: '#000' });
         if (frpShowZuban) {
           const zp = [];
           if (item.zuban)  zp.push(`図番　${item.zuban}`);
@@ -2863,7 +2863,7 @@ const QuotationPDF = (() => {
       pageMargins: [30, 40, 30, 40],
       defaultStyle: { font, fontSize: 9 },
       styles: {
-        tableHeader: { bold: true, fontSize: 9, fillColor: '#1a4d8f', color: '#ffffff', alignment: 'center' },
+        tableHeader: { bold: true, fontSize: 9, fillColor: '#1a4d8f', color: '#ffffff', alignment: 'center', noWrap: true },
         sectionHdr:  { bold: true, fontSize: 9, fillColor: '#e8edf5' },
       },
       content: [
