@@ -2206,8 +2206,6 @@ input.item-gensui-b::-webkit-inner-spin-button {
 .adjust-hint-track { background:#dde5f5; border-radius:4px; height:6px; margin:6px 0 4px; overflow:hidden; }
 .adjust-hint-progress { background:#1a56db; height:100%; border-radius:4px; transition:width .3s; }
 .adjust-hint-note { font-size:11px; color:#666; margin-top:2px; }
-.btn-adjust-reset { background:#1a56db; color:#fff; border:none; border-radius:4px; padding:4px 10px; font-size:12px; cursor:pointer; }
-.btn-adjust-reset:hover { background:#1647c4; }
 .btn-adjust-sync { background:#0e9f6e; color:#fff; border:none; border-radius:4px; padding:4px 10px; font-size:12px; cursor:pointer; }
 .btn-adjust-sync:hover { background:#057a55; }
 .adjust-hint-input { width:72px; border:1px solid #b0c4de; border-radius:3px; padding:1px 4px; font-size:14px; font-weight:bold; text-align:right; color:#333; }

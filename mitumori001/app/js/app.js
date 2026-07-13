@@ -1114,7 +1114,7 @@ const app = (() => {
     document.addEventListener('input',  markDirty);
     document.addEventListener('change', markDirty);
     window.addEventListener('beforeunload', e => {
-      if (isDirty) {
+      if (isDirty || _needsAdjustUpdate()) {
         e.preventDefault();
         e.returnValue = '';
       }
@@ -7854,33 +7854,6 @@ const app = (() => {
     state.waribikiAmount = waribikiAmount;
     state.deliveryPrice = deliveryPrice;
 
-    // per-section 代理店価格小計に調整額を按分反映
-    if (dairiTotal != null && dairiTotal > 0 && adjustAmount > 0) {
-      const secBlocks = Array.from(container?.querySelectorAll('[data-section-id]') || []);
-      const visibleBlocks = secBlocks.filter(b => {
-        const dw = b.querySelector('.dairi-subtotal-wrap');
-        return dw && dw.style.display !== 'none';
-      });
-      let allocated = 0;
-      visibleBlocks.forEach((b, idx) => {
-        const dVal = b.querySelector('.dairi-subtotal-val');
-        if (!dVal) return;
-        const secId = Number(b.dataset.sectionId);
-        const sec = sections.find(s => s.id === secId);
-        if (!sec) return;
-        const secQty = Math.max(1, Number(sec.secQty) || 1);
-        const rawDairi = sec.items.reduce((sum, i) => {
-          const qty = Number(i.qty) || 1;
-          const dUnit = effectiveFinalDairiUnit(i);
-          return sum + (dUnit != null ? dUnit * qty : 0);
-        }, 0) * secQty;
-        const isLast = idx === visibleBlocks.length - 1;
-        const portion = isLast ? (adjustAmount - allocated) : Math.round(adjustAmount * rawDairi / dairiTotal);
-        allocated += portion;
-        dVal.textContent = '¥' + (rawDairi - portion).toLocaleString('ja-JP');
-      });
-    }
-
     // 原価合計
     const genkaTotal = sections.reduce((sum, s) => {
       const secQty = Math.max(1, Number(s.secQty) || 1);
@@ -7899,10 +7872,9 @@ const app = (() => {
       const footerDairiWrap = document.getElementById('footerDairiWrap');
       if (footerDairiWrap) {
         if (dairiTotal != null) {
-          const showDelivery = discount > 0;
-          setText('footerDairi', '¥' + (showDelivery ? deliveryPrice : dairiTotal).toLocaleString('ja-JP'));
+          setText('footerDairi', '¥' + dairiTotal.toLocaleString('ja-JP'));
           const footerLabelEl = document.getElementById('footerDairiLabel');
-          if (footerLabelEl) footerLabelEl.textContent = showDelivery ? '貴社お渡し' : '代理店';
+          if (footerLabelEl) footerLabelEl.textContent = '代理店';
           footerDairiWrap.style.display = '';
         } else {
           footerDairiWrap.style.display = 'none';
@@ -7913,7 +7885,7 @@ const app = (() => {
         footerGenkaWrap.style.display = genkaTotal > 0 ? '' : 'none';
         setText('footerGenka', '¥' + genkaTotal.toLocaleString('ja-JP'));
       }
-      const araRiBase  = deliveryPrice > 0 ? deliveryPrice : grandTotal;
+      const araRiBase  = (dairiTotal != null && dairiTotal > 0) ? dairiTotal : grandTotal;
       const araRiF     = araRiBase - genkaTotal;
       const araRiRateF = araRiBase > 0 ? araRiF / araRiBase * 100 : null;
       setText('footerAraRi',     '¥' + araRiF.toLocaleString('ja-JP'));
@@ -8068,36 +8040,34 @@ const app = (() => {
     const prog = document.getElementById('adjustHintProgress');
     if (prog) prog.style.width = pct + '%';
 
-    // 残額更新ボタン: 残 > 0 かつ 残 < 元の調整額
+    // 残額更新ボタン: 何かしら手動値引きがある場合は常に表示（rest=0でも）
     const syncWrap = document.getElementById('adjustHintSyncWrap');
     if (syncWrap) {
-      if (rest > 0 && rest < baseAdjust) {
+      if (totalLocked > 0) {
         document.getElementById('adjustHintSyncLabel').textContent = fmt(rest);
         syncWrap.style.display = '';
       } else {
         syncWrap.style.display = 'none';
       }
     }
-    // 調整完了ボタン: 残 = 0
-    const resetWrap = document.getElementById('adjustHintResetWrap');
-    if (resetWrap) resetWrap.style.display = rest === 0 ? '' : 'none';
 
     bar.style.display = '';
   }
 
-  function resetAdjustAmount() {
-    state.baseAdjustAmount = 0;
-    const discEl = document.getElementById('discountAmount');
-    if (discEl) { discEl.value = ''; updateOutput(); }
-  }
 
   function updateAdjustAmountToRest() {
     const rest = state._adjustRest;
-    if (!rest || rest <= 0) return;
+    if (rest == null) return;
     const discEl = document.getElementById('discountAmount');
     if (!discEl) return;
-    discEl.value = rest;
-    // baseAdjustAmount は更新しない（元の基準額を保持してdone計算を継続）
+    if (rest <= 0) {
+      // 全額適用済み: discountAmount を 0 にリセット（調整完了と同じ動作）
+      discEl.value = '';
+      state.baseAdjustAmount = 0;
+    } else {
+      discEl.value = rest;
+      // baseAdjustAmount は更新しない（元の基準額を保持してdone計算を継続）
+    }
     updateOutput();
   }
 
@@ -8768,8 +8738,36 @@ const app = (() => {
     if (tabName === 'summary') renderSummaryTable();
   }
 
+  let _pendingTab = null;
+
+  function _showAdjustWarnModal() {
+    const rest        = state._adjustRest;
+    const adjAmount   = state.adjustAmount || 0;
+    const fmt         = v => '¥' + v.toLocaleString('ja-JP');
+    const msg         = document.getElementById('adjustWarnMsg');
+    if (msg) msg.textContent = `調整額 ${fmt(adjAmount)} に対し、代理店単価への反映残額が ${fmt(rest)} あります。①基本情報と②見積明細の金額が一致していません。`;
+    document.getElementById('adjustWarnModal').style.display = '';
+  }
+
+  function _adjustWarnCancel() {
+    document.getElementById('adjustWarnModal').style.display = 'none';
+  }
+
+  function _needsAdjustUpdate() {
+    if (state.frpMode) return false;
+    const adjAmount = state.adjustAmount || 0;
+    const rest      = state._adjustRest;
+    return adjAmount > 0 && rest != null && adjAmount !== rest;
+  }
+
   document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => goToTab(btn.dataset.tab));
+    btn.addEventListener('click', () => {
+      if (_needsAdjustUpdate() && btn.dataset.tab !== 'items') {
+        _showAdjustWarnModal();
+        return;
+      }
+      goToTab(btn.dataset.tab);
+    });
   });
 
   // ── 見積まとめ（集計表）─────────────────────────────────────────
@@ -9346,9 +9344,9 @@ const app = (() => {
     // 切り上げ表示
     toggleRounding,
     // 調整額
-    resetAdjustAmount,
     updateAdjustAmountToRest,
     syncAdjustAmountFromHint,
+    _adjustWarnCancel,
     // デバッグ・テスト用
     _state: state,
     _renderFrpItems: renderFrpItems,
