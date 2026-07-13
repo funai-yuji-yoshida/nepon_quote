@@ -536,7 +536,7 @@ const QuotationPDF = (() => {
           if (line3) nameParts.push({ text: line3, fontSize: Math.max(6, itemFs - 1), color: '#333' });
         } else {
           if (item.hinmei)  nameParts.push({ text: item.hinmei,  bold: true, fontSize: itemFs });
-          if (item.itemnum) nameParts.push({ text: item.itemnum, fontSize: Math.max(6, itemFs - 1), color: '#333' });
+          if (item.itemnum) nameParts.push({ text: item.itemnum, fontSize: itemFs, color: '#333' });
           if (frpShowZuban) {
             const zp = [];
             if (item.zuban)  zp.push(`図番　${item.zuban}`);

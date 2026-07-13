@@ -170,6 +170,7 @@
               <input type="number" id="ratePurchase" class="rate-input" step="0.001" min="0.001" max="9.999" placeholder="―">
             </div>
             <button class="btn-apply-rate" onclick="app.applyGlobalRate()">全明細に反映</button>
+            <div id="ratePanelFrpNote" style="display:none;font-size:11px;color:#c00;margin-top:6px;">※この項目はFRPには反映されません</div>
           </div>
         </div>
       </div>
@@ -576,26 +577,6 @@
           </div>
         </div>
 
-        <!-- 衛生標準項選択行 -->
-        <div class="toolbar-main" id="eiseiRow" style="display:none;margin-top:3px;">
-          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
-            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
-          </div>
-          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
-            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;background:#1a56db;color:#fff;border-color:#1a56db;">衛生</button></div>
-            <select id="eiseiChuSelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onEiseiChuChange(this.value)">
-              <option value="">― 中項目を選択 ―</option>
-            </select>
-            <select id="eiseiShoSelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onEiseiShoChange(this.value)">
-              <option value="">― 小項目を選択 ―</option>
-            </select>
-            <select id="eiseiModelSelect" class="input-search" style="height:30px;flex:1;min-width:0;">
-              <option value="">― 型式を選択 ―</option>
-            </select>
-            <button class="btn-cat-add" onclick="app.execEiseiAdd()">追加</button>
-          </div>
-        </div>
-
         <!-- 既存関数との互換用（非表示） -->
         <select id="productTargetSection" style="display:none"></select>
         <select id="kikiTargetSection" style="display:none"></select>
@@ -606,6 +587,26 @@
         <button id="btnKanzaiAdd" style="display:none"></button>
         <button id="btnDenzaiAdd" style="display:none"></button>
         <button id="btnStandardAdd" style="display:none"></button>
+      </div>
+
+      <!-- 衛生標準項選択行（FRPモード時のみ表示） -->
+      <div class="toolbar-main" id="eiseiRow" style="display:none;margin-top:3px;">
+        <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
+          <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
+        </div>
+        <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+          <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;background:#1a56db;color:#fff;border-color:#1a56db;">衛生</button></div>
+          <select id="eiseiChuSelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onEiseiChuChange(this.value)">
+            <option value="">― 中項目を選択 ―</option>
+          </select>
+          <select id="eiseiShoSelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onEiseiShoChange(this.value)">
+            <option value="">― 小項目を選択 ―</option>
+          </select>
+          <select id="eiseiModelSelect" class="input-search" style="height:30px;flex:1;min-width:0;">
+            <option value="">― 型式を選択 ―</option>
+          </select>
+          <button class="btn-cat-add" onclick="app.execEiseiAdd()">追加</button>
+        </div>
       </div>
 
       <!-- FRP見積コンテナー（frpMode時のみ表示） -->
@@ -639,6 +640,7 @@
               <th class="frp-col-unit">単位</th>
               <th class="frp-col-price">小売価格単価</th>
               <th class="frp-col-total">小売価格合計</th>
+              <th class="frp-col-rate">掛率</th>
               <th class="frp-col-shikiri">仕切単価</th>
               <th class="frp-col-shikiri-total">仕切合計</th>
               <th class="frp-col-del"></th>

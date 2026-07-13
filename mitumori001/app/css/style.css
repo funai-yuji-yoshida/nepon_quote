@@ -2114,6 +2114,7 @@ input.item-gensui-b::-webkit-inner-spin-button {
 .frp-col-price, .frp-col-total,
 .frp-col-shikiri, .frp-col-shikiri-total { width: 90px; text-align: right; }
 .frp-col-del   { width: 30px; text-align: center; }
+.frp-col-rate  { width: 46px; text-align: center; color: #555; font-size: 12px; }
 .frp-col-hinshu { width: 120px; }
 .frp-hinshu-sel { font-size: 11px; width: 100%; max-width: 118px; padding: 1px 2px; }
 

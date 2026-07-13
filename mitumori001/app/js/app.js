@@ -1525,6 +1525,7 @@ const app = (() => {
     // FRPモードUI適用
     if (state.frpMode) {
       loadFrpSettings();
+      loadFrpCache();
       applyFrpModeUI();
       renderFrpItems();
       updateFrpTotals();
@@ -1776,9 +1777,6 @@ const app = (() => {
         })();
         const qJaPrefix = _jaBoundary > 0 ? q.slice(0, _jaBoundary) : null;
         const qJaPrefixPart = (qJaPrefix && qJaPrefix !== qPrefix) ? `or(Product_Name:starts_with:${qJaPrefix})` : '';
-        const rawExtra = raw !== q
-          ? `or(Product_Name:starts_with:${raw})or(Product_Code:starts_with:${raw})or(field2:starts_with:${raw})`
-          : '';
         const nq   = normalize(q);
         const nRaw = normalize(raw);
         // ローカルフィルタ: 名前は「含む」、コード・型式は「前方一致」
@@ -1808,7 +1806,7 @@ const app = (() => {
         // 1. criteria: 名前前方一致（日本語境界・区切り記号プレフィックス対応）
         // 2. word: 全文検索（Zohoトークン分割でAND検索）
         // 3. kana: 漢字-仮名境界のカナ部分でword検索（「セット」など）
-        const _criteriaQuery = `((Product_Name:starts_with:${q})${qPrefixPart}${qJaPrefixPart}or(Product_Code:starts_with:${q})or(field2:starts_with:${q})${rawExtra})`;
+        const _criteriaQuery = `((Product_Name:starts_with:${q})${qPrefixPart}${qJaPrefixPart}or(Product_Code:starts_with:${q})or(field2:starts_with:${q}))`;
         const kanaSuffix = qJaPrefix ? q.slice(qJaPrefix.length) : '';
         const [criteriaRes, wordRes, kanaRes] = await Promise.all([
           ZOHO.CRM.API.searchRecord({
@@ -1818,7 +1816,7 @@ const app = (() => {
           }).catch(() => null),
           ZOHO.CRM.API.searchRecord({
             Entity: 'Products', Type: 'word',
-            Query: raw,
+            Query: q,
             page: 1, per_page: 100,
           }).catch(() => null),
           kanaSuffix ? ZOHO.CRM.API.searchRecord({
@@ -4605,6 +4603,10 @@ const app = (() => {
     const eiseiRowEl = document.getElementById('eiseiRow');
     if (eiseiRowEl) eiseiRowEl.style.display = frpOn ? '' : 'none';
 
+    // 掛率パネル注意書き: FRPモードのみ表示
+    const ratePanelFrpNote = document.getElementById('ratePanelFrpNote');
+    if (ratePanelFrpNote) ratePanelFrpNote.style.display = frpOn ? '' : 'none';
+
     const btn   = document.getElementById('btnFrpMode');
     const label = document.getElementById('frpModeLabel');
     if (btn) {
@@ -4772,6 +4774,9 @@ const app = (() => {
     if (!tbody) return;
 
     const shikiriKey = 'priceA';
+    const rateRow = (state.frpDealerCode && state.frpArea)
+      ? FRP_AREA_RATES.find(r => r.code === state.frpDealerCode && r.area === state.frpArea)
+      : null;
     const rows = [];
 
     state.frpItems.forEach((item, idx) => {
@@ -4779,6 +4784,8 @@ const app = (() => {
       const qty          = Number(item.qty) || 1;
       const priceTotal   = item.price * qty;
       const shikiriTotal = shikiri    * qty;
+      const rateVal      = (rateRow && item.hinshu && rateRow[item.hinshu] != null) ? rateRow[item.hinshu] : null;
+      const rateTxt      = rateVal != null ? (rateVal / 100).toFixed(2) : '—';
 
       // 品名・型式（編集可能）
       const zubanParts = [];
@@ -4831,6 +4838,7 @@ const app = (() => {
                    min="0" step="1" data-frp-id="${item.id}" data-field="price">
           </td>
           <td class="frp-col-total" style="text-align:right">${fmtFrp(priceTotal)}</td>
+          <td class="frp-col-rate">${rateTxt}</td>
           <td class="frp-col-shikiri">
             <input type="number" class="frp-price-input" value="${shikiri || ''}"
                    min="0" step="1" data-frp-id="${item.id}" data-field="shikiri">
@@ -4848,7 +4856,7 @@ const app = (() => {
         rows.push(`
           <tr class="frp-soryo-row">
             <td></td>
-            <td colspan="9" class="frp-soryo-note">${escHtml(item.soryoNote)}</td>
+            <td colspan="10" class="frp-soryo-note">${escHtml(item.soryoNote)}</td>
           </tr>
         `);
       }
