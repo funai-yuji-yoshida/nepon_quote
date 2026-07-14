@@ -4805,7 +4805,8 @@ const app = (() => {
     const rows = [];
 
     state.frpItems.forEach((item, idx) => {
-      const shikiri      = item[shikiriKey] || 0;
+      const shikiriRaw   = item[shikiriKey] || 0;
+      const shikiri      = state.roundingEnabled ? roundUp(shikiriRaw) : shikiriRaw;
       const qty          = Number(item.qty) || 1;
       const priceTotal   = item.price * qty;
       const shikiriTotal = shikiri    * qty;
@@ -5081,10 +5082,11 @@ const app = (() => {
           item.frpRate = null;
           item.priceA  = 0;
         }
+        const displayShikiri = state.roundingEnabled ? roundUp(item.priceA || 0) : (item.priceA || 0);
         const shikiriInput = row.querySelector('.frp-price-input[data-field="shikiri"]');
-        if (shikiriInput) shikiriInput.value = item.priceA || '';
+        if (shikiriInput) shikiriInput.value = displayShikiri || '';
         const shikiriTotalCell = row.querySelector('.frp-col-shikiri-total');
-        if (shikiriTotalCell) shikiriTotalCell.textContent = fmtFrp((item.priceA || 0) * qty);
+        if (shikiriTotalCell) shikiriTotalCell.textContent = fmtFrp(displayShikiri * qty);
         updateFrpTotals();
         updateOutput();
         markDirty();
@@ -5178,7 +5180,10 @@ const app = (() => {
   function updateFrpTotals() {
     const shikiriKey   = 'priceA';
     const priceTotal   = state.frpItems.reduce((s, i) => s + i.price * (Number(i.qty) || 1), 0);
-    const shikiriTotal = state.frpItems.reduce((s, i) => s + (i[shikiriKey] || 0) * (Number(i.qty) || 1), 0);
+    const shikiriTotal = state.frpItems.reduce((s, i) => {
+      const v = state.roundingEnabled ? roundUp(i[shikiriKey] || 0) : (i[shikiriKey] || 0);
+      return s + v * (Number(i.qty) || 1);
+    }, 0);
     const discount     = state.frpDiscount || 0;
     const grandTotal   = Math.max(0, shikiriTotal - discount);
 
@@ -9141,10 +9146,17 @@ const app = (() => {
     state.roundingEnabled = !state.roundingEnabled;
     const btn = document.getElementById('btnToggleRounding');
     if (btn) btn.classList.toggle('is-active', state.roundingEnabled);
-    state.sections.forEach(sec => {
-      const block = document.querySelector(`.section-block[data-section-id="${sec.id}"]`);
-      if (block) renderSection(sec, block);
-    });
+    const btnFrp = document.getElementById('btnToggleRoundingFrp');
+    if (btnFrp) btnFrp.classList.toggle('is-active', state.roundingEnabled);
+    if (state.frpMode) {
+      renderFrpItems();
+      updateFrpTotals();
+    } else {
+      state.sections.forEach(sec => {
+        const block = document.querySelector(`.section-block[data-section-id="${sec.id}"]`);
+        if (block) renderSection(sec, block);
+      });
+    }
     updateOutput();
   }
 

@@ -187,8 +187,12 @@ const QuotationPDF = (() => {
     const frpItems = data.frpItems || [];
 
     // FRPモード用合計
+    const roundingEnabled = data.roundingEnabled || false;
     const frpPriceTotal   = frpItems.reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.qty) || 1), 0);
-    const frpShikiriTotal = frpItems.reduce((s, i) => s + (Number(i.priceA) || 0) * (Number(i.qty) || 1), 0);
+    const frpShikiriTotal = frpItems.reduce((s, i) => {
+      const v = roundingEnabled ? roundUp(Number(i.priceA) || 0) : (Number(i.priceA) || 0);
+      return s + v * (Number(i.qty) || 1);
+    }, 0);
 
     const dateStr    = data.date ? formatDate(data.date, data.dateFormat) : '';
     const quoteNoStr = data.quoteNoStr || (data.seqNo ? `CQR${data.seqNo}-${String(data.revision || 1).padStart(5, '0')}` : '');
@@ -295,6 +299,7 @@ const QuotationPDF = (() => {
           frpShowZuban: data.frpShowZuban !== false,
           frpShowSpecs: data.frpShowSpecs !== false,
           frpDiscount:  data.frpDiscount || 0,
+          roundingEnabled,
           adjustAmount, waribikiAmount,
         }),
 
@@ -328,6 +333,7 @@ const QuotationPDF = (() => {
     mainRate, pdfPriceMode, dairiTotal, showUchiwake, showProductCode = false,
     frpMode, frpItems, frpPriceTotal, frpShikiriTotal,
     frpShowZuban = true, frpShowSpecs = true, frpDiscount = 0,
+    roundingEnabled = false,
     adjustAmount = 0, waribikiAmount = 0 }) {
     const isDairiAvailable = mainRate != null || dairiTotal != null;
     const isActiveDairi = pdfPriceMode !== 'teika' && isDairiAvailable;
@@ -524,7 +530,8 @@ const QuotationPDF = (() => {
       const emptyPc = (fs) => showProductCode ? [{ text: '', fontSize: fs }] : [];
       if (entry.type === 'frpItem') {
         const item = entry.item;
-        const shikiri = Number(item.priceA) || 0;
+        const shikiriRaw = Number(item.priceA) || 0;
+        const shikiri = roundingEnabled ? roundUp(shikiriRaw) : shikiriRaw;
         const qty = Number(item.qty) || 1;
         const priceTotal   = (Number(item.price) || 0) * qty;
         const shikiriTotal = shikiri * qty;
@@ -536,7 +543,7 @@ const QuotationPDF = (() => {
           if (line3) nameParts.push({ text: line3, fontSize: Math.max(6, itemFs - 1), color: '#333' });
         } else {
           if (item.hinmei)  nameParts.push({ text: item.hinmei,  bold: true, fontSize: itemFs });
-          if (item.itemnum) nameParts.push({ text: item.itemnum, fontSize: itemFs, color: '#333' });
+          if (item.itemnum) nameParts.push({ text: item.itemnum, bold: true, fontSize: item.type === 'soryo' ? itemFs : itemFs + 1.5 });
           if (frpShowZuban) {
             const zp = [];
             if (item.zuban)  zp.push(`図番　${item.zuban}`);
@@ -1311,7 +1318,7 @@ const QuotationPDF = (() => {
         if (line3) nameParts.push({ text: line3, fontSize: 8, color: '#333' });
       } else {
         if (item.hinmei)  nameParts.push({ text: item.hinmei, bold: true, fontSize: 9 });
-        if (item.itemnum) nameParts.push({ text: item.itemnum, bold: true, fontSize: 9, color: '#000' });
+        if (item.itemnum) nameParts.push({ text: item.itemnum, bold: true, fontSize: item.type === 'soryo' ? 9 : 11 });
         if (frpShowZuban) {
           const zp = [];
           if (item.zuban)  zp.push(`図番　${item.zuban}`);
