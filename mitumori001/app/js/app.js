@@ -1016,7 +1016,7 @@ const app = (() => {
     frpFooterSections:  null,  // 枠外文言セクション（loadFrpSettingsで初期化）
     _frpSettingsRaw:    null,  // quote.FRP_JSON の parse 結果
     frpShowZuban:  true,  // 図番印刷ON/OFF
-    frpShowSpecs:  true,  // 仕様印刷ON/OFF
+    frpShowSpecs:  false, // 仕様印刷ON/OFF
     frpCache:      null,  // FRPモジュール全件キャッシュ
     customerAccountId: null, // Quote.Account_Name.id（Account_Number取得用）
     frpDealerCode: null,     // 代理店コード（Account_Number 上4桁）
@@ -2337,7 +2337,7 @@ const app = (() => {
     } catch(e) { /* 商品マスタに存在しない場合は空のまま */ }
 
     const item = createItem();
-    item.name        = mainRecord.model + (mainRecord.hinban ? '　セット品番　' + mainRecord.hinban : '');
+    item.name        = mainRecord.model + (mainRecord.hinban ? '　' + mainRecord.hinban : '');
     item.unit        = '式';
     item.spec        = mainRecord.model || '';
     item.productCode = productCode;
@@ -4460,7 +4460,7 @@ const app = (() => {
     if (saved) {
       state.frpHz        = saved.hz        || '50Hz';
       state.frpShowZuban = saved.showZuban !== false;
-      state.frpShowSpecs = saved.showSpecs !== false;
+      state.frpShowSpecs = saved.showSpecs === true;
       state.frpFooterSections = FRP_DEFAULT_SECTIONS.map((def, i) => {
         const s = saved.footerSections?.[i];
         return s ? { title: s.title ?? def.title, enabled: s.enabled !== false, text: s.text ?? def.text }
@@ -4469,7 +4469,7 @@ const app = (() => {
     } else {
       state.frpHz             = '50Hz';
       state.frpShowZuban      = true;
-      state.frpShowSpecs      = true;
+      state.frpShowSpecs      = false;
       state.frpFooterSections = FRP_DEFAULT_SECTIONS.map(s => ({ ...s }));
     }
   }
@@ -4485,7 +4485,7 @@ const app = (() => {
     if (zubanCb) zubanCb.checked = state.frpShowZuban !== false;
 
     const specsCb = document.getElementById('frpSettingsSpecs');
-    if (specsCb) specsCb.checked = state.frpShowSpecs !== false;
+    if (specsCb) specsCb.checked = state.frpShowSpecs === true;
 
     const sections = state.frpFooterSections || FRP_DEFAULT_SECTIONS.map(s => ({ ...s }));
     sections.forEach((sec, i) => {
@@ -4561,7 +4561,7 @@ const app = (() => {
     const specsCb2 = document.getElementById('frpSettingsSpecs');
     document.querySelectorAll('input[name="frpSettingsHz"]').forEach(r => { r.checked = r.value === '50Hz'; });
     if (zubanCb)  zubanCb.checked  = true;
-    if (specsCb2) specsCb2.checked = true;
+    if (specsCb2) specsCb2.checked = false;
     showToast('初期値に戻しました（保存するには「保存」を押してください）', 'warn');
   }
 
