@@ -1275,6 +1275,14 @@ const app = (() => {
       try {
         const parsed = JSON.parse(savedJson);
         state.sections      = parsed.sections     || [];
+        // isNetsukiMain 行で productCode が未保存の場合、spec（品番）から補完
+        state.sections.forEach(sec => {
+          (sec.items || []).forEach(item => {
+            if (item.isNetsukiMain && !item.productCode && item.spec) {
+              item.productCode = item.spec;
+            }
+          });
+        });
         // dairiRate=nullの既存行はmainRateを継承するため補正不要
         state.deliveryPrice = parsed.deliveryPrice || state.deliveryPrice;
         state.laborCost     = parsed.laborCost     || null;
@@ -2156,11 +2164,13 @@ const app = (() => {
     const isNetsukiStructure = matched.some(r => !!r.spec);
 
     let mainItem = null;
+    let headerHinban = '';  // order=1 の品番を order=2 に引き継ぐ
     matched.forEach(r => {
       if (isNetsukiStructure) {
         // ── 新構造（SBM系）──
         if (r.order === 1) {
           // 品名ヘッダー行（価格なし）
+          headerHinban = r.hinban || '';
           const header = createItem();
           header.name            = r.name;
           header.qty             = '';
@@ -2169,10 +2179,12 @@ const app = (() => {
           targetSection.items.push(header);
         } else if (r.order === 2 && !mainItem) {
           // 本機行（価格・仕様あり）
+          const hinban = r.hinban || headerHinban;  // order=2 になければ order=1 の品番を使用
           const item = createItem();
           item.isNetsukiMain = true;
           item.name           = r.name;
-          item.spec           = r.hinban || '';
+          item.spec           = r.model || '';
+          item.productCode    = hinban;
           item.qty            = r.qty;
           item.unit           = r.unit;
           item.unitPrice      = r.teika  || null;
@@ -2194,9 +2206,11 @@ const app = (() => {
         } else if (mainItem) {
           // order=3+: 付属品行（個別行として追加）
           const subItem = createItem();
-          subItem.name = r.name;
-          subItem.qty  = r.qty;
-          subItem.unit = r.unit;
+          subItem.name        = r.name;
+          subItem.spec        = r.model  || '';
+          subItem.productCode = r.hinban || '';
+          subItem.qty         = r.qty;
+          subItem.unit        = r.unit;
           targetSection.items.push(subItem);
         }
       } else {
@@ -2205,7 +2219,8 @@ const app = (() => {
           // 本機行（価格あり）
           const item = createItem();
           item.name           = r.name;
-          item.spec           = r.hinban || '';
+          item.spec           = r.model  || '';
+          item.productCode    = r.hinban || '';
           item.qty            = r.qty;
           item.unit           = r.unit;
           item.unitPrice      = r.teika  || null;
@@ -2219,9 +2234,11 @@ const app = (() => {
         } else if (mainItem) {
           // 付属品行（個別行として追加）
           const subItem = createItem();
-          subItem.name = r.name;
-          subItem.qty  = r.qty;
-          subItem.unit = r.unit;
+          subItem.name        = r.name;
+          subItem.spec        = r.model  || '';
+          subItem.productCode = r.hinban || '';
+          subItem.qty         = r.qty;
+          subItem.unit        = r.unit;
           targetSection.items.push(subItem);
         }
       }
@@ -8806,7 +8823,8 @@ const app = (() => {
 
   let _pendingTab = null;
 
-  function _showAdjustWarnModal() {
+  function _showAdjustWarnModal(tabName) {
+    _pendingTab = tabName || null;
     const rest        = state._adjustRest;
     const adjAmount   = state.adjustAmount || 0;
     const fmt         = v => '¥' + v.toLocaleString('ja-JP');
@@ -8816,20 +8834,28 @@ const app = (() => {
   }
 
   function _adjustWarnCancel() {
+    _pendingTab = null;
     document.getElementById('adjustWarnModal').style.display = 'none';
+  }
+
+  function _adjustWarnIgnore() {
+    document.getElementById('adjustWarnModal').style.display = 'none';
+    const tab = _pendingTab;
+    _pendingTab = null;
+    if (tab) goToTab(tab);
   }
 
   function _needsAdjustUpdate() {
     if (state.frpMode) return false;
     const adjAmount = state.adjustAmount || 0;
     const rest      = state._adjustRest;
-    return adjAmount > 0 && rest != null && adjAmount !== rest;
+    return adjAmount > 0 && rest != null && rest > 0;
   }
 
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       if (_needsAdjustUpdate() && btn.dataset.tab !== 'items') {
-        _showAdjustWarnModal();
+        _showAdjustWarnModal(btn.dataset.tab);
         return;
       }
       goToTab(btn.dataset.tab);
@@ -9421,6 +9447,7 @@ const app = (() => {
     updateAdjustAmountToRest,
     syncAdjustAmountFromHint,
     _adjustWarnCancel,
+    _adjustWarnIgnore,
     // デバッグ・テスト用
     _state: state,
     _renderFrpItems: renderFrpItems,

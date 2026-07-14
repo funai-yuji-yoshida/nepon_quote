@@ -442,12 +442,12 @@ const QuotationPDF = (() => {
     const mirrorEntries = [];
     if (!frpMode) {
       const singleSection = sectionTotals.length === 1;
-      sectionTotals.forEach(s => {
-        if ((isKouji || !isBuppan) && !singleSection) {
-          // 工事・作業（大項目複数）: 大項目のみ表示（鏡は概要のみ、明細は別ページ）
-          mirrorEntries.push({ type: 'section', s });
+      sectionTotals.forEach((s, sIdx) => {
+        if (isKouji || (!isBuppan && !singleSection)) {
+          // 工事: 常に大項目のみ表示 / 作業（大項目複数）: 大項目のみ表示
+          mirrorEntries.push({ type: 'section', s, sIdx });
         } else {
-          // 物販、または大項目が1つの場合: 個別アイテムを表示
+          // 物販、または大項目が1つの作業: 個別アイテムを表示
           if (s.name && s.name.trim()) {
             mirrorEntries.push({ type: 'sectionHeader', s });
           }
@@ -597,7 +597,7 @@ const QuotationPDF = (() => {
         }, 0);
         const secN = s.secQty || 1;
         const row = [
-          { text: String(s.no || ''), alignment: 'center', fontSize: itemFs },
+          { text: String(s.no || entry.sIdx + 1), alignment: 'center', fontSize: itemFs },
           { text: s.name || '', fontSize: itemFs },
           ...emptyPc(itemFs),
           { text: String(secN), alignment: 'center', fontSize: itemFs },
@@ -1655,7 +1655,7 @@ const QuotationPDF = (() => {
       if ((section.name || '').trim()) {
         rows.push([
           { text: String(section.no || sIdx + 1), alignment: 'center', style: 'sectionHdr' },
-          { text: `※${section.name}`, style: 'sectionHdr', colSpan: COLS - 1 },
+          { text: section.name, style: 'sectionHdr', colSpan: COLS - 1 },
           ...emp(COLS - 2),
         ]);
       }
@@ -1946,8 +1946,8 @@ const QuotationPDF = (() => {
         }
       });
 
-      normalItems.forEach(({ item, idx }) => {
-        const noCell = { text: String(idx + 1), alignment: 'center', fontSize: 8 };
+      normalItems.forEach(({ item }, nIdx) => {
+        const noCell = { text: String(nIdx + 1), alignment: 'center', fontSize: 8 };
         if (useDairi) {
           rows.push([
             noCell,
@@ -2225,7 +2225,7 @@ const QuotationPDF = (() => {
       if ((section.name || '').trim()) {
         rows.push([
           { text: String(section.no || sIdx + 1), alignment: 'center', style: 'sectionHdr' },
-          { text: `※${section.name}`, style: 'sectionHdr', colSpan: COLS - 1 },
+          { text: section.name, style: 'sectionHdr', colSpan: COLS - 1 },
           ...emp(COLS - 2),
         ]);
       }
@@ -2241,7 +2241,10 @@ const QuotationPDF = (() => {
           return;
         }
 
-        const noCell = { text: String(itemNo++), alignment: 'right' };
+        // 熱機本機行は No. なし（ヘッダー行の続きとして扱う）
+        const noCell = item.isNetsukiMain
+          ? { text: '', alignment: 'right' }
+          : { text: String(itemNo++), alignment: 'right' };
         if (useDairi) {
           rows.push([
             noCell,
@@ -2762,7 +2765,7 @@ const QuotationPDF = (() => {
       // セクションヘッダー
       tableRows.push([
         { text: String(sec.no || ''), alignment: 'center', bold: true, fillColor: '#e8edf5' },
-        { text: `※${sec.name || ''}`, bold: true, colSpan: colCount - 1, fillColor: '#e8edf5' },
+        { text: sec.name || '', bold: true, colSpan: colCount - 1, fillColor: '#e8edf5' },
         ...empties(colCount - 2),
       ]);
 
