@@ -342,7 +342,6 @@ const QuotationPDF = (() => {
     const useDairiColumns = pdfPriceMode === 'dairi' && isDairiAvailable;
     const isShikiOnly = pdfPriceMode === 'dairi-only' && isDairiAvailable;
     const useDairi = useDairiColumns || isKoujiDairi;
-    const roundingEnabled = data.roundingEnabled || false;
     const dairiUnit = (item) => {
       if (item?.finalDairiUnit != null) return item.finalDairiUnit;
       if (item?._dairiManual === true && item.dairiUnitPrice != null) return item.dairiUnitPrice;

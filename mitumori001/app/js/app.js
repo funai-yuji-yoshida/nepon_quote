@@ -1819,9 +1819,11 @@ const app = (() => {
         // 1. criteria: 名前前方一致（日本語境界・区切り記号プレフィックス対応）
         // 2. word: 全文検索（Zohoトークン分割でAND検索）
         // 3. kana: 漢字-仮名境界のカナ部分でword検索（「セット」など）
-        const _criteriaQuery = `((Product_Name:starts_with:${q})${qPrefixPart}${qJaPrefixPart}or(Product_Code:starts_with:${q})or(field2:starts_with:${q}))`;
+        // Product_Code / field2 は半角・全角どちらで登録されているか不明なため両方で検索する
+        const _codeRawPart = raw !== q ? `or(Product_Code:starts_with:${raw})or(field2:starts_with:${raw})` : '';
+        const _criteriaQuery = `((Product_Name:starts_with:${q})${qPrefixPart}${qJaPrefixPart}or(Product_Code:starts_with:${q})or(field2:starts_with:${q})${_codeRawPart})`;
         const kanaSuffix = qJaPrefix ? q.slice(qJaPrefix.length) : '';
-        const [criteriaRes, wordRes, kanaRes] = await Promise.all([
+        const [criteriaRes, wordRes, wordRawRes, kanaRes] = await Promise.all([
           ZOHO.CRM.API.searchRecord({
             Entity: 'Products', Type: 'criteria',
             Query: _criteriaQuery,
@@ -1832,6 +1834,12 @@ const app = (() => {
             Query: q,
             page: 1, per_page: 100,
           }).catch(() => null),
+          // 半角のまま word 検索（全角変換後と異なる場合のみ）
+          raw !== q ? ZOHO.CRM.API.searchRecord({
+            Entity: 'Products', Type: 'word',
+            Query: raw,
+            page: 1, per_page: 100,
+          }).catch(() => null) : Promise.resolve(null),
           kanaSuffix ? ZOHO.CRM.API.searchRecord({
             Entity: 'Products', Type: 'word',
             Query: kanaSuffix,
@@ -1842,6 +1850,7 @@ const app = (() => {
         const allData = [
           ...(criteriaRes?.data || []),
           ...(wordRes?.data || []),
+          ...(wordRawRes?.data || []),
           ...(kanaRes?.data || []),
         ];
         products = allData.filter(p => {
