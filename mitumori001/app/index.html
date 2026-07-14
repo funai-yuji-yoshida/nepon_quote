@@ -1202,7 +1202,9 @@
           <select id="tplFilterDept" class="input-standard" onchange="app.filterTemplates()">
             <option value="">― 所課で絞り込み ―</option>
           </select>
-          <input type="text" id="tplFilterType" class="input-medium" placeholder="種別..." oninput="app.filterTemplates()">
+          <select id="tplFilterType" class="input-standard" onchange="app.filterTemplates()">
+            <option value="">― 種別で絞り込み ―</option>
+          </select>
           <input type="text" id="tplFilterName" class="input-medium" placeholder="名前..." oninput="app.filterTemplates()">
           <select id="tplSortOrder" class="input-standard" style="min-width:90px" onchange="app.filterTemplates()">
             <option value="name_asc">名前 ↑</option>
@@ -1235,7 +1237,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="document.getElementById('tplLoadModal').style.display='none'">キャンセル</button>
-        <button class="btn-secondary" onclick="app.showSetProductDialog()">📦 セット商品を追加</button>
+        <!-- <button class="btn-secondary" onclick="app.showSetProductDialog()">📦 セット商品を追加</button> -->
         <button class="btn-primary" id="btnTplLoad" onclick="app.execTemplateLoad()" disabled>📂 読み込み</button>
       </div>
     </div>

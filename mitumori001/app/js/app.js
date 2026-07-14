@@ -7473,19 +7473,29 @@ const app = (() => {
     listEl.innerHTML = '<div class="tpl-loading">読み込み中...</div>';
 
     await loadAllTemplates();
+
+    // 種別セレクトを templateList の type 値で動的構築
+    const typeEl = document.getElementById('tplFilterType');
+    if (typeEl) {
+      const types = [...new Set(state.templateList.map(t => t.type).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ja'));
+      typeEl.innerHTML = '<option value="">― 種別で絞り込み ―</option>' +
+        types.map(t => `<option value="${escHtml(t)}">${escHtml(t)}</option>`).join('');
+      typeEl.value = '';
+    }
+
     filterTemplates();
   }
 
   function filterTemplates() {
     const deptId = document.getElementById('tplFilterDept')?.value || '';
-    const typeQ  = (document.getElementById('tplFilterType')?.value || '').trim().toLowerCase();
+    const typeQ  = document.getElementById('tplFilterType')?.value || '';
     const nameQ  = (document.getElementById('tplFilterName')?.value || '').trim().toLowerCase();
 
     const sortOrder = document.getElementById('tplSortOrder')?.value || 'name_asc';
 
     let filtered = state.templateList.slice();
     if (deptId) filtered = filtered.filter(t => t.deptId === deptId);
-    if (typeQ)  filtered = filtered.filter(t => t.type.toLowerCase().includes(typeQ));
+    if (typeQ)  filtered = filtered.filter(t => t.type === typeQ);
     if (nameQ)  filtered = filtered.filter(t => t.name.toLowerCase().includes(nameQ));
 
     filtered.sort((a, b) => {
