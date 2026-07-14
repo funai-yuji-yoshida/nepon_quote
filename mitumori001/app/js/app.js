@@ -2339,7 +2339,7 @@ const app = (() => {
     const item = createItem();
     item.name        = mainRecord.model + (mainRecord.hinban ? '　セット品番　' + mainRecord.hinban : '');
     item.unit        = '式';
-    item.spec        = productCode;
+    item.spec        = mainRecord.model || '';
     item.productCode = productCode;
     item.qty         = 1;
     item.unitPrice   = unitPrice;
@@ -2538,9 +2538,10 @@ const app = (() => {
     }
     const m = state.pendingKiki;
     const item = createItem();
-    item.name      = m.name;
-    item.spec      = m.model || '';
-    item.unit      = m.unit  || '台';
+    item.name        = m.name;
+    item.spec        = m.model || '';
+    item.productCode = m.code  || '';
+    item.unit        = m.unit  || '台';
     item.unitPrice = m.price || 0;
     item.amount    = (m.price || 0) * (item.qty || 1);
     item.genka     = m.cost  || 0;
@@ -2861,7 +2862,7 @@ const app = (() => {
       item.productId   = product.id;
       item.name        = product.name;
       item.denpyoName  = product.denpyoName || '';  // 伝票名称（印刷用）
-      item.spec        = product.code;
+      item.spec        = product.model || '';
       item.productCode = product.code;
       item.model       = product.model || '';
       item.productSpec = product.specContent || '';
@@ -3156,6 +3157,7 @@ const app = (() => {
     item.name             = m.name;
     item.model            = m.model || '';
     item.spec             = m.model || m.code || '';
+    item.productCode      = m.code  || '';
     item.unit             = m.unit  || '個';
     item.unitPrice        = m.price || 0;
     item.amount           = (m.price || 0) * (item.qty || 1);
