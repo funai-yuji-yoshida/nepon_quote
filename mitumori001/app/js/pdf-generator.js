@@ -253,7 +253,7 @@ const QuotationPDF = (() => {
         amountBig:   { fontSize: 18, bold: true },
         subtotalRow: { bold: true, fillColor: '#f8f8f8' },
         totalRow:    { bold: true },
-        pageHdr:     { fontSize: 8, color: '#333' },
+        pageHdr:     { fontSize: 8, color: '#000' },
       },
 
       // ページヘッダー（2ページ目以降）
@@ -537,9 +537,9 @@ const QuotationPDF = (() => {
         const nameParts = [];
         if (item.type === 'option') {
           if (item.hinmei)    nameParts.push({ text: item.hinmei,    bold: true, fontSize: itemFs });
-          if (item.chubunrui) nameParts.push({ text: item.chubunrui, fontSize: Math.max(6, itemFs - 1), color: '#333' });
+          if (item.chubunrui) nameParts.push({ text: item.chubunrui, fontSize: Math.max(6, itemFs - 1), color: '#000' });
           const line3 = qty >= 2 ? (item.optSpec5 || '') : (item.name3 || '');
-          if (line3) nameParts.push({ text: line3, fontSize: Math.max(6, itemFs - 1), color: '#333' });
+          if (line3) nameParts.push({ text: line3, fontSize: Math.max(6, itemFs - 1), color: '#000' });
         } else {
           if (item.hinmei)  nameParts.push({ text: item.hinmei,  bold: true, fontSize: itemFs });
           if (item.itemnum) nameParts.push({ text: item.itemnum, bold: true, fontSize: item.type === 'soryo' ? itemFs : itemFs + 1.5 });
@@ -547,7 +547,7 @@ const QuotationPDF = (() => {
             const zp = [];
             if (item.zuban)  zp.push(`図番　${item.zuban}`);
             if (item.hinban) zp.push(`品番　${item.hinban}`);
-            if (zp.length) nameParts.push({ text: zp.join('　'), fontSize: Math.max(5.5, itemFs - 1.5), color: '#555' });
+            if (zp.length) nameParts.push({ text: zp.join('　'), fontSize: Math.max(5.5, itemFs - 1.5), color: '#000' });
           }
         }
         const nameCell = nameParts.length > 0 ? { stack: nameParts } : { text: item.name || '', bold: true, fontSize: itemFs };
@@ -633,7 +633,7 @@ const QuotationPDF = (() => {
         const specFs = Math.max(5.5, itemFs - 0.5);
         const row = [
           { text: '', fontSize: specFs },
-          { text: entry.text, fontSize: specFs, color: '#444', margin: [8, 0, 0, 0] },
+          { text: entry.text, fontSize: specFs, color: '#000', margin: [8, 0, 0, 0] },
           ...emptyPc(specFs),
           { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
           { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
@@ -657,7 +657,7 @@ const QuotationPDF = (() => {
         const specFs = Math.max(5.0, itemFs - 1.0);
         const row = [
           { text: '', fontSize: specFs },
-          { text: `${entry.spec.label}：${entry.spec.value}`, fontSize: specFs, color: '#444', margin: [8, 0, 0, 0] },
+          { text: `${entry.spec.label}：${entry.spec.value}`, fontSize: specFs, color: '#000', margin: [8, 0, 0, 0] },
           ...emptyPc(specFs),
           { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
           { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
@@ -1270,8 +1270,8 @@ const QuotationPDF = (() => {
         const rightText = sections.slice(mid).join('\n\n');
         return [{
           columns: [
-            { text: leftText,  fontSize: 7, lineHeight: 1.3, preserveLeadingSpaces: true, color: '#444', width: '*' },
-            { text: rightText, fontSize: 7, lineHeight: 1.3, preserveLeadingSpaces: true, color: '#444', width: '*' },
+            { text: leftText,  fontSize: 7, lineHeight: 1.3, preserveLeadingSpaces: true, color: '#000', width: '*' },
+            { text: rightText, fontSize: 7, lineHeight: 1.3, preserveLeadingSpaces: true, color: '#000', width: '*' },
           ],
           columnGap: 12,
           margin: [0, 10, 0, 0],
@@ -1312,9 +1312,9 @@ const QuotationPDF = (() => {
       const nameParts = [];
       if (item.type === 'option') {
         if (item.hinmei)    nameParts.push({ text: item.hinmei,    bold: true, fontSize: 9 });
-        if (item.chubunrui) nameParts.push({ text: item.chubunrui, fontSize: 8, color: '#333' });
+        if (item.chubunrui) nameParts.push({ text: item.chubunrui, fontSize: 8, color: '#000' });
         const line3 = qty >= 2 ? (item.optSpec5 || '') : (item.name3 || '');
-        if (line3) nameParts.push({ text: line3, fontSize: 8, color: '#333' });
+        if (line3) nameParts.push({ text: line3, fontSize: 8, color: '#000' });
       } else {
         if (item.hinmei)  nameParts.push({ text: item.hinmei, bold: true, fontSize: 9 });
         if (item.itemnum) nameParts.push({ text: item.itemnum, bold: true, fontSize: item.type === 'soryo' ? 9 : 11 });
@@ -1322,7 +1322,7 @@ const QuotationPDF = (() => {
           const zp = [];
           if (item.zuban)  zp.push(`図番　${item.zuban}`);
           if (item.hinban) zp.push(`品番　${item.hinban}`);
-          if (zp.length) nameParts.push({ text: zp.join('　'), fontSize: 7, color: '#555' });
+          if (zp.length) nameParts.push({ text: zp.join('　'), fontSize: 7, color: '#000' });
         }
       }
       const nameCell = nameParts.length > 0
@@ -1343,7 +1343,7 @@ const QuotationPDF = (() => {
         (item.specs || []).forEach(spec => {
           subRows.push([
             { text: '', border: [true, false, false, false] },
-            { text: `　${spec}`, fontSize: 8, color: '#555', colSpan: 7,
+            { text: `　${spec}`, fontSize: 8, color: '#000', colSpan: 7,
               border: [false, false, true, false] },
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
           ]);
@@ -1447,7 +1447,7 @@ const QuotationPDF = (() => {
       content.push({
         text: frpFooterText,
         fontSize: 8,
-        color: '#444',
+        color: '#000',
         margin: [0, 12, 0, 0],
         lineHeight: 1.5,
         preserveLeadingSpaces: true,
@@ -1567,7 +1567,7 @@ const QuotationPDF = (() => {
         (item.specLines || []).filter(l => (l || '').trim()).forEach(line => {
           rows.push([
             { text: '' },
-            { text: line, fontSize: 7.5, color: '#444', margin: [8, 0, 0, 0] },
+            { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] },
             ...emp(COLS - 2),
           ]);
         });
@@ -1985,7 +1985,7 @@ const QuotationPDF = (() => {
           }
           if (item.machineSpec) {
             (item.machineSpec.specs || []).forEach(spec => {
-              rows.push([{ text: '' }, { text: `${spec.label}：${spec.value}`, fontSize: 7.5, color: '#444', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
+              rows.push([{ text: '' }, { text: `${spec.label}：${spec.value}`, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
             });
           }
         }
@@ -2278,21 +2278,21 @@ const QuotationPDF = (() => {
         if (!showProductCode && !item.machineSpecHidden && !item.machineSpec) {
           const _detModel = item.specMasterContent ? '' : (item.printModel !== false ? (item.model || item.spec || '') : '');
           if (_detModel) {
-            rows.push([{ text: '' }, { text: `　型式　${_detModel}`, fontSize: 7.5, color: '#333' }, ...emp(COLS - 2)]);
+            rows.push([{ text: '' }, { text: `　型式　${_detModel}`, fontSize: 7.5, color: '#000' }, ...emp(COLS - 2)]);
           }
         }
         // 仕様行
         if (!item.machineSpecHidden && item.specMasterContent) {
           // 熱機仕様：specMasterContentを行ごとに表示し、付属品リスト（specLines）を続けて表示
           item.specMasterContent.split('\n').filter(l => l.trim()).forEach(line => {
-            rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#444', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
+            rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
           });
           (item.specLines || []).filter(l => (l || '').trim()).forEach(line => {
-            rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#444', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
+            rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
           });
         } else {
           const _sl1 = (item.specLines || []).filter(l => (l || '').trim());
-          _sl1.forEach(line => rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#444', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]));
+          _sl1.forEach(line => rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]));
         }
       });
 
@@ -2560,17 +2560,17 @@ const QuotationPDF = (() => {
         // 型式行（商品マスタの型式。品目コード列表示時・machineSpecアイテムは省略）
         if (!item.machineSpecHidden) {
           if (item.model && !item.machineSpec && !showProductCode && item.printModel !== false) {
-            rows.push([{ text: '' }, { text: `　型式：${item.model}`, fontSize: 7.5, color: '#333' }, ...emp(COLS - 2)]);
+            rows.push([{ text: '' }, { text: `　型式：${item.model}`, fontSize: 7.5, color: '#000' }, ...emp(COLS - 2)]);
           }
           if (item.machineSpec) {
             // machineSpecアイテムは品名が型式名なので型式行は出さない
             (item.machineSpec.specs || []).forEach(spec => {
-              rows.push([{ text: '' }, { text: `${spec.label}：${spec.value}`, fontSize: 7.5, color: '#444', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
+              rows.push([{ text: '' }, { text: `${spec.label}：${spec.value}`, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
             });
           }
         }
         const _sl2 = (item.specLines || []).filter(l => (l || '').trim());
-        _sl2.forEach(line => rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#444', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]));
+        _sl2.forEach(line => rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]));
       });
 
       for (let i = 0; i < 2; i++) {

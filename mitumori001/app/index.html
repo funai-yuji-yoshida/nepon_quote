@@ -614,8 +614,9 @@
         <div class="frp-header">
           <div class="frp-area-section">
             <span class="frp-area-label">代理店：</span>
-            <input id="frpDealerCodeInput" class="frp-dealer-input" type="text" maxlength="8" placeholder="例:Y1003122"
-                   oninput="app.onFrpDealerCodeInput(this.value)">
+            <select id="frpDealerSelect" class="frp-dealer-select" onchange="app.onFrpDealerSelect(this.value)">
+              <option value="">— 選択 —</option>
+            </select>
             <span class="frp-area-label">エリア：</span>
             <select id="frpAreaSelect" class="frp-area-select" onchange="app.onFrpAreaChange(this.value)">
               <option value="">— 選択 —</option>

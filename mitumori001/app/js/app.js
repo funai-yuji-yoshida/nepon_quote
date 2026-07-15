@@ -1021,6 +1021,7 @@ const app = (() => {
     customerAccountId: null, // Quote.Account_Name.id（Account_Number取得用）
     frpDealerCode: null,     // 代理店コード（Account_Number 上4桁）
     frpArea:       null,     // 選択中エリア名
+    frpAreaRates:  [],       // FRP掛率マスタ（CRM FRP1 から動的ロード）
     roundingEnabled: false,    // 切り上げ表示モード
     remarkTableEnabled: false, // 缶体温度設定テーブルを備考下に追加
     _thresholdSide: null,  // 閾値判定キャッシュ（'over'|'under'|null）
@@ -1356,6 +1357,7 @@ const app = (() => {
 
   /** デモデータ（SDK未接続時） */
   function loadDemoData() {
+    state.frpAreaRates  = FRP_AREA_RATES;  // デモ時はハードコード定数を使用
     state.customerName  = '株式会社大仙';
     state.projectName   = '某300坪温室暖房設備工事';
     state.ownerName     = '池田';
@@ -4720,7 +4722,7 @@ const app = (() => {
     // 品種を自動設定し、エリアが選択済みなら仕切単価を計算
     item.hinshu = _autoHinshu(item);
     if (item.hinshu && state.frpDealerCode && state.frpArea) {
-      const rateRow = FRP_AREA_RATES.find(r => r.code === state.frpDealerCode && r.area === state.frpArea);
+      const rateRow = state.frpAreaRates.find(r => r.code === state.frpDealerCode && r.area === state.frpArea);
       if (rateRow && rateRow[item.hinshu] != null) {
         item.frpRate = rateRow[item.hinshu] / 100;
         item.priceA  = Math.round((item.price || 0) * item.frpRate);
@@ -4809,7 +4811,7 @@ const app = (() => {
 
     const shikiriKey = 'priceA';
     const rateRow = (state.frpDealerCode && state.frpArea)
-      ? FRP_AREA_RATES.find(r => r.code === state.frpDealerCode && r.area === state.frpArea)
+      ? state.frpAreaRates.find(r => r.code === state.frpDealerCode && r.area === state.frpArea)
       : null;
     const rows = [];
 
@@ -5045,7 +5047,7 @@ const app = (() => {
         if (!item) return;
         item.hinshu = sel.value || null;
         if (item.hinshu && state.frpArea && state.frpDealerCode) {
-          const rateRow = FRP_AREA_RATES.find(r => r.code === state.frpDealerCode && r.area === state.frpArea);
+          const rateRow = state.frpAreaRates.find(r => r.code === state.frpDealerCode && r.area === state.frpArea);
           if (rateRow && rateRow[item.hinshu] != null) {
             const rate = rateRow[item.hinshu];
             item.frpRate = rate / 100;
@@ -5110,6 +5112,10 @@ const app = (() => {
   }
 
   async function fetchFrpDealerCode() {
+    // 掛率マスタ未ロードなら先にロードする（loadCurrentUser との競合対策）
+    if (!state.frpAreaRates.length) {
+      await loadFrpRates(state.createDeptCode);
+    }
     const accountId = state.customerAccountId;
     if (!accountId || !zohoReady) {
       updateFrpAreaUI();
@@ -5123,7 +5129,7 @@ const app = (() => {
       const raw = String(record?.field || '');
       const candidate = raw.slice(0, 4);
 
-      state.frpDealerCode = FRP_AREA_RATES.some(r => r.code === candidate) ? candidate : null;
+      state.frpDealerCode = state.frpAreaRates.some(r => r.code === candidate) ? candidate : null;
     } catch(e) {
       console.error('[FRP] 代理店コード取得エラー:', e);
       state.frpDealerCode = null;
@@ -5131,32 +5137,38 @@ const app = (() => {
     updateFrpAreaUI();
   }
 
-  // updateInput=true のときのみ input 欄の値を書き換える（自動検出時のみ）
-  function updateFrpAreaUI(updateInput = true) {
-    const dealerInput = document.getElementById('frpDealerCodeInput');
-    const areaSelect  = document.getElementById('frpAreaSelect');
+  function updateFrpAreaUI() {
+    const dealerSelect = document.getElementById('frpDealerSelect');
+    const areaSelect   = document.getElementById('frpAreaSelect');
     if (!areaSelect) return;
 
-    if (updateInput && dealerInput && state.frpDealerCode) {
-      dealerInput.value = state.frpDealerCode;
+    // 代理店ドロップダウンを一意コードで構築
+    if (dealerSelect) {
+      const seen = new Set();
+      const dealerOpts = state.frpAreaRates
+        .filter(r => { if (seen.has(r.code)) return false; seen.add(r.code); return true; })
+        .map(r => {
+            // dealerName がない場合（FRP_AREA_RATES フォールバック）は area 文字列の「（」前を代理店名として使用
+            const label = r.dealerName || (r.area || '').split(/[（(]/)[0].trim() || r.code;
+            return `<option value="${escHtml(r.code)}" ${state.frpDealerCode === r.code ? 'selected' : ''}>${escHtml(label)}</option>`;
+          })
+        .join('');
+      dealerSelect.innerHTML = '<option value="">— 選択 —</option>' + dealerOpts;
     }
 
     const code  = state.frpDealerCode;
     const areas = code
-      ? FRP_AREA_RATES.filter(r => r.code === code).map(r => r.area)
+      ? state.frpAreaRates.filter(r => r.code === code).map(r => r.area)
       : [];
 
     areaSelect.innerHTML = '<option value="">— 選択 —</option>' +
       areas.map(a => `<option value="${escHtml(a)}" ${state.frpArea === a ? 'selected' : ''}>${escHtml(a)}</option>`).join('');
   }
 
-  function onFrpDealerCodeInput(val) {
-    const upper = val.trim().toUpperCase();
-    // 8桁入力（例: Y1003122）でも4桁入力でも上4桁をコードとして使用
-    const code = upper.slice(0, 4);
-    state.frpDealerCode = FRP_AREA_RATES.some(r => r.code === code) ? code : null;
+  function onFrpDealerSelect(code) {
+    state.frpDealerCode = state.frpAreaRates.some(r => r.code === code) ? code : null;
     state.frpArea = null;
-    updateFrpAreaUI(false);  // ユーザー入力中は input 欄を上書きしない
+    updateFrpAreaUI();
     markDirty();
   }
 
@@ -5169,7 +5181,7 @@ const app = (() => {
 
   function applyFrpAreaRates() {
     if (!state.frpArea || !state.frpDealerCode) return;
-    const rateRow = FRP_AREA_RATES.find(r => r.code === state.frpDealerCode && r.area === state.frpArea);
+    const rateRow = state.frpAreaRates.find(r => r.code === state.frpDealerCode && r.area === state.frpArea);
     if (!rateRow) return;
 
     state.frpItems.forEach(item => {
@@ -5312,6 +5324,28 @@ const app = (() => {
 
       const seqStr  = String(newSeq).padStart(4, '0');
       const quoteNo = `${category}${createCode}${siteCode}-${kikaShita}${seqStr}${edaban}`;
+
+      // 重複チェック: 同じ見積番号が既に存在しないか確認
+      if (zohoReady) {
+        const dupRes = await ZOHO.CRM.API.searchRecord({
+          Entity: 'Quotes',
+          Type:   'criteria',
+          Query:  `(field55:equals:${quoteNo})`,
+        }).catch(() => null);
+        const dups = (dupRes?.data || []).filter(r => r.id !== state.quoteId);
+        if (dups.length > 0) {
+          const dupSubjects = dups.map(r => r.Subject || r.id).join('\n');
+          const proceed = confirm(
+            `⚠️ 見積番号「${quoteNo}」は既に使用されています。\n\n該当見積:\n${dupSubjects}\n\nこのまま使用しますか？`
+          );
+          if (!proceed) {
+            btn.disabled = false;
+            btn.textContent = '🔢 採番する';
+            return;
+          }
+          showToast(`重複番号で発行: ${quoteNo}`, 'warn');
+        }
+      }
 
       state.seqNoHistory.push({ seqNo: state.seqNo, seqNumber: state.seqNumber, edaban: state.edaban });
       state.seqNo          = quoteNo;
@@ -6768,15 +6802,83 @@ const app = (() => {
         console.log('[loadCurrentUser] resolved deptCode:', deptCode);
       } catch(e2) { console.warn('getRecord(users) error:', e2); }
 
-      if (deptCode && !state.createDeptCode) {
+      // field15（shoka）が設定されている場合はユーザー所課を使わない
+      if (deptCode && !state.createDeptCode && !state.shoka) {
         state.createDeptCode = deptCode;
         const createEl = document.getElementById('createDept');
         if (createEl) createEl.value = deptCode;
         console.log('[loadCurrentUser] createDept set to:', deptCode, '| select value:', createEl?.value);
       } else {
-        console.log('[loadCurrentUser] skipped: deptCode=', deptCode, '| state.createDeptCode=', state.createDeptCode);
+        console.log('[loadCurrentUser] skipped: deptCode=', deptCode, '| state.createDeptCode=', state.createDeptCode, '| shoka=', state.shoka);
       }
+      // 所課コードが確定したタイミングでFRP掛率マスタをロード
+      await loadFrpRates(state.createDeptCode);
     } catch(e) { console.warn('getCurrentUser error:', e); }
+  }
+
+  /** FRP掛率マスタを CRM FRP1 モジュールからロードする
+   *  優先1: 所課コード（field1）で検索 ← 確実
+   *  優先2: Quotes.field15 の所課名（field）で検索 ← コード未確定時
+   */
+  async function loadFrpRates(deptCode) {
+    const shokaName = state.shoka || '';  // Quotes.field15 の所課名
+    // CRM未接続 または所課が未確定 → ハードコードをフォールバックとして使用
+    if (!zohoReady || (!shokaName && !deptCode)) {
+      if (!state.frpAreaRates.length) state.frpAreaRates = FRP_AREA_RATES;
+      if (state.frpMode) updateFrpAreaUI();
+      return;
+    }
+    try {
+      // 所課コードが確定していればfield1で検索、なければ所課名で検索
+      const query = deptCode
+        ? `(field1:equals:${deptCode})`
+        : `(field:equals:${shokaName})`;
+      const label = deptCode || shokaName;
+
+      const res = await ZOHO.CRM.API.searchRecord({
+        Entity:   'FRP1',
+        Type:     'criteria',
+        Query:    query,
+        page:     1,
+        per_page: 200,
+      });
+      const records = res?.data || [];
+      if (records.length === 0) {
+        // CRM接続中にレコードなし → 空配列（誤った所課のデータを混入させない）
+        console.warn(`[FRP] 掛率マスタ: 所課「${label}」のレコードなし`);
+        state.frpAreaRates = [];
+      } else {
+        state.frpAreaRates = records.map(r => ({
+          code:       r.field2 || '',
+          dealerName: r.field3 || '',
+          area:       r.field4 || '',
+          p1:  Number(r.p1)  || 0,
+          p2:  Number(r.p2)  || 0,
+          b1:  Number(r.b1)  || 0,
+          b2:  Number(r.b2)  || 0,
+          b3:  Number(r.b3)  || 0,
+          w1:  Number(r.w1)  || 0,
+          w2:  Number(r.w2)  || 0,
+          opt: Number(r.opt) || 0,
+        }));
+        console.log(`[FRP] 掛率マスタ読み込み完了: ${state.frpAreaRates.length}件 (所課「${label}」)`);
+        // 所課コードが未確定の場合、FRP1.field1 から逆引きして createDept を更新
+        const derivedCode = String(records[0].field1 || '').trim();
+        if (!state.createDeptCode && derivedCode) {
+          state.createDeptCode = derivedCode;
+          const createEl = document.getElementById('createDept');
+          if (createEl && createEl.value !== derivedCode) {
+            createEl.value = derivedCode;
+            console.log('[FRP] createDeptCode を FRP1.field1 から取得:', derivedCode);
+          }
+        }
+      }
+    } catch(e) {
+      console.warn('[FRP] 掛率マスタ読み込み失敗:', e);
+      if (!state.frpAreaRates.length) state.frpAreaRates = FRP_AREA_RATES;
+    }
+    // FRPモード中なら代理店ドロップダウンを更新
+    if (state.frpMode) updateFrpAreaUI();
   }
 
   async function showSpecTemplateMenu(btn) {
@@ -6982,6 +7084,18 @@ const app = (() => {
     if (createEl) {
       createEl.innerHTML = opts;
       if (state.createDeptCode) createEl.value = state.createDeptCode;
+      createEl.onchange = async function() {
+        const code = createEl.value;
+        state.createDeptCode = code;
+        const entry = DEPT_LIST.find(d => d.code === code);
+        state.shoka = entry ? entry.name : '';
+        // 所課変更時は代理店・エリアをリセットして再ロード
+        state.frpDealerCode = null;
+        state.frpArea       = null;
+        state.frpAreaRates  = [];
+        await loadFrpRates(code);
+        markDirty();
+      };
     }
     if (siteEl) {
       siteEl.innerHTML = opts;
@@ -8600,6 +8714,11 @@ const app = (() => {
       // 作成所課（部門）の未入力チェック
       const _deptEl = document.getElementById('createDept');
       if (_deptEl && _deptEl.value) state.createDeptCode = _deptEl.value;
+      // createDeptCode から shoka（Quotes.field15 の値）を同期
+      if (state.createDeptCode) {
+        const _deptEntry = DEPT_LIST.find(d => d.code === state.createDeptCode);
+        if (_deptEntry) state.shoka = _deptEntry.name;
+      }
       if (!state.createDeptCode) {
         showToast('部門（作成所課）を選択してください', 'err');
         statusEl.textContent = '⚠️ 部門が未入力です';
@@ -8699,6 +8818,7 @@ const app = (() => {
         field62: saveDeliveryPrice, // 貴社お渡し価格
         field64: state.submitDate ? formatDateInput(state.submitDate) : undefined, // 見積提出日
         field63: state.quoteCategory || undefined, // 見積区分
+        field15: state.shoka        || undefined, // 所課（作成所課名）
         field8:  state.projectName2 || undefined, // 件名2行目
         field7:  state.projectName3 || undefined, // 件名3行目
         // サブフォームは後続の処理で deleteRecord + updateRecord で個別処理
@@ -9454,7 +9574,7 @@ const app = (() => {
     moveFrpItem,
     openFrpWizard,
     onFrpAreaChange,
-    onFrpDealerCodeInput,
+    onFrpDealerSelect,
     _frpWizardSetHz,
     _frpWizardSetShubetsu,
     _frpWizardSetChubunrui,
