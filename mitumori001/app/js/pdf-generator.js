@@ -381,8 +381,8 @@ const QuotationPDF = (() => {
     const COL_WIDTHS = frpMode
       ? (isTeika ? [22, '*', 25, 20, 58, 58] : [22, '*', 25, 20, 58, 58, 50, 50])
       : (showProductCode
-        ? (useDairi ? [22, '*', 50, 24, 30, 52, 58, 52, 58] : [22, '*', 50, 36, 30, 58, 58])
-        : (useDairi ? [22, '*', 24, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58]));
+        ? (useDairi ? [22, '*', 50, 24, 44, 52, 58, 52, 58] : [22, '*', 50, 36, 44, 58, 58])
+        : (useDairi ? [22, '*', 24, 44, 52, 58, 52, 58] : [22, '*', 36, 44, 58, 58]));
     const COLS = frpMode ? (isTeika ? 6 : 8) : (useDairi ? (showProductCode ? 9 : 8) : (showProductCode ? 7 : 6));
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
 
@@ -685,7 +685,7 @@ const QuotationPDF = (() => {
           { text: item.name || '', fontSize: itemFs },
           ...(showProductCode ? [{ text: item.productCode || '', fontSize: itemFs, noWrap: true }] : []),
           { text: String(item.qty || 1), alignment: 'center', fontSize: itemFs },
-          { text: item.unit || '式', alignment: 'center', fontSize: itemFs },
+          { text: item.unit || '式', alignment: 'center', fontSize: Math.min(itemFs, 9) },
           { text: isShikiOnly ? (dairiUnit(item) != null ? fmt(dairiUnit(item)) : '') : (item.unitPrice ? fmt(item.unitPrice) : ''), alignment: 'right', fontSize: itemFs },
           { text: isShikiOnly ? fmt(dairi(item.amount, item)) : fmt(item.amount), alignment: 'right', fontSize: itemFs },
         ];
@@ -1492,8 +1492,8 @@ const QuotationPDF = (() => {
     };
 
     const COL_WIDTHS = useDairi
-      ? [20, '*', 22, 30, 52, 58, 52, 58]
-      : [22, '*', 36, 30, 58, 58];
+      ? [20, '*', 22, 44, 52, 58, 52, 58]
+      : [22, '*', 36, 44, 58, 58];
     const COLS = useDairi ? 8 : 6;
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
 
@@ -1621,8 +1621,8 @@ const QuotationPDF = (() => {
       return Math.round((Number(item.amount) || 0) * rate);
     };
     const COL_WIDTHS = showProductCode
-      ? (useDairi ? [20, '*', 58, 22, 30, 52, 58, 52, 58] : [22, '*', 58, 36, 30, 58, 58])
-      : (useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58]);
+      ? (useDairi ? [20, '*', 58, 22, 44, 52, 58, 52, 58] : [22, '*', 58, 36, 44, 58, 58])
+      : (useDairi ? [20, '*', 22, 44, 52, 58, 52, 58] : [22, '*', 36, 44, 58, 58]);
     const COLS = useDairi ? (showProductCode ? 9 : 8) : (showProductCode ? 7 : 6);
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
@@ -1893,8 +1893,8 @@ const QuotationPDF = (() => {
       return Math.round((Number(item.amount) || 0) * rate);
     };
     const COL_WIDTHS = showProductCode
-      ? (useDairi ? [20, '*', 58, 22, 30, 52, 58, 52, 58] : [22, '*', 58, 36, 30, 58, 58])
-      : (useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58]);
+      ? (useDairi ? [20, '*', 58, 22, 44, 52, 58, 52, 58] : [22, '*', 58, 36, 44, 58, 58])
+      : (useDairi ? [20, '*', 22, 44, 52, 58, 52, 58] : [22, '*', 36, 44, 58, 58]);
     const COLS = useDairi ? (showProductCode ? 9 : 8) : (showProductCode ? 7 : 6);
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
@@ -2190,8 +2190,8 @@ const QuotationPDF = (() => {
       return Math.round(dairiItemAmt(item) / qty);
     };
     const COL_WIDTHS = showProductCode
-      ? (useDairi ? [20, '*', 58, 22, 30, 52, 58, 52, 58] : [22, '*', 58, 36, 30, 58, 58])
-      : (useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58]);
+      ? (useDairi ? [20, '*', 58, 22, 44, 52, 58, 52, 58] : [22, '*', 58, 36, 44, 58, 58])
+      : (useDairi ? [20, '*', 22, 44, 52, 58, 52, 58] : [22, '*', 36, 44, 58, 58]);
     const COLS = useDairi ? (showProductCode ? 9 : 8) : (showProductCode ? 7 : 6);
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
@@ -2479,8 +2479,8 @@ const QuotationPDF = (() => {
       return Math.round(dairiItemAmt(item) / qty);
     };
     const COL_WIDTHS = showProductCode
-      ? (useDairi ? [20, '*', 58, 22, 30, 52, 58, 52, 58] : [22, '*', 58, 36, 30, 58, 58])
-      : (useDairi ? [20, '*', 22, 30, 52, 58, 52, 58] : [22, '*', 36, 30, 58, 58]);
+      ? (useDairi ? [20, '*', 58, 22, 44, 52, 58, 52, 58] : [22, '*', 58, 36, 44, 58, 58])
+      : (useDairi ? [20, '*', 22, 44, 52, 58, 52, 58] : [22, '*', 36, 44, 58, 58]);
     const COLS = useDairi ? (showProductCode ? 9 : 8) : (showProductCode ? 7 : 6);
     const emp = (n) => Array.from({ length: n }, () => ({ text: '' }));
     const result = [];
@@ -2755,7 +2755,7 @@ const QuotationPDF = (() => {
     });
 
     // テーブル列定義
-    const colWidths = showDairi ? [22, '*', 30, 24, 48, 48, 48, 48] : [22, '*', 36, 30, 58, 58];
+    const colWidths = showDairi ? [22, '*', 30, 46, 48, 48, 48, 48] : [22, '*', 36, 46, 58, 58];
     const colCount  = colWidths.length;
     const hdrSpan   = colCount - 2; // No.列と金額列を除いた span 数
 
