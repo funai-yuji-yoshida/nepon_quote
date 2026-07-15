@@ -258,7 +258,7 @@ const QuotationPDF = (() => {
 
       // ページヘッダー（2ページ目以降）
       header(currentPage, pageCount) {
-        if (currentPage === 1) return null;
+        if (currentPage === 1 || frpMode) return null;
         return {
           margin: [18, 8, 18, 0],
           table: {
@@ -318,9 +318,17 @@ const QuotationPDF = (() => {
           ),
         ] : []),
 
-        // FRPモード: 衛生設備セクションが登録されていれば別ページで出力
+        // FRPモード: 衛生設備セクションが登録されていれば別ページにFRP+衛生の合体明細を出力
         ...(frpMode && sections.some(s => (s.items || []).some(i => (i.name || '').trim()))
-          ? [{ text: '', pageBreak: 'before' }, ...buildEiseiSection({ sections, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, roundingEnabled: data.roundingEnabled || false })]
+          ? [{ text: '', pageBreak: 'before' }, ...buildFrpCombinedDetailPage({
+              frpItems, frpPriceTotal, frpShikiriTotal,
+              frpDiscount:   data.frpDiscount  || 0,
+              frpFooterText: data.frpFooterText || '',
+              frpShowZuban:  data.frpShowZuban !== false,
+              sections,
+              mainRate: data.mainRate,
+              roundingEnabled,
+            })]
           : []),
       ],
     };
@@ -1593,6 +1601,248 @@ const QuotationPDF = (() => {
         margin: [0, 0, 0, 0],
       },
     ];
+  }
+
+  // ── FRP+衛生設備 合体明細ページ ───────────────────────────────
+  // FRPモードで衛生設備セクションが存在する場合に使用する
+  // 単一テーブル（希望小売単価/合計・仕切単価/合計）にFRP行と衛生行を通し番号で並べる
+
+  function buildFrpCombinedDetailPage({
+    frpItems, frpPriceTotal, frpShikiriTotal, frpDiscount = 0,
+    frpFooterText = '', frpShowZuban = true,
+    sections, mainRate, roundingEnabled = false,
+  }) {
+    const COL_WIDTHS = [22, '*', 25, 20, 58, 58, 50, 50];
+    const COLS = 8;
+
+    const dairiUnitFn = (item) => {
+      if (item.finalDairiUnit != null) return item.finalDairiUnit;
+      if (item.priceS != null && item.priceS > 0) return item.priceS;
+      const rate = item.dairiRate ?? mainRate;
+      if (rate == null) return null;
+      const base = item.unitPrice || (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
+      if (!base) return null;
+      const auto = Math.round(base * rate);
+      return roundingEnabled ? roundUp(auto) : auto;
+    };
+    const dairiAmtFn = (item) => {
+      const qty = Number(item.qty) || 1;
+      if (item.finalDairiUnit != null) return item.finalDairiUnit * qty;
+      if (item.priceS != null && item.priceS > 0) return item.priceS * qty;
+      const rate = item.dairiRate ?? mainRate;
+      if (rate == null) return 0;
+      if (roundingEnabled && item.unitPrice) return roundUp(Math.round(item.unitPrice * rate)) * qty;
+      return Math.round((Number(item.amount) || 0) * rate);
+    };
+
+    const mkSecRow = (label) => [
+      { text: '', border: [true, true, false, true], fillColor: '#d0d8e8' },
+      { text: label, bold: true, fontSize: 9, colSpan: COLS - 1,
+        border: [false, true, true, true], fillColor: '#d0d8e8' },
+      ...Array.from({ length: COLS - 2 }, () => ({ text: '' })),
+    ];
+
+    const rows = [[
+      { text: 'No',          style: 'tableHeader' },
+      { text: '品名',         style: 'tableHeader' },
+      { text: '数量',         style: 'tableHeader' },
+      { text: '単位',         style: 'tableHeader' },
+      { text: '希望小売単価', style: 'tableHeader' },
+      { text: '希望小売合計', style: 'tableHeader' },
+      { text: '仕切単価',     style: 'tableHeader' },
+      { text: '仕切合計',     style: 'tableHeader' },
+    ]];
+    let rowNo = 1;
+
+    // FRP セクション
+    rows.push(mkSecRow('FRP'));
+    frpItems.forEach(item => {
+      const qty          = Number(item.qty) || 1;
+      const priceTotal   = (Number(item.price)  || 0) * qty;
+      const shikiri      = Number(item.priceA) || 0;
+      const shikiriTotal = shikiri * qty;
+
+      const nameParts = [];
+      if (item.type === 'option') {
+        if (item.hinmei)    nameParts.push({ text: item.hinmei,    bold: true, fontSize: 9 });
+        if (item.chubunrui) nameParts.push({ text: item.chubunrui, fontSize: 8, color: '#000' });
+        const line3 = qty >= 2 ? (item.optSpec5 || '') : (item.name3 || '');
+        if (line3) nameParts.push({ text: line3, fontSize: 8, color: '#000' });
+      } else {
+        if (item.hinmei)  nameParts.push({ text: item.hinmei,  bold: true, fontSize: 9 });
+        if (item.itemnum) nameParts.push({ text: item.itemnum, bold: true, fontSize: item.type === 'soryo' ? 9 : 11 });
+        if (frpShowZuban) {
+          const zp = [];
+          if (item.zuban)  zp.push(`図番　${item.zuban}`);
+          if (item.hinban) zp.push(`品番　${item.hinban}`);
+          if (zp.length)   nameParts.push({ text: zp.join('　'), fontSize: 7, color: '#000' });
+        }
+      }
+      const nameCell = nameParts.length > 0 ? { stack: nameParts } : { text: item.name || '', bold: true };
+
+      const subRows = [];
+      if (item.soryoNote) {
+        subRows.push([
+          { text: '', border: [true, false, true, false] },
+          { text: `  ${item.soryoNote}`, fontSize: 7, color: '#c00', border: [true, false, true, false] },
+          { text: '', border: [true, false, true, false] },
+          { text: '', border: [true, false, true, false] },
+          { text: '', border: [true, false, true, false] },
+          { text: '', border: [true, false, true, false] },
+          { text: '', border: [true, false, true, false] },
+          { text: '', border: [true, false, true, false] },
+        ]);
+      }
+      if (item.type !== 'option') {
+        (item.specs || []).forEach(spec => {
+          subRows.push([
+            { text: '', border: [true, false, true, false] },
+            { text: `　${spec}`, fontSize: 8, color: '#000', border: [true, false, true, false] },
+            { text: '', border: [true, false, true, false] },
+            { text: '', border: [true, false, true, false] },
+            { text: '', border: [true, false, true, false] },
+            { text: '', border: [true, false, true, false] },
+            { text: '', border: [true, false, true, false] },
+            { text: '', border: [true, false, true, false] },
+          ]);
+        });
+      }
+      if (subRows.length > 0) {
+        const last = subRows[subRows.length - 1];
+        last.forEach(cell => { cell.border[3] = true; });
+      }
+      const btm = subRows.length === 0;
+      rows.push([
+        { text: String(rowNo++), alignment: 'center', border: [true, true, true, btm] },
+        { ...nameCell,            border: [true, true, true, btm] },
+        { text: String(qty),      alignment: 'center', border: [true, true, true, btm] },
+        { text: item.unit || '',  alignment: 'center', border: [true, true, true, btm] },
+        { text: fmt(item.price) || '', alignment: 'right', border: [true, true, true, btm] },
+        { text: fmt(priceTotal),       alignment: 'right', border: [true, true, true, btm] },
+        { text: fmt(shikiri),          alignment: 'right', border: [true, true, true, btm] },
+        { text: fmt(shikiriTotal),     alignment: 'right', border: [true, true, true, btm] },
+      ]);
+      subRows.forEach(r => rows.push(r));
+    });
+
+    // 衛生設備 セクション
+    let eiseiPriceTotal   = 0;
+    let eiseiShikiriTotal = 0;
+    const eiseiSections = sections.filter(s => (s.items || []).some(i => (i.name || '').trim()));
+    if (eiseiSections.length > 0) {
+      rows.push(mkSecRow('衛生設備'));
+      eiseiSections.forEach(section => {
+        (section.items || []).filter(i => (i.name || '').trim()).forEach(item => {
+          const qty    = Number(item.qty) || 1;
+          const uPrice = item.unitPrice || Math.round(Number(item.amount) / qty);
+          const total  = Number(item.amount) || 0;
+          const dUnit  = dairiUnitFn(item);
+          const dAmt   = dairiAmtFn(item);
+          eiseiPriceTotal   += total;
+          eiseiShikiriTotal += dAmt;
+          const specLines = (item.specLines || []).filter(l => (l || '').trim());
+          const btm = specLines.length === 0;
+          rows.push([
+            { text: String(rowNo++), alignment: 'center', fontSize: 8, border: [true, true, true, btm] },
+            { text: item.name || '', border: [true, true, true, btm] },
+            { text: item.qty != null && item.qty !== '' ? String(item.qty) : '', alignment: 'right', border: [true, true, true, btm] },
+            { text: item.unit || '', alignment: 'center', border: [true, true, true, btm] },
+            { text: fmt(uPrice), alignment: 'right', border: [true, true, true, btm] },
+            { text: fmt(total),  alignment: 'right', border: [true, true, true, btm] },
+            { text: dUnit != null ? fmt(dUnit) : '', alignment: 'right', border: [true, true, true, btm] },
+            { text: fmt(dAmt),   alignment: 'right', border: [true, true, true, btm] },
+          ]);
+          specLines.forEach((line, li) => {
+            const isLast = li === specLines.length - 1;
+            rows.push([
+              { text: '', border: [true, false, true, isLast] },
+              { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0], border: [true, false, true, isLast] },
+              { text: '', border: [true, false, true, isLast] },
+              { text: '', border: [true, false, true, isLast] },
+              { text: '', border: [true, false, true, isLast] },
+              { text: '', border: [true, false, true, isLast] },
+              { text: '', border: [true, false, true, isLast] },
+              { text: '', border: [true, false, true, isLast] },
+            ]);
+          });
+        });
+      });
+    }
+
+    // 空白行
+    for (let i = 0; i < 2; i++) {
+      rows.push([
+        { text: '', border: [true, false, true, false] },
+        ...Array.from({ length: COLS - 2 }, () => ({ text: '', border: [false, false, false, false] })),
+        { text: '', border: [false, false, true, false] },
+      ]);
+    }
+
+    // 合計行
+    const combinedPriceTotal   = frpPriceTotal   + eiseiPriceTotal;
+    const combinedShikiriTotal = frpShikiriTotal + eiseiShikiriTotal;
+    rows.push([
+      { text: '', border: [true, true, false, false], fillColor: '#e8f0f8' },
+      { text: '合　　計', alignment: 'center', bold: true, colSpan: 4,
+        border: [false, true, false, false], fillColor: '#e8f0f8' },
+      { text: '' }, { text: '' }, { text: '' },
+      { text: fmt(combinedPriceTotal),   alignment: 'right', bold: true,
+        border: [false, true, false, false], fillColor: '#e8f0f8' },
+      { text: '', border: [false, true, false, false], fillColor: '#e8f0f8' },
+      { text: fmt(combinedShikiriTotal), alignment: 'right', bold: true,
+        border: [false, true, true, false], fillColor: '#e8f0f8' },
+    ]);
+    if (frpDiscount > 0) {
+      const grandTotal = Math.max(0, combinedShikiriTotal - frpDiscount);
+      rows.push([
+        { text: '', border: [true, false, false, true], fillColor: '#fff' },
+        { text: '出精値引き', alignment: 'center', colSpan: 4,
+          border: [false, false, false, true], fillColor: '#fff' },
+        { text: '' }, { text: '' }, { text: '' },
+        { text: '', border: [false, false, false, true], fillColor: '#fff' },
+        { text: '', border: [false, false, false, true], fillColor: '#fff' },
+        { text: `▲ ${fmt(frpDiscount)}`, alignment: 'right',
+          border: [false, false, true, true], fillColor: '#fff' },
+      ]);
+      rows.push([
+        { text: '', border: [true, false, false, true], fillColor: '#dce8f7' },
+        { text: '御見積金額（税別）', alignment: 'center', bold: true, colSpan: 4,
+          border: [false, false, false, true], fillColor: '#dce8f7' },
+        { text: '' }, { text: '' }, { text: '' },
+        { text: '', border: [false, false, false, true], fillColor: '#dce8f7' },
+        { text: '', border: [false, false, false, true], fillColor: '#dce8f7' },
+        { text: fmt(grandTotal), alignment: 'right', bold: true,
+          border: [false, false, true, true], fillColor: '#dce8f7' },
+      ]);
+    }
+
+    const content = [{
+      table: { widths: COL_WIDTHS, headerRows: 1, body: rows },
+      layout: {
+        hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length) ? 0.8 : 0.3,
+        vLineWidth: () => 0.5,
+        paddingLeft:   () => 3,
+        paddingRight:  () => 3,
+        paddingTop:    () => 2,
+        paddingBottom: () => 2,
+        hLineColor: () => '#555',
+        vLineColor: () => '#888',
+      },
+      margin: [0, 0, 0, 0],
+    }];
+    if (frpFooterText) {
+      const ftrSecs = frpFooterText.split(/\n\n+/);
+      const mid = Math.ceil(ftrSecs.length / 2);
+      content.push({
+        columns: [
+          { text: ftrSecs.slice(0, mid).join('\n\n'), fontSize: 7, lineHeight: 1.3, preserveLeadingSpaces: true, color: '#000', width: '*' },
+          { text: ftrSecs.slice(mid).join('\n\n'),    fontSize: 7, lineHeight: 1.3, preserveLeadingSpaces: true, color: '#000', width: '*' },
+        ],
+        columnGap: 12,
+        margin: [0, 10, 0, 0],
+      });
+    }
+    return content;
   }
 
   // ── 2ページ目以降（見積まとめモード・工事）────────────────────
