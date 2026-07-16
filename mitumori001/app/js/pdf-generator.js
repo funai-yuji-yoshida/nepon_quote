@@ -301,6 +301,7 @@ const QuotationPDF = (() => {
           frpDiscount:  data.frpDiscount || 0,
           roundingEnabled,
           adjustAmount, waribikiAmount,
+          printDetail: data.printDetail !== false,
         }),
 
         // ====================================================
@@ -342,7 +343,7 @@ const QuotationPDF = (() => {
     frpMode, frpItems, frpPriceTotal, frpShikiriTotal,
     frpShowZuban = true, frpShowSpecs = true, frpDiscount = 0,
     roundingEnabled = false,
-    adjustAmount = 0, waribikiAmount = 0 }) {
+    adjustAmount = 0, waribikiAmount = 0, printDetail = false }) {
     const isDairiAvailable = mainRate != null || dairiTotal != null;
     const isActiveDairi = pdfPriceMode !== 'teika' && isDairiAvailable;
     const isKoujiDairi = pdfPriceMode === 'dairi-kouji' && isDairiAvailable;
@@ -455,12 +456,16 @@ const QuotationPDF = (() => {
     const mirrorEntries = [];
     if (!frpMode) {
       const singleSection = sectionTotals.length === 1;
+      const hasSections = sectionTotals.some(s => (s.name || '').trim());
+      // 物販+大項目あり+鏡+明細 の場合は大項目のみ表示
+      const buppanShowSectionOnly = isBuppan && printDetail && hasSections;
       sectionTotals.forEach((s, sIdx) => {
-        if (isKouji || (!isBuppan && !singleSection)) {
+        if (isKouji || (!isBuppan && !singleSection) || buppanShowSectionOnly) {
           // 工事: 常に大項目のみ表示 / 作業（大項目複数）: 大項目のみ表示
+          // 物販+大項目+鏡+明細: 大項目のみ表示
           mirrorEntries.push({ type: 'section', s, sIdx });
         } else {
-          // 物販、または大項目が1つの作業: 個別アイテムを表示
+          // 物販（鏡のみ）、または大項目が1つの作業: 個別アイテムを表示
           if (s.name && s.name.trim()) {
             mirrorEntries.push({ type: 'sectionHeader', s });
           }
@@ -493,7 +498,7 @@ const QuotationPDF = (() => {
       frpItems.forEach(item => {
         const subEntries = [];
         if (item.soryoNote) subEntries.push({ type: 'frpNote', text: item.soryoNote });
-        if (frpShowSpecs && item.type !== 'option') {
+        if (frpShowSpecs && item.type !== 'option' && item.specsHidden === false) {
           (item.specs || []).forEach(spec => subEntries.push({ type: 'frpSpec', text: spec }));
         }
         mirrorEntries.push({ type: 'frpItem', item, hasSubRows: subEntries.length > 0 });
@@ -1347,7 +1352,7 @@ const QuotationPDF = (() => {
           { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
         ]);
       }
-      if (item.type !== 'option') {
+      if (item.type !== 'option' && item.specsHidden === false) {
         (item.specs || []).forEach(spec => {
           subRows.push([
             { text: '', border: [true, false, false, false] },
@@ -1550,7 +1555,7 @@ const QuotationPDF = (() => {
       validItems.forEach(item => {
         hasItems = true;
         const qtyStr = item.qty != null && item.qty !== '' ? String(item.qty) : '';
-        const noCell = { text: String(rowNo++), alignment: 'center', fontSize: 8 };
+        const noCell = { text: String(rowNo++), alignment: 'right', fontSize: 8 };
         if (useDairi) {
           rows.push([
             noCell,
@@ -1693,7 +1698,7 @@ const QuotationPDF = (() => {
           { text: '', border: [true, false, true, false] },
         ]);
       }
-      if (item.type !== 'option') {
+      if (item.type !== 'option' && item.specsHidden === false) {
         (item.specs || []).forEach(spec => {
           subRows.push([
             { text: '', border: [true, false, true, false] },
@@ -2203,7 +2208,7 @@ const QuotationPDF = (() => {
       });
 
       normalItems.forEach(({ item }, nIdx) => {
-        const noCell = { text: String(nIdx + 1), alignment: 'center', fontSize: 8 };
+        const noCell = { text: String(nIdx + 1), alignment: 'right', fontSize: 8 };
         if (useDairi) {
           rows.push([
             noCell,
@@ -2779,11 +2784,11 @@ const QuotationPDF = (() => {
       (section.items || []).forEach(item => {
         // 熱機ヘッダー行（タイトル）: 数量・価格なし・No.あり
         if (item.isNetsukiHeader) {
-          rows.push([{ text: String(itemNo++), alignment: 'center', fontSize: 8 }, { text: item.name || '' }, ...emp(COLS - 2)]);
+          rows.push([{ text: String(itemNo++), alignment: 'right', fontSize: 8 }, { text: item.name || '' }, ...emp(COLS - 2)]);
           return;
         }
         const qtyStr = item.qty != null && item.qty !== '' ? String(item.qty) : '';
-        const noCell = { text: String(itemNo++), alignment: 'center', fontSize: 8 };
+        const noCell = { text: String(itemNo++), alignment: 'right', fontSize: 8 };
         if (useDairi) {
           rows.push([
             noCell,
