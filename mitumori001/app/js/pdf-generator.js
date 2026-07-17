@@ -1017,7 +1017,13 @@ const QuotationPDF = (() => {
     // 行数に応じたヘッダー部フォントサイズ
     const compact = mirrorRowCount > 18;
     const titleFs    = compact ? 17 : 22;
-    const custFs     = compact ? 12 : 16;
+    // 顧客名の文字数に応じてフォントサイズを自動縮小（利用可能幅 ≒ 324pt）
+    const _custFullLen = ((data.customerName || '') +
+      (data.customerHonorific && data.customerHonorific !== 'ー' ? '　' + data.customerHonorific : '')).length;
+    const custFs = compact ? 12 :
+      _custFullLen <= 15 ? 16 :
+      _custFullLen <= 19 ? 14 :
+      _custFullLen <= 24 ? 12 : 10;
     const midFs      = compact ? 9  : 12;
     const amountBigFs= compact ? 14 : 18;
     const hdrLineH   = compact ? 1.3 : 1.6;

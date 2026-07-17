@@ -867,6 +867,118 @@ const app = (() => {
     '４ｔ（U）・１','４ｔ（U）・２','４ｔ（U）・３','４ｔ（U）・４','４ｔ（U）・５','４ｔ（U）・６',
   ];
 
+  // 型式 → 配送区分番号（送料関連シートより）
+  const FRP_HAISOU_KUBUN = {
+    'CRK50-02B': 2, 'CRK50-02C': 2,
+    'CRK50-04B': 2, 'CRK50-04C': 2,
+    'CRK50-06B': 3, 'CRK50-06C': 3, 'CRK50-06D': 3,
+    'CRK50-07B': 3, 'CRK50-07C': 3, 'CRK50-07D': 3,
+    'CRK50-10B': 3, 'CRK50-10C': 3, 'CRK50-10D': 3, 'CRK50-10E': 3,
+    'CRK50-12B': 3, 'CRK50-12C': 3, 'CRK50-12D': 3, 'CRK50-12E': 3,
+    'CRK50-15B': 44,'CRK50-15C': 44,'CRK50-15D': 44,'CRK50-15E': 44,
+    'CRK50-17B': 44,'CRK50-17C': 44,'CRK50-17D': 44,'CRK50-17E': 44,
+    'CRK50-18B': 44,'CRK50-18C': 44,'CRK50-18D': 44,'CRK50-18E': 44,
+    'CRK50-22B': 44,'CRK50-22C': 44,'CRK50-22D': 44,'CRK50-22E': 44,
+    'CRK50-26B': 44,'CRK50-26C': 40,'CRK50-26D': 40,'CRK50-26E': 40,
+    'CRY50-10C': 3, 'CRY50-13C': 3, 'CRY50-16C': 3,
+    'CRY50-20C': 40,'CRY50-24C': 40,'CRY50-26C': 40,
+    // 便槽・簡易水洗・横型直下（NYU2系）
+    'NYU2-5': 2, 'NYU2-9': 2, 'NYU2-10': 2,
+    'NYU2-13': 3, 'NYU2-16': 3, 'NYU2-18': 3, 'NYU2-21': 3,
+    'NYU2-25': 40, 'NYU2-31': 40,
+    // 便槽・簡易水洗・横型横引き（NYU4系）
+    'NYU4-5': 2, 'NYU4-9': 2, 'NYU4-10': 2,
+    'NYU4-13': 3, 'NYU4-16': 3, 'NYU4-18': 3, 'NYU4-21': 3,
+    'NYU4-25': 40, 'NYU4-31': 40,
+    // 便槽・簡易水洗・横型横引き2連（NYU48系）
+    'NYU48-5': 2, 'NYU48-9': 2, 'NYU48-10': 2,
+    'NYU48-13': 3, 'NYU48-16': 3, 'NYU48-18': 3, 'NYU48-21': 3,
+    'NYU48-25': 40, 'NYU48-31': 40,
+    // 便槽・簡易水洗・横型横引き3連（NYU・T系）
+    'NYU・T-9': 2,
+    'NYU・T-13': 3, 'NYU・T-16': 3, 'NYU・T-18': 3, 'NYU・T-21': 3,
+    'NYU・T-25': 40, 'NYU・T-31': 40,
+    // 便槽・縦型横引き（NKU4系）
+    'NKU4-3': 2, 'NKU4-5': 2, 'NKU4-8': 2,
+    'NKU4-10': 3, 'NKU4-13': 3, 'NKU4-15': 3, 'NKU4-18': 3,
+    // 便槽・縦型横引き2連（NKU48系）
+    'NKU48-3': 2, 'NKU48-5': 2, 'NKU48-8': 2,
+    'NKU48-10': 3, 'NKU48-13': 3, 'NKU48-15': 3, 'NKU48-18': 3,
+    // 便槽・縦型直下（NKS2系）
+    'NKS2-3': 2, 'NKS2-5': 2, 'NKS2-8': 2,
+    'NKS2-10': 3, 'NKS2-13': 3, 'NKS2-15': 3, 'NKS2-18': 3,
+    // 受水槽・横型小型（JY系）
+    'JY-5': 2, 'JY-9': 2, 'JY-10': 2,
+    'JY-13': 3, 'JY-16': 3, 'JY-18': 3, 'JY-21': 3,
+    'JY-25': 40, 'JY-31': 40,
+    // 排水槽・小型（OY系）
+    'OY-5': 2, 'OY-9': 2, 'OY-10': 2,
+    'OY-13': 3, 'OY-16': 3, 'OY-18': 3, 'OY-21': 3,
+    'OY-25': 40, 'OY-31': 40,
+    // 大型横型Φ1300（TPY-13系）
+    'TPY-25W-13': 40,'TPY-30W-13': 40,'TPY-35W-13': 40,'TPY-40W-13': 40,'TPY-45W-13': 40,'TPY-50W-13': 40,
+    'TPY-60W-13': 60,
+    'TPY-70W-13': 100,'TPY-80W-13': 100,
+    // 大型横型Φ1600（TPY-16系）
+    'TPY-30W-16': 40,'TPY-40W-16': 40,'TPY-50W-16': 40,'TPY-60W-16': 40,'TPY-70W-16': 40,'TPY-80W-16': 40,'TPY-90W-16': 40,
+    'TPY-100W-16': 60,
+    'TPY-120W-16': 100,'TPY-130W-16': 100,
+    // 大型横型Φ2000（TPY-20系）
+    'TPY-50W-20': 40,'TPY-60W-20': 40,'TPY-70W-20': 40,'TPY-80W-20': 40,'TPY-90W-20': 40,'TPY-100W-20': 40,'TPY-130W-20': 40,
+    'TPY-150W-20': 60,
+    'TPY-180W-20': 100,'TPY-200W-20': 100,'TPY-250W-20': 100,
+    // 受水槽・特殊Φ1200（TJY-12系）
+    'TJY-2000-12': 3,
+    'TJY-2500-12': 40,'TJY-3000-12': 40,'TJY-4000-12': 40,'TJY-5000-12': 40,'TJY-6000-12': 40,
+    // 受水槽・特殊Φ1300（TJY-13系）
+    'TJY-2000-13': 3,
+    'TJY-2500-13': 40,'TJY-3000-13': 40,'TJY-4000-13': 40,'TJY-5000-13': 40,'TJY-6000-13': 40,
+    'TJY-7000-13': 60,'TJY-8000-13': 60,
+    'TJY-9000-13': 100,'TJY-10000-13': 100,
+    // 受水槽・特殊Φ1600（TJY-16系）
+    'TJY-3000-16': 40,'TJY-4000-16': 40,'TJY-5000-16': 40,'TJY-6000-16': 40,'TJY-7000-16': 40,'TJY-8000-16': 40,'TJY-9000-16': 40,'TJY-10000-16': 40,
+    'TJY-12000-16': 60,
+    'TJY-13000-16': 100,'TJY-15000-16': 100,
+    // 受水槽・特殊Φ2000（TJY-20系）
+    'TJY-9000-20': 40,'TJY-10000-20': 40,'TJY-13000-20': 40,'TJY-15000-20': 40,
+    'TJY-20000-20': 100,'TJY-25000-20': 100,'TJY-28000-20': 100,
+    // 排水槽・Φ1200（TOY-12系）
+    'TOY-2000-12': 3,
+    'TOY-2500-12': 40,'TOY-3000-12': 40,'TOY-4000-12': 40,'TOY-5000-12': 40,'TOY-6000-12': 40,
+    // 排水槽・Φ1300（TOY-13系）
+    'TOY-2000-13': 3,
+    'TOY-2500-13': 40,'TOY-3000-13': 40,'TOY-4000-13': 40,'TOY-5000-13': 40,'TOY-6000-13': 40,
+    'TOY-7000-13': 60,'TOY-8000-13': 60,
+    'TOY-9000-13': 100,'TOY-10000-13': 100,
+    // 排水槽・Φ1600（TOY-16系）
+    'TOY-3000-16': 40,'TOY-4000-16': 40,'TOY-5000-16': 40,'TOY-6000-16': 40,'TOY-7000-16': 40,'TOY-8000-16': 40,'TOY-9000-16': 40,'TOY-10000-16': 40,
+    'TOY-12000-16': 60,
+    'TOY-13000-16': 100,'TOY-15000-16': 100,
+    // 排水槽・Φ2000（TOY-20系）
+    'TOY-9000-20': 40,'TOY-10000-20': 40,'TOY-13000-20': 40,'TOY-15000-20': 40,
+    'TOY-20000-20': 100,'TOY-25000-20': 100,'TOY-28000-20': 100,
+  };
+
+  // 混載便区分 → 送料マスタ選択項目名
+  const FRP_KONZAI_SORYO_NAME = {
+    1: '混載・通常１', 2: '混載・通常２', 3: '混載・通常３',
+    4: '混載・中１',   5: '混載・中２（○○県）', 6: '混載・中３（○○県）',
+    7: '混載・特殊１', 8: '混載・特殊２',         9: '混載・特殊３',
+  };
+
+  // チャーター便：区分 → 車種キー
+  const FRP_CHARTER_VEHICLE = { 40: 't4', 44: 't4', 60: 't6', 100: 't10' };
+
+  // チャーター便地域名（7地域）
+  const FRP_CHARTER_REGIONS = ['○○県', '●●県', '△△県', '××県', '□□県', '◇◇県', '◆◆県'];
+
+  // チャーター便金額テーブル（送料関連シートより）
+  const FRP_CHARTER_PRICE = {
+    t4:  [135000, 120000, 120000, 115000, 125000, 138000, 135000],
+    t6:  [150000, 135000, 135000, 125000, 136000, 155000, 153000],
+    t10: [178000, 164000, 164000, 158000, 169000, 182000, 180000],
+  };
+
   /** カスタムドロップダウンを閉じる */
   function closeNameDropdown(nameInput) {
     if (_nameDd._input === nameInput) _nameDd.style.display = 'none';
@@ -1259,8 +1371,8 @@ const app = (() => {
       state.seqNumber      = 0;
       state.edaban         = '1';
     }
-    // seqNoがない場合、Quotes.field15（所課）の名前でDEPT_LISTを逆引きしてcreateDepCodeをセット
-    if (!state.createDeptCode && state.shoka) {
+    // Quotes.field15（所課）の名前でDEPT_LISTを逆引きしてcreateDepCodeをセット（field15を優先）
+    if (state.shoka) {
       const deptEntry = DEPT_LIST.find(d => d.name === state.shoka);
       if (deptEntry) state.createDeptCode = deptEntry.code;
     }
@@ -3830,6 +3942,30 @@ const app = (() => {
     'NYU・T-21': { model: 'KB-1200', qty: 2, unit: '組', extras: [{ model: 'SYD-100T', qty: 1, unit: 'セット' }] },
     'NYU・T-25': { model: 'KB-1300', qty: 2, unit: '組', extras: [{ model: 'SYD-100T', qty: 1, unit: 'セット' }] },
     'NYU・T-31': { model: 'KB-1300', qty: 2, unit: '組', extras: [{ model: 'SYD-100T', qty: 1, unit: 'セット' }] },
+    // 便槽・縦型横引き（NKU4系）→ 臭突SYD-100Aのみ付属
+    'NKU4-3':  { extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    'NKU4-5':  { extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    'NKU4-8':  { extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    'NKU4-10': { extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    'NKU4-13': { extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    'NKU4-15': { extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    'NKU4-18': { extras: [{ model: 'SYD-100A', qty: 1, unit: 'セット' }] },
+    // 便槽・縦型横引き2連（NKU48系）→ 臭突SYD-100Wのみ付属
+    'NKU48-3':  { extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    'NKU48-5':  { extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    'NKU48-8':  { extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    'NKU48-10': { extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    'NKU48-13': { extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    'NKU48-15': { extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    'NKU48-18': { extras: [{ model: 'SYD-100W', qty: 1, unit: 'セット' }] },
+    // 便槽・縦型直下（NKS2系）→ 臭突SYD-100Cのみ付属
+    'NKS2-3':  { extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
+    'NKS2-5':  { extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
+    'NKS2-8':  { extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
+    'NKS2-10': { extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
+    'NKS2-13': { extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
+    'NKS2-15': { extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
+    'NKS2-18': { extras: [{ model: 'SYD-100C', qty: 1, unit: 'セット' }] },
     // 受水槽・横型（小型）（JYシリーズ）
     'JY-5':  { model: 'KB-720',  qty: 2, unit: '組' },
     'JY-9':  { model: 'KB-820',  qty: 2, unit: '組' },
@@ -4023,9 +4159,11 @@ const app = (() => {
       showToast('FRPデータを読み込み中です。しばらくお待ちください。', 'warn');
       return;
     }
+    const _deptHzAuto = (DEPT_LIST.find(d => d.name === state.shoka)
+                      || DEPT_LIST.find(d => d.code === state.createDeptCode))?.hz;
     _frpWizard = {
       mode,
-      hz:          state.frpHz,
+      hz:          _deptHzAuto || state.frpHz,
       shubetsu:    null,
       chubunrui:   null,
       kashira:     null,
@@ -4376,14 +4514,6 @@ const app = (() => {
     const normalizedItemnum = (record.itemnum || '').normalize('NFKC').trim();
     const bandCfg = FRP_BAND_SET_MAP[normalizedItemnum];
     if (bandCfg && productItem) {
-      const normalizedModel = bandCfg.model.normalize('NFKC');
-      // itemnum または Name にモデル番号が含まれるオプション部品レコードを検索
-      const bandRecord = state.frpCache.find(r =>
-        r.field3 === 'オプション部品' && (
-          (r.itemnum || '').normalize('NFKC').trim() === normalizedModel ||
-          (r.Name || '').normalize('NFKC').includes(normalizedModel)
-        )
-      );
       // オプション品をキャッシュまたは手動で追加するヘルパー
       function _addAutoOption(optModel, optQty, optUnit, fallbackHinmei) {
         const nm = optModel.normalize('NFKC');
@@ -4412,17 +4542,27 @@ const app = (() => {
         }
       }
 
-      if (bandRecord) {
-        const prevMaxId = state.frpItems.reduce((m, i) => Math.max(m, i.id), 0);
-        addFrpItem(bandRecord);
-        const added = state.frpItems.find(i => i.id > prevMaxId && i.type !== 'soryo');
-        if (added) {
-          added.qty = bandCfg.qty;
-          added._bandFor = productItem.id;
-          added._bandQtyPer = bandCfg.qty;
+      // 仮固定バンドを追加（model指定がある場合のみ）
+      if (bandCfg.model) {
+        const normalizedModel = bandCfg.model.normalize('NFKC');
+        const bandRecord = state.frpCache.find(r =>
+          r.field3 === 'オプション部品' && (
+            (r.itemnum || '').normalize('NFKC').trim() === normalizedModel ||
+            (r.Name || '').normalize('NFKC').includes(normalizedModel)
+          )
+        );
+        if (bandRecord) {
+          const prevMaxId = state.frpItems.reduce((m, i) => Math.max(m, i.id), 0);
+          addFrpItem(bandRecord);
+          const added = state.frpItems.find(i => i.id > prevMaxId && i.type !== 'soryo');
+          if (added) {
+            added.qty = bandCfg.qty;
+            added._bandFor = productItem.id;
+            added._bandQtyPer = bandCfg.qty;
+          }
+        } else {
+          _addAutoOption(bandCfg.model, bandCfg.qty, bandCfg.unit, '仮固定バンドセット');
         }
-      } else {
-        _addAutoOption(bandCfg.model, bandCfg.qty, bandCfg.unit, '仮固定バンドセット');
       }
 
       // 追加オプション品（臭突管セット等）を自動追加
@@ -4442,14 +4582,24 @@ const app = (() => {
       updateFrpTotals();
       updateOutput();
       const extraNames = (bandCfg.extras || []).map(e => e.model).join('・');
-      const toastMsg = extraNames
-        ? `${record.itemnum} → ${bandCfg.model} × ${bandCfg.qty}${bandCfg.unit}、${extraNames} を自動追加しました`
-        : `${record.itemnum} → ${bandCfg.model} × ${bandCfg.qty}${bandCfg.unit} を自動追加しました`;
-      showToast(toastMsg);
+      const bandPart = bandCfg.model ? `${bandCfg.model} × ${bandCfg.qty}${bandCfg.unit}` : '';
+      const toastParts = [bandPart, extraNames].filter(Boolean).join('・');
+      showToast(`${record.itemnum} → ${toastParts} を自動追加しました`);
     }
 
     document.getElementById('frpWizardModal').style.display = 'none';
     if (!bandCfg) showToast(`${record.Name || record.itemnum || '製品'} を追加しました`);
+
+    // 配送区分に基づいて送料を自動追加
+    const itemnumNorm = (record.itemnum || '').normalize('NFKC').trim();
+    const haisouKubun = FRP_HAISOU_KUBUN[itemnumNorm];
+    if (haisouKubun) {
+      if (haisouKubun <= 9) {
+        _frpAddKonzaiSoryo(haisouKubun);
+      } else {
+        _frpOpenCharterModal(haisouKubun);
+      }
+    }
   }
 
   const FRP_DEFAULT_SECTIONS = [
@@ -4508,6 +4658,107 @@ const app = (() => {
   }
 
   /** 送料選択モーダルを開く */
+  /** 混載便送料を送料マスタから自動追加 */
+  function _frpAddKonzaiSoryo(kubun) {
+    const soryoName = FRP_KONZAI_SORYO_NAME[kubun];
+    if (!soryoName) return;
+    const def = state.soryoMaster.find(m => m.name === soryoName);
+    const item = {
+      id: state.nextFrpId++, type: 'soryo',
+      shubetsu: '送料', chubunrui: '', kashira: '',
+      hinmei:    def ? def.line1 : '送料',
+      itemnum:   def ? def.line2 : '',
+      zuban: '', hinban: '', name3: '', optSpec5: '',
+      qty: 1, unit: '式',
+      price:  def ? def.price : 0,
+      priceA: def ? def.price : 0,
+      priceB: def ? def.price : 0,
+      soryoKubun: kubun,
+      soryoNote:  def ? def.line3 : '',
+      specs: [], _fromMaster: true,
+    };
+    const others = state.frpItems.filter(i => i.type !== 'soryo');
+    const soryos = state.frpItems.filter(i => i.type === 'soryo');
+    state.frpItems = [...others, ...soryos, item];
+    markDirty(); renderFrpItems(); updateFrpTotals(); updateOutput();
+  }
+
+  /** チャーター便地域選択モーダルを表示 */
+  function _frpOpenCharterModal(kubun) {
+    const existing = document.getElementById('soryoCharterModal');
+    if (existing) existing.remove();
+    const vkey  = FRP_CHARTER_VEHICLE[kubun];
+    const prices = FRP_CHARTER_PRICE[vkey];
+    const vLabel = { t4: '4tユニック', t6: '6tユニック', t10: '10t平車' }[vkey];
+    const canSwitch = kubun === 44;
+    const rows = FRP_CHARTER_REGIONS.map((region, i) =>
+      `<tr style="border-bottom:1px solid #eee">
+         <td style="padding:8px 12px">${escHtml(region)}</td>
+         <td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">
+           ¥${prices[i].toLocaleString()}</td>
+         <td style="padding:8px 12px">
+           <button class="btn-primary btn-sm"
+             onclick="app._frpAddCharterSoryo(${kubun},${i})">選択</button>
+         </td>
+       </tr>`
+    ).join('');
+    const switchNote = canSwitch
+      ? '<p style="margin:0 0 10px;font-size:12px;color:#e67e22">※混載切替可：値段次第で混載便への変更が可能です</p>' : '';
+    const modal = document.createElement('div');
+    modal.id = 'soryoCharterModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9001;display:flex;align-items:center;justify-content:center';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.2);width:420px;max-width:95vw">
+        <div style="padding:14px 18px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-weight:700;font-size:15px">チャーター便【${escHtml(vLabel)}】地域選択</span>
+          <button onclick="document.getElementById('soryoCharterModal').remove()"
+                  style="background:none;border:none;font-size:20px;cursor:pointer;color:#666">×</button>
+        </div>
+        <div style="padding:14px 18px">
+          ${switchNote}
+          <table style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="background:#f5f5f5;font-size:12px;color:#666">
+                <th style="padding:6px 12px;text-align:left">配送先</th>
+                <th style="padding:6px 12px;text-align:right">金額（例）</th>
+                <th style="padding:6px 12px"></th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <p style="margin:10px 0 0;font-size:11px;color:#999">※金額は参考値です。実際の金額は確認の上修正してください。</p>
+        </div>
+      </div>`;
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+  }
+
+  /** チャーター便送料行を追加 */
+  function _frpAddCharterSoryo(kubun, regionIdx) {
+    document.getElementById('soryoCharterModal')?.remove();
+    const vkey   = FRP_CHARTER_VEHICLE[kubun];
+    const price  = FRP_CHARTER_PRICE[vkey][regionIdx];
+    const region = FRP_CHARTER_REGIONS[regionIdx];
+    const vLabel = { t4: '4tユニック', t6: '6tユニック', t10: '10t平車' }[vkey];
+    const canSwitch = kubun === 44;
+    const item = {
+      id: state.nextFrpId++, type: 'soryo',
+      shubetsu: '送料', chubunrui: '', kashira: '',
+      hinmei:  'チャーター便',
+      itemnum: `【${vLabel}】${region}送り${canSwitch ? '（混載切替可）' : ''}`,
+      zuban: '', hinban: '', name3: '', optSpec5: '',
+      qty: 1, unit: '式',
+      price, priceA: price, priceB: price,
+      soryoKubun: kubun,
+      soryoNote: '車両通行可否要確認',
+      specs: [], _fromMaster: false,
+    };
+    const others = state.frpItems.filter(i => i.type !== 'soryo');
+    const soryos = state.frpItems.filter(i => i.type === 'soryo');
+    state.frpItems = [...others, ...soryos, item];
+    markDirty(); renderFrpItems(); updateFrpTotals(); updateOutput();
+  }
+
   function openSoryoModal() {
     const existing = document.getElementById('soryoModal');
     if (existing) existing.remove();
@@ -4910,7 +5161,7 @@ const app = (() => {
     return null;
   }
 
-  const FRP_OPTION_PDFS = ['仮固定バンド'];
+  const FRP_OPTION_PDFS = ['仮固定バンド', '臭突管セット'];
 
   function _getFrpRecordPdfKey(r) {
     const fields = [r.Name || '', r.itemnum || '', r.field4 || ''];
@@ -7043,15 +7294,7 @@ const app = (() => {
         console.log('[loadCurrentUser] resolved deptCode:', deptCode);
       } catch(e2) { console.warn('getRecord(users) error:', e2); }
 
-      // field15（shoka）が設定されている場合はユーザー所課を使わない
-      if (deptCode && !state.createDeptCode && !state.shoka) {
-        state.createDeptCode = deptCode;
-        const createEl = document.getElementById('createDept');
-        if (createEl) createEl.value = deptCode;
-        console.log('[loadCurrentUser] createDept set to:', deptCode, '| select value:', createEl?.value);
-      } else {
-        console.log('[loadCurrentUser] skipped: deptCode=', deptCode, '| state.createDeptCode=', state.createDeptCode, '| shoka=', state.shoka);
-      }
+      // 作成所課はQuotes.field15から設定するため、ユーザー所課は使わない
       // 所課コードが確定したタイミングでFRP掛率・送料マスタをロード
       await loadFrpRates(state.createDeptCode);
       await loadSoryoMaster(state.createDeptCode);
@@ -7104,9 +7347,9 @@ const app = (() => {
           opt: Number(r.opt) || 0,
         }));
         console.log(`[FRP] 掛率マスタ読み込み完了: ${state.frpAreaRates.length}件 (所課「${label}」)`);
-        // 所課コードが未確定の場合、FRP1.field1 から逆引きして createDept を更新
+        // 所課コードが未確定かつfield15（所課）も未設定の場合のみ、FRP1.field1 から逆引きして createDept を更新
         const derivedCode = String(records[0].field1 || '').trim();
-        if (!state.createDeptCode && derivedCode) {
+        if (!state.createDeptCode && !state.shoka && derivedCode) {
           state.createDeptCode = derivedCode;
           const createEl = document.getElementById('createDept');
           if (createEl && createEl.value !== derivedCode) {
@@ -7353,26 +7596,26 @@ const app = (() => {
   }
 
   const DEPT_LIST = [
-    { code: '15',  name: '札幌営業所' },
-    { code: '19',  name: '仙台営業所' },
-    { code: '17',  name: '盛岡出張所' },
-    { code: '28',  name: 'さいたま営業所' },
-    { code: '32',  name: '南関東営業所' },
-    { code: '37',  name: '新潟営業所' },
-    { code: '36',  name: '松本営業所' },
+    { code: '15',  name: '札幌営業所',     hz: '50Hz' },
+    { code: '19',  name: '仙台営業所',     hz: '50Hz' },
+    { code: '17',  name: '盛岡出張所',     hz: '50Hz' },
+    { code: '28',  name: 'さいたま営業所', hz: '50Hz' },
+    { code: '32',  name: '南関東営業所',   hz: '50Hz' },
+    { code: '37',  name: '新潟営業所',     hz: '50Hz' },
+    { code: '36',  name: '松本営業所',     hz: '50Hz' },
     { code: '43',  name: '静岡営業所' },
-    { code: '44',  name: '名古屋営業所' },
-    { code: '51',  name: '大阪営業所' },
-    { code: '61',  name: '広島営業所' },
-    { code: '66',  name: '高松営業所' },
-    { code: '68',  name: '高知営業所' },
-    { code: '70',  name: '福岡営業所' },
-    { code: '73',  name: '長崎営業所' },
-    { code: '75',  name: '熊本営業所' },
-    { code: '79',  name: '熊本SC' },
-    { code: '76',  name: '南九州営業所' },
-    { code: '77',  name: '鹿児島営業所' },
-    { code: '97',  name: '営業サービス本部' },
+    { code: '44',  name: '名古屋営業所',   hz: '60Hz' },
+    { code: '51',  name: '大阪営業所',     hz: '60Hz' },
+    { code: '61',  name: '広島営業所',     hz: '60Hz' },
+    { code: '66',  name: '高松営業所',     hz: '60Hz' },
+    { code: '68',  name: '高知営業所',     hz: '60Hz' },
+    { code: '70',  name: '福岡営業所',     hz: '60Hz' },
+    { code: '73',  name: '長崎営業所',     hz: '60Hz' },
+    { code: '75',  name: '熊本営業所',     hz: '60Hz' },
+    { code: '79',  name: '熊本SC',         hz: '60Hz' },
+    { code: '76',  name: '南九州営業所',   hz: '60Hz' },
+    { code: '77',  name: '鹿児島営業所',   hz: '60Hz' },
+    { code: '97',  name: '営業サービス統括部' },
     { code: '990', name: '経営企画室' },
     { code: '99',  name: 'その他' },
     { code: '991', name: '【ダミー】開発部' },
@@ -9877,6 +10120,7 @@ const app = (() => {
     switchFrpMode, setFrpAB,
     addFrpManualItem,
     openSoryoModal, addFrpSoryoFromMaster,
+    _frpAddKonzaiSoryo, _frpOpenCharterModal, _frpAddCharterSoryo,
     removeFrpItem,
     removeFrpSpec,
     toggleFrpSpecs,
