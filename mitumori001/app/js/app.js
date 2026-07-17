@@ -857,6 +857,16 @@ const app = (() => {
     _nameDd.style.display = 'block';
   }
 
+  // 送料マスタ表示順（CustomModule33 field4 選択項目名の並び順）
+  const SORYO_ORDER = [
+    '混載・通常１','混載・通常２','混載・通常３',
+    '混載・中１','混載・中２（○○県）','混載・中３（○○県）',
+    '混載・特殊１','混載・特殊２','混載・特殊３','混載・特殊４',
+    '混載・特殊・離島１','混載・特殊・離島２',
+    '４ｔ（平）・１','４ｔ（平）・２','４ｔ（平）・３','４ｔ（平）・４',
+    '４ｔ（U）・１','４ｔ（U）・２','４ｔ（U）・３','４ｔ（U）・４','４ｔ（U）・５','４ｔ（U）・６',
+  ];
+
   /** カスタムドロップダウンを閉じる */
   function closeNameDropdown(nameInput) {
     if (_nameDd._input === nameInput) _nameDd.style.display = 'none';
@@ -1023,6 +1033,7 @@ const app = (() => {
     frpDealerCode: null,     // 代理店コード（Account_Number 上4桁）
     frpArea:       null,     // 選択中エリア名
     frpAreaRates:  [],       // FRP掛率マスタ（CRM FRP1 から動的ロード）
+    soryoMaster:   [],       // 送料マスタ（CRM CustomModule33 から動的ロード）
     roundingEnabled: false,    // 切り上げ表示モード
     remarkTableEnabled: false, // 缶体温度設定テーブルを備考下に追加
     _thresholdSide: null,  // 閾値判定キャッシュ（'over'|'under'|null）
@@ -4496,6 +4507,103 @@ const app = (() => {
     }
   }
 
+  /** 送料選択モーダルを開く */
+  function openSoryoModal() {
+    const existing = document.getElementById('soryoModal');
+    if (existing) existing.remove();
+
+    if (!state.soryoMaster.length) {
+      showToast('送料マスタが読み込まれていません。所課を確認してください。');
+      return;
+    }
+
+    const rows = state.soryoMaster.map((def, idx) => {
+      const priceStr = def.price ? '¥' + def.price.toLocaleString() : '—';
+      const sub = [def.line2, def.line3].filter(Boolean).join(' / ');
+      return `
+        <tr class="soryo-modal-row" onclick="app.addFrpSoryoFromMaster(${idx})" style="cursor:pointer">
+          <td style="padding:7px 10px;font-size:13px;font-weight:600">${escHtml(def.name)}</td>
+          <td style="padding:7px 10px;font-size:12px;color:#555">
+            ${escHtml(def.line1)}${sub ? '<br><span style="color:#888">' + escHtml(sub) + '</span>' : ''}
+          </td>
+          <td style="padding:7px 10px;font-size:13px;text-align:right;white-space:nowrap">${escHtml(priceStr)}</td>
+        </tr>`;
+    }).join('');
+
+    const modal = document.createElement('div');
+    modal.id = 'soryoModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:center;justify-content:center';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.2);width:560px;max-width:95vw;max-height:80vh;display:flex;flex-direction:column">
+        <div style="padding:14px 18px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-weight:700;font-size:15px">送料を選択</span>
+          <button onclick="document.getElementById('soryoModal').remove()"
+                  style="background:none;border:none;font-size:20px;cursor:pointer;color:#666;line-height:1">×</button>
+        </div>
+        <div style="overflow-y:auto;flex:1">
+          <table style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="background:#f5f5f5;font-size:12px;color:#666">
+                <th style="padding:6px 10px;text-align:left;font-weight:600">選択項目名</th>
+                <th style="padding:6px 10px;text-align:left;font-weight:600">見積表記</th>
+                <th style="padding:6px 10px;text-align:right;font-weight:600">価格</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+
+    // 行ホバー
+    modal.querySelectorAll('.soryo-modal-row').forEach(tr => {
+      tr.addEventListener('mouseenter', () => tr.style.background = '#e8f0fe');
+      tr.addEventListener('mouseleave', () => tr.style.background = '');
+    });
+    // 背景クリックで閉じる
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+    document.body.appendChild(modal);
+  }
+
+  /** 送料マスタから送料行を追加してFRP明細末尾に挿入 */
+  function addFrpSoryoFromMaster(idx) {
+    const def = state.soryoMaster[idx];
+    if (!def) return;
+    const item = {
+      id:         state.nextFrpId++,
+      type:       'soryo',
+      shubetsu:   '送料',
+      chubunrui:  '',
+      kashira:    '',
+      hinmei:     def.line1,
+      itemnum:    def.line2,
+      zuban:      '',
+      hinban:     '',
+      name3:      '',
+      optSpec5:   '',
+      qty:        1,
+      unit:       '式',
+      price:      def.price,
+      priceA:     def.price,
+      priceB:     def.price,
+      soryoKubun: 0,
+      soryoNote:  def.line3,
+      specs:      [],
+      _fromMaster: true,
+    };
+    // 送料は常に最下段
+    const others = state.frpItems.filter(i => i.type !== 'soryo');
+    const soryos = state.frpItems.filter(i => i.type === 'soryo');
+    soryos.push(item);
+    state.frpItems = [...others, ...soryos];
+
+    document.getElementById('soryoModal')?.remove();
+    markDirty();
+    renderFrpItems();
+    updateFrpTotals();
+    updateOutput();
+  }
+
   function openFrpSettings() {
     const modal = document.getElementById('frpSettingsModal');
     if (!modal) return;
@@ -6944,8 +7052,9 @@ const app = (() => {
       } else {
         console.log('[loadCurrentUser] skipped: deptCode=', deptCode, '| state.createDeptCode=', state.createDeptCode, '| shoka=', state.shoka);
       }
-      // 所課コードが確定したタイミングでFRP掛率マスタをロード
+      // 所課コードが確定したタイミングでFRP掛率・送料マスタをロード
       await loadFrpRates(state.createDeptCode);
+      await loadSoryoMaster(state.createDeptCode);
     } catch(e) { console.warn('getCurrentUser error:', e); }
   }
 
@@ -7013,6 +7122,70 @@ const app = (() => {
     // FRPモード中なら代理店ドロップダウンを更新
     if (state.frpMode) updateFrpAreaUI();
   }
+
+  /** CustomModule33 レコードを選択項目名順に整形して返す */
+  function _parseSoryoRecords(records) {
+    return SORYO_ORDER
+      .map(name => {
+        const r = records.find(rec => rec.field4 === name);
+        if (!r) return null;
+        return {
+          name:  name,
+          line1: String(r.field2 || ''),
+          line2: String(r.field5 || ''),
+          line3: String(r.field6 || ''),
+          price: Number(r.field3) || 0,
+        };
+      })
+      .filter(Boolean);
+  }
+
+  /** 送料マスタを CRM CustomModule33 からロードする
+   *  優先1: 所課コード（field1）で検索
+   *  優先2: 所課名「標準」（field）で検索（所課別データなし時のフォールバック）
+   */
+  async function loadSoryoMaster(deptCode) {
+    if (!zohoReady) { state.soryoMaster = []; return; }
+    try {
+      // 所課コードが確定していれば所課別データを優先取得
+      if (deptCode) {
+        const res = await ZOHO.CRM.API.searchRecord({
+          Entity:   'CustomModule33',
+          Type:     'criteria',
+          Query:    `(field1:equals:${deptCode})`,
+          page:     1,
+          per_page: 50,
+        });
+        const records = res?.data || [];
+        if (records.length > 0) {
+          state.soryoMaster = _parseSoryoRecords(records);
+          console.log('[Soryo] 所課別マスタ読み込み完了:', state.soryoMaster.length + '件 (所課「' + deptCode + '」)');
+          return;
+        }
+        console.log('[Soryo] 所課「' + deptCode + '」のレコードなし → 標準にフォールバック');
+      }
+      // フォールバック: 所課名「標準」で検索
+      const resDef = await ZOHO.CRM.API.searchRecord({
+        Entity:   'CustomModule33',
+        Type:     'criteria',
+        Query:    '(field:equals:標準)',
+        page:     1,
+        per_page: 50,
+      });
+      const defRecords = resDef?.data || [];
+      if (defRecords.length > 0) {
+        state.soryoMaster = _parseSoryoRecords(defRecords);
+        console.log('[Soryo] 標準マスタ読み込み完了:', state.soryoMaster.length + '件');
+      } else {
+        console.warn('[Soryo] 標準マスタも見つかりません');
+        state.soryoMaster = [];
+      }
+    } catch(e) {
+      console.warn('[Soryo] マスタ取得エラー:', e);
+      state.soryoMaster = [];
+    }
+  }
+
 
   async function showSpecTemplateMenu(btn) {
     const addRow = btn.closest('.item-row');
@@ -7227,6 +7400,7 @@ const app = (() => {
         state.frpArea       = null;
         state.frpAreaRates  = [];
         await loadFrpRates(code);
+        await loadSoryoMaster(code);
         markDirty();
       };
     }
@@ -9702,6 +9876,7 @@ const app = (() => {
     // FRPモード
     switchFrpMode, setFrpAB,
     addFrpManualItem,
+    openSoryoModal, addFrpSoryoFromMaster,
     removeFrpItem,
     removeFrpSpec,
     toggleFrpSpecs,
