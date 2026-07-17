@@ -1,0 +1,1060 @@
+<title>ネポン見積アプリ 操作説明</title>
+<style>
+:root {
+  --navy:   #0F3460;
+  --blue:   #1565C0;
+  --blue-lt:#E3F2FD;
+  --bg:     #F8FAFC;
+  --text:   #1E293B;
+  --muted:  #64748B;
+  --border: #CBD5E1;
+  --white:  #FFFFFF;
+  --code-bg:#F1F5F9;
+  --warn-bg:#FFF8E1;
+  --warn-bd:#F59E0B;
+  --frp-bg: #F0FDF4;
+  --frp-bd: #16A34A;
+  --sidebar-w: 240px;
+  --content-max: 780px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --navy:   #1E3A5F;
+    --blue:   #60A5FA;
+    --blue-lt:#1E3A5F;
+    --bg:     #0F172A;
+    --text:   #E2E8F0;
+    --muted:  #94A3B8;
+    --border: #334155;
+    --white:  #1E293B;
+    --code-bg:#1E293B;
+    --warn-bg:#292100;
+    --warn-bd:#D97706;
+    --frp-bg: #052E16;
+    --frp-bd: #16A34A;
+  }
+}
+:root[data-theme="light"] {
+  --navy:#0F3460;--blue:#1565C0;--blue-lt:#E3F2FD;--bg:#F8FAFC;--text:#1E293B;
+  --muted:#64748B;--border:#CBD5E1;--white:#FFFFFF;--code-bg:#F1F5F9;
+  --warn-bg:#FFF8E1;--warn-bd:#F59E0B;--frp-bg:#F0FDF4;--frp-bd:#16A34A;
+}
+:root[data-theme="dark"] {
+  --navy:#1E3A5F;--blue:#60A5FA;--blue-lt:#1E3A5F;--bg:#0F172A;--text:#E2E8F0;
+  --muted:#94A3B8;--border:#334155;--white:#1E293B;--code-bg:#1E293B;
+  --warn-bg:#292100;--warn-bd:#D97706;--frp-bg:#052E16;--frp-bd:#16A34A;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:14px}
+body{
+  font-family:-apple-system,'Hiragino Kaku Gothic ProN','Meiryo','Yu Gothic UI',sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.7;
+}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+code,kbd{
+  font-family:'SFMono-Regular','Consolas','Courier New',monospace;
+  font-size:.85em;background:var(--code-bg);color:var(--blue);
+  padding:1px 5px;border-radius:3px;border:1px solid var(--border);
+}
+
+/* ── Layout ── */
+.layout{display:flex;min-height:100vh}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:var(--white);border-right:1px solid var(--border);
+  position:fixed;top:0;left:0;height:100vh;overflow-y:auto;
+  display:flex;flex-direction:column;z-index:100;
+}
+.sidebar-header{
+  padding:16px 16px 12px;border-bottom:1px solid var(--border);
+  background:var(--navy);color:#fff;position:sticky;top:0;z-index:10;
+}
+.sidebar-header h1{font-size:13px;font-weight:700;line-height:1.4}
+.sidebar-header small{font-size:11px;opacity:.7}
+.nav-list{padding:8px 0;flex:1}
+.nav-chapter{
+  padding:6px 14px 2px;font-size:11px;font-weight:700;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
+  margin-top:4px;
+}
+.nav-item{
+  display:block;padding:5px 14px 5px 20px;font-size:12.5px;
+  color:var(--text);border-left:3px solid transparent;
+  transition:background .15s,border-color .15s;
+  cursor:pointer;
+}
+.nav-item:hover{background:var(--blue-lt);text-decoration:none}
+.nav-item.active{
+  background:var(--blue-lt);border-left-color:var(--blue);
+  color:var(--blue);font-weight:600;
+}
+.nav-item.chapter{
+  padding-left:14px;font-size:13px;font-weight:600;
+}
+.sidebar-footer{
+  padding:10px 14px;border-top:1px solid var(--border);
+  font-size:11px;color:var(--muted);
+}
+.theme-btn{
+  background:none;border:1px solid var(--border);border-radius:4px;
+  padding:3px 8px;font-size:11px;color:var(--muted);cursor:pointer;
+  margin-bottom:4px;width:100%;
+}
+
+/* ── Main content ── */
+.main{
+  margin-left:var(--sidebar-w);flex:1;
+  padding:40px 48px 80px;max-width:calc(var(--sidebar-w) + var(--content-max));
+}
+.content-inner{max-width:var(--content-max)}
+
+/* ── Section headings ── */
+.section-intro{
+  background:var(--navy);color:#fff;border-radius:8px;
+  padding:24px 28px;margin-bottom:36px;
+}
+.section-intro h2{font-size:20px;margin-bottom:6px}
+.section-intro p{font-size:13px;opacity:.85;line-height:1.6}
+
+.chapter{padding-top:48px;margin-bottom:8px;scroll-margin-top:20px}
+.chapter-title{
+  display:flex;align-items:center;gap:10px;
+  font-size:18px;font-weight:700;color:var(--navy);
+  border-bottom:2px solid var(--blue);padding-bottom:8px;margin-bottom:20px;
+}
+[data-theme="dark"] .chapter-title,[data-theme="dark"] .chapter-title{color:var(--blue)}
+
+.chapter-badge{
+  background:var(--blue);color:#fff;font-size:11px;font-weight:700;
+  padding:2px 8px;border-radius:12px;white-space:nowrap;flex-shrink:0;
+}
+.chapter-badge.frp{background:var(--frp-bd)}
+
+.section{scroll-margin-top:20px;margin-bottom:28px}
+.section-title{
+  font-size:15px;font-weight:700;color:var(--text);
+  margin:20px 0 10px;display:flex;align-items:center;gap:8px;
+}
+.section-num{
+  background:var(--blue-lt);color:var(--blue);font-size:12px;
+  font-weight:700;padding:1px 7px;border-radius:10px;flex-shrink:0;
+}
+.section-num.frp{background:var(--frp-bg);color:var(--frp-bd)}
+
+.subsection-title{
+  font-size:13.5px;font-weight:700;color:var(--text);
+  margin:16px 0 8px;padding-left:10px;
+  border-left:3px solid var(--blue);
+}
+
+/* ── Tables ── */
+.tbl-wrap{overflow-x:auto;margin:10px 0 16px;border-radius:6px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{
+  background:var(--navy);color:#fff;padding:8px 12px;
+  text-align:left;font-weight:600;white-space:nowrap;
+}
+td{padding:7px 12px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5}
+tr:last-child td{border-bottom:none}
+tr:nth-child(even) td{background:var(--bg)}
+tr:hover td{background:var(--blue-lt)}
+
+/* ── Lists ── */
+ul,ol{padding-left:1.4em;margin:8px 0 12px}
+li{margin-bottom:4px;font-size:13.5px}
+
+/* ── Note boxes ── */
+.note{
+  background:var(--warn-bg);border-left:4px solid var(--warn-bd);
+  padding:10px 14px;border-radius:0 6px 6px 0;margin:12px 0;font-size:13px;
+}
+.note.tip{background:var(--blue-lt);border-color:var(--blue)}
+.note.frp{background:var(--frp-bg);border-color:var(--frp-bd)}
+.note-icon{margin-right:6px}
+
+/* ── Chips ── */
+.chip{
+  display:inline-block;background:var(--blue-lt);color:var(--blue);
+  font-size:11px;font-weight:600;padding:1px 7px;border-radius:10px;
+  margin:0 2px;vertical-align:middle;
+}
+.chip.frp{background:var(--frp-bg);color:var(--frp-bd)}
+
+/* ── Step flow ── */
+.steps{
+  display:flex;flex-wrap:wrap;align-items:center;gap:4px;
+  margin:10px 0;font-size:13px;
+}
+.step{
+  background:var(--blue);color:#fff;padding:4px 12px;border-radius:14px;
+  font-size:12px;font-weight:600;
+}
+.step-arrow{color:var(--muted);font-size:16px}
+
+/* ── Back to top ── */
+#toTop{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--blue);color:#fff;border:none;border-radius:50%;
+  width:40px;height:40px;font-size:18px;cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,.2);opacity:0;
+  transition:opacity .25s;display:flex;align-items:center;justify-content:center;
+}
+#toTop.visible{opacity:1}
+
+/* ── Hero ── */
+.hero{
+  background:var(--navy);color:#fff;padding:28px 28px;border-radius:10px;
+  margin-bottom:36px;
+}
+.hero h2{font-size:22px;margin-bottom:8px}
+.hero p{font-size:13.5px;opacity:.85;line-height:1.7;margin-bottom:10px}
+.hero-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.hero-tag{
+  background:rgba(255,255,255,.15);padding:3px 10px;border-radius:12px;
+  font-size:12px;
+}
+
+/* ── Grid cards ── */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:12px 0}
+.card{
+  background:var(--white);border:1px solid var(--border);border-radius:8px;
+  padding:14px 16px;
+}
+.card-title{font-size:13px;font-weight:700;margin-bottom:4px;color:var(--blue)}
+.card-body{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* ── Preset badges ── */
+.preset-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.preset{
+  display:flex;align-items:flex-start;gap:8px;
+  background:var(--white);border:1px solid var(--border);border-radius:6px;
+  padding:10px 14px;flex:1;min-width:160px;
+}
+.preset-name{
+  background:var(--blue);color:#fff;font-size:11px;font-weight:700;
+  padding:2px 8px;border-radius:10px;white-space:nowrap;margin-top:1px;
+}
+.preset-desc{font-size:12.5px;color:var(--muted)}
+
+/* ── Appendix collapsible ── */
+details{margin:8px 0;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+details summary{
+  padding:10px 14px;font-weight:600;font-size:13.5px;cursor:pointer;
+  background:var(--white);list-style:none;
+}
+details summary::before{content:"▶ ";font-size:11px;color:var(--blue)}
+details[open] summary::before{content:"▼ "}
+details>div{padding:0 14px 14px}
+
+/* ── Responsive ── */
+@media(max-width:800px){
+  .sidebar{transform:translateX(-100%);transition:transform .25s}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0;padding:16px}
+  .menu-btn{display:flex}
+}
+.menu-btn{
+  display:none;position:fixed;top:12px;left:12px;z-index:200;
+  background:var(--blue);color:#fff;border:none;border-radius:6px;
+  padding:8px 12px;font-size:16px;cursor:pointer;
+}
+</style>
+
+<button class="menu-btn" id="menuBtn" onclick="toggleSidebar()">☰</button>
+
+<div class="layout">
+
+<!-- ═══ SIDEBAR ═══ -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h1>ネポン見積アプリ</h1>
+    <small>操作説明マニュアル</small>
+  </div>
+  <div class="nav-list">
+    <a class="nav-item chapter" href="#intro">はじめに</a>
+
+    <div class="nav-chapter">第1章　基本情報タブ</div>
+    <a class="nav-item" href="#s1-1">1-1 見積番号の採番</a>
+    <a class="nav-item" href="#s1-2">1-2 顧客・工事情報</a>
+    <a class="nav-item" href="#s1-3">1-3 掛率情報</a>
+    <a class="nav-item" href="#s1-4">1-4 金額情報</a>
+    <a class="nav-item" href="#s1-5">1-5 取引条件</a>
+    <a class="nav-item" href="#s1-6">1-6 見積モード切替</a>
+    <a class="nav-item" href="#s1-7">1-7 見積外工事</a>
+
+    <div class="nav-chapter">第2章　見積明細（通常）</div>
+    <a class="nav-item" href="#s2-1">2-1 共通操作</a>
+    <a class="nav-item" href="#s2-2">2-2 商品タブ</a>
+    <a class="nav-item" href="#s2-3">2-3 機器タブ</a>
+    <a class="nav-item" href="#s2-4">2-4 管材タブ</a>
+    <a class="nav-item" href="#s2-5">2-5 電材タブ</a>
+    <a class="nav-item" href="#s2-6">2-6 工事タブ</a>
+    <a class="nav-item" href="#s2-7">2-7 標準項タブ</a>
+    <a class="nav-item" href="#s2-8">2-8 テンプレート</a>
+
+    <div class="nav-chapter">第3章　見積明細（FRP）</div>
+    <a class="nav-item" href="#s3-1">3-1 FRP画面構成</a>
+    <a class="nav-item" href="#s3-2">3-2 FRP製品追加</a>
+    <a class="nav-item" href="#s3-3">3-3 仕様表示切替</a>
+    <a class="nav-item" href="#s3-4">3-4 オプション品</a>
+    <a class="nav-item" href="#s3-5">3-5 明細行の編集</a>
+    <a class="nav-item" href="#s3-6">3-6 FRP設定</a>
+
+    <div class="nav-chapter">第4章　PDF出力</div>
+    <a class="nav-item" href="#s4-1">4-1 印刷モード</a>
+    <a class="nav-item" href="#s4-2">4-2 印刷オプション</a>
+    <a class="nav-item" href="#s4-3">4-3 PDF生成</a>
+    <a class="nav-item" href="#s4-4">4-4 CRMへ保存</a>
+
+    <div class="nav-chapter">第5章　見積まとめ</div>
+    <a class="nav-item" href="#s5-1">5-1 カテゴリ別集計</a>
+    <a class="nav-item" href="#s5-2">5-2 代理店集計PDF</a>
+
+    <div class="nav-chapter">付録</div>
+    <a class="nav-item" href="#appA">付録A　CRM連携フィールド</a>
+    <a class="nav-item" href="#appB">付録B　区分別機能差</a>
+    <a class="nav-item" href="#appC">付録C　よくある質問</a>
+  </div>
+  <div class="sidebar-footer">
+    <button class="theme-btn" onclick="toggleTheme()">🌙 テーマ切替</button>
+    2026-07-17 版
+  </div>
+</nav>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main">
+<div class="content-inner">
+
+<!-- はじめに -->
+<div id="intro" class="chapter" style="padding-top:0">
+  <div class="hero">
+    <h2>ネポン見積アプリ　操作説明</h2>
+    <p>Zoho CRM の見積書レコード上で動作するウィジェットアプリです。<br>
+    CRMから顧客・掛率情報を自動取得し、見積明細を作成・PDF出力・CRM保存まで一括で行えます。</p>
+    <div class="hero-tags">
+      <span class="hero-tag">① 基本情報タブ</span>
+      <span class="hero-tag">② 見積明細タブ</span>
+      <span class="hero-tag">③ PDF出力タブ</span>
+      <span class="hero-tag">④ 見積まとめタブ</span>
+    </div>
+  </div>
+
+  <div class="note tip">
+    <span class="note-icon">💡</span>
+    <strong>起動方法</strong>：Zoho CRM の見積書レコードを開くと、ページ内のウィジェットエリアにアプリが表示されます。
+  </div>
+
+  <h3 class="section-title" style="margin-top:20px">見積区分による画面の違い</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>見積区分</th><th>内訳印刷</th><th>機器タブ</th><th>標準項タブ</th><th>調整額ラベル</th></tr></thead>
+      <tbody>
+        <tr><td><strong>工事</strong></td><td>○</td><td>○</td><td>○</td><td>出精値引き</td></tr>
+        <tr><td><strong>物販</strong></td><td>✕</td><td>✕</td><td>○</td><td>値引き</td></tr>
+        <tr><td><strong>作業</strong></td><td>○</td><td>✕</td><td>○</td><td>出精値引き</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <span class="note-icon">⚠️</span>
+    <strong>未保存の変更がある場合</strong>は画面上部に警告バナーが表示されます。タブを閉じる前に必ず「CRMに保存」してください。
+  </div>
+</div>
+
+<!-- ═══ 第1章 ═══ -->
+<div id="ch1" class="chapter">
+  <div class="chapter-title">
+    <span class="chapter-badge">第1章</span>
+    ① 基本情報タブ
+  </div>
+
+  <!-- 1-1 -->
+  <div id="s1-1" class="section">
+    <h3 class="section-title"><span class="section-num">1-1</span>見積番号の採番</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>アプリ項目</th><th>入力方法</th><th>CRM表示名</th><th>API名</th></tr></thead>
+        <tbody>
+          <tr><td>工事カテゴリ</td><td>手動選択（CQ / CQX / CD / CE / CP）</td><td>—</td><td>—</td></tr>
+          <tr><td>作成所課</td><td>手動選択 / 採番済みなら自動復元</td><td>所課</td><td><code>field15</code></td></tr>
+          <tr><td>現場所課</td><td>手動選択</td><td>—</td><td>—</td></tr>
+          <tr><td>期下二桁</td><td>手動入力</td><td>—</td><td>—</td></tr>
+          <tr><td>見積番号</td><td>「🔢 採番する」で自動生成 / 採番済みなら自動復元</td><td>見積連番</td><td><code>field55</code></td></tr>
+          <tr><td>枝番</td><td>手動入力 / 「枝番＋１」ボタン</td><td>改訂番号</td><td><code>field56</code></td></tr>
+          <tr><td>見積提出日</td><td>CRMから自動セット・手動変更可</td><td>見積提出日</td><td><code>field64</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note tip">
+      <span class="note-icon">💡</span>
+      採番後は「連番＋１」「枝番＋１」「採番クリア」「← 戻る」で管理できます。採番済みの見積書を再度開いた場合は <code>field55</code> の値から番号を自動復元します。
+    </div>
+  </div>
+
+  <!-- 1-2 -->
+  <div id="s1-2" class="section">
+    <h3 class="section-title"><span class="section-num">1-2</span>顧客・工事情報</h3>
+    <p style="font-size:13px;margin-bottom:10px;color:var(--muted)">起動時にCRM見積書レコードから自動取得します。手動編集も可能です。</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>アプリ項目</th><th>CRM表示名</th><th>API名</th><th>備考</th></tr></thead>
+        <tbody>
+          <tr><td>見積提出先</td><td>取引先名(販売先)</td><td><code>Account_Name</code></td><td>ルックアップ</td></tr>
+          <tr><td>見積提出先の敬称</td><td>取引先敬称</td><td><code>field4</code></td><td>御中 / 様</td></tr>
+          <tr><td>顧客担当者</td><td>顧客名</td><td><code>Contact_Name</code></td><td>ルックアップ</td></tr>
+          <tr><td>顧客担当者の敬称</td><td>連絡先敬称</td><td><code>field3</code></td><td>様 / 殿</td></tr>
+          <tr><td>工事名（件名）</td><td>件名</td><td><code>Subject</code></td><td></td></tr>
+          <tr><td>件名2行目</td><td>件名2行目に入れる項目</td><td><code>field8</code></td><td>値がない場合はUI・PDF両方で非表示</td></tr>
+          <tr><td>件名3行目</td><td>件名3行目に入れる項目</td><td><code>field7</code></td><td>値がない場合はUI・PDF両方で非表示</td></tr>
+          <tr><td>担当者（営業）</td><td>見積書の担当者</td><td><code>Owner</code></td><td>レコードオーナー</td></tr>
+          <tr><td>更新者（事務）</td><td>見積の更新者</td><td><code>field68</code></td><td>ユーザールックアップ</td></tr>
+          <tr><td>見積区分</td><td>区分</td><td><code>field63</code></td><td>表示のみ（工事 / 物販 / 作業）</td></tr>
+          <tr><td>作成所課</td><td>所課</td><td><code>field15</code></td><td>ルックアップ</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 1-3 -->
+  <div id="s1-3" class="section">
+    <h3 class="section-title"><span class="section-num">1-3</span>掛率情報</h3>
+    <p style="font-size:13px;margin-bottom:10px;color:var(--muted)">起動時にCRMから自動取得します。「全明細に反映」ボタンで全行に一括適用できます。</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>アプリ項目</th><th>CRM表示名</th><th>API名</th></tr></thead>
+        <tbody>
+          <tr><td>代理店掛率</td><td>代理店掛率</td><td><code>main_rate</code></td></tr>
+          <tr><td>製品掛率</td><td>製品掛率</td><td><code>item_rate</code></td></tr>
+          <tr><td>部品掛率</td><td>部品掛率</td><td><code>parts_rate</code></td></tr>
+          <tr><td>仕入れ品掛率</td><td>仕入れ品掛率</td><td><code>purchase_rate</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note"><span class="note-icon">⚠️</span>FRP明細には掛率の一括反映は適用されません。</div>
+  </div>
+
+  <!-- 1-4 -->
+  <div id="s1-4" class="section">
+    <h3 class="section-title"><span class="section-num">1-4</span>金額情報</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>アプリ項目</th><th>算出方法</th><th>CRM連携</th></tr></thead>
+        <tbody>
+          <tr><td>明細合計（希望小売価格）</td><td>明細から自動計算</td><td>—</td></tr>
+          <tr><td>代理店価格合計</td><td>明細×掛率で自動計算</td><td>—</td></tr>
+          <tr><td>割引額（①－②）</td><td>自動計算</td><td>—</td></tr>
+          <tr><td>調整額</td><td>CRMから自動取得・手動編集可</td><td><code>field61</code></td></tr>
+          <tr><td>貴社お渡し価格</td><td>自動計算</td><td>—</td></tr>
+          <tr><td>原価合計</td><td>自動計算（内部管理用）</td><td>—</td></tr>
+          <tr><td>粗利 / 粗利率</td><td>自動計算（内部管理用）</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 1-5 -->
+  <div id="s1-5" class="section">
+    <h3 class="section-title"><span class="section-num">1-5</span>取引条件</h3>
+    <p style="font-size:13px;margin-bottom:10px;color:var(--muted)">起動時にCRMから自動取得します。ドロップダウン選択または直接テキスト入力で編集でき、「CRMに保存」で書き戻します。</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>アプリ項目</th><th>API名</th><th>主な選択肢（直接入力も可）</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>納期</td><td><code>field6</code></td>
+            <td>お打ち合わせ願います / ご注文後1週間でお渡しできます / ご注文後2週間 / 3週間 / 1ヶ月 / 2ヶ月 / 3ヶ月 / 半年でお渡しできます</td>
+          </tr>
+          <tr>
+            <td>受渡し方法</td><td><code>field51</code></td>
+            <td>搬入・設置・試運転渡し / お打ち合わせ願います / 現場館側渡し / ご指定地車上渡し</td>
+          </tr>
+          <tr>
+            <td>支払い条件</td><td><code>field57</code></td>
+            <td>お打ち合わせ願います / 月末〆翌月現金支払い / 月末〆の出来高払い（現金支払い） / 契約時1/3・中間1/3・完成時1/3（現金払い） / 月末〆翌月支払い（90日手形） / 月末〆翌月支払い（120日手形）</td>
+          </tr>
+          <tr>
+            <td>見積有効期限</td><td><code>field58</code></td>
+            <td>見積期限は60日限りです。期限後のご用命の節は一応ご照会願います。</td>
+          </tr>
+          <tr><td>備考</td><td><code>field59</code></td><td>自由入力</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 1-6 -->
+  <div id="s1-6" class="section">
+    <h3 class="section-title"><span class="section-num">1-6</span>見積モードの切り替え</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-title">通常モード</div>
+        <div class="card-body">商品・機器・管材・電材・工事・標準項タブで明細を作成するモード</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--frp-bd)">FRPモード</div>
+        <div class="card-body">FRP製品専用の明細を作成するモード。明細タブの表示が切り替わる</div>
+      </div>
+    </div>
+    <div class="note tip"><span class="note-icon">💡</span>「FRP見積モードに切り替え」ボタンを押すと切り替えられます。</div>
+  </div>
+
+  <!-- 1-7 -->
+  <div id="s1-7" class="section">
+    <h3 class="section-title"><span class="section-num">1-7</span>見積外工事の選択</h3>
+    <p style="font-size:13px;margin-bottom:10px">PDFの「見積外工事」欄に印字する項目をチェックリストから選択します。約54項目のマスタリストから任意の項目にチェックを入れます。</p>
+    <div class="note"><span class="note-icon">⚠️</span>初期状態で必須チェック済みの項目（解除可能）：「見積記載以外の機器・設備工事」「消費税及び地方税」</div>
+    <h4 class="subsection-title">プリセット</h4>
+    <div class="preset-row">
+      <div class="preset">
+        <span class="preset-name">水系</span>
+        <span class="preset-desc">ボイラ・配管系工事向けの標準セット</span>
+      </div>
+      <div class="preset">
+        <span class="preset-name">風系</span>
+        <span class="preset-desc">温風暖房・ダクト系工事向けの標準セット</span>
+      </div>
+      <div class="preset">
+        <span class="preset-name" style="background:var(--muted)">汎用</span>
+        <span class="preset-desc">必須項目のみ選択・全マスタから選択可能な状態にリセット</span>
+      </div>
+    </div>
+  </div>
+</div><!-- /ch1 -->
+
+<!-- ═══ 第2章 ═══ -->
+<div id="ch2" class="chapter">
+  <div class="chapter-title">
+    <span class="chapter-badge">第2章</span>
+    ② 見積明細タブ（通常モード）
+  </div>
+
+  <!-- 2-1 -->
+  <div id="s2-1" class="section">
+    <h3 class="section-title"><span class="section-num">2-1</span>共通操作</h3>
+    <ul>
+      <li>大項目（セクション）の追加・削除・並び替え</li>
+      <li>明細行のドラッグ&amp;ドロップによる並び替え・削除</li>
+      <li>起動時にCRM「<strong>見積明細JSON</strong>」（<code>JSON</code>）から自動復元</li>
+    </ul>
+  </div>
+
+  <!-- 2-2 -->
+  <div id="s2-2" class="section">
+    <h3 class="section-title"><span class="section-num">2-2</span>商品タブ</h3>
+    <p style="font-size:13px;margin-bottom:8px">参照モジュール：<span class="chip">Products（商品）</span></p>
+    <ul>
+      <li>品名・商品コード・型式でキーワード検索</li>
+      <li>追加時に同型式の工事費（<span class="chip">CustomModule1</span>）を自動付与</li>
+      <li>機器仕様（<span class="chip">CustomModule21</span>）を自動表示</li>
+    </ul>
+    <div class="note tip"><span class="note-icon">💡</span>機器仕様の優先順位：CustomModule21（所課別カスタム仕様）→ Products.field13（商品マスタ）</div>
+  </div>
+
+  <!-- 2-3 -->
+  <div id="s2-3" class="section">
+    <h3 class="section-title"><span class="section-num">2-3</span>機器タブ</h3>
+    <p style="font-size:13px;margin-bottom:8px">参照モジュール：<span class="chip">CustomModule23（工事用機器リスト）</span></p>
+    <ul>
+      <li>カテゴリ絞り込み＋テキスト検索で追加</li>
+    </ul>
+    <div class="note"><span class="note-icon">⚠️</span>工事カテゴリの見積のみ表示されます。</div>
+  </div>
+
+  <!-- 2-4 -->
+  <div id="s2-4" class="section">
+    <h3 class="section-title"><span class="section-num">2-4</span>管材タブ</h3>
+    <p style="font-size:13px;margin-bottom:8px">参照モジュール：<span class="chip">CustomModule18（管材表）</span></p>
+    <div class="steps">
+      <span class="step">カテゴリ選択</span><span class="step-arrow">→</span>
+      <span class="step">品名選択</span><span class="step-arrow">→</span>
+      <span class="step">型式選択</span><span class="step-arrow">→</span>
+      <span class="step">追加</span>
+    </div>
+  </div>
+
+  <!-- 2-5 -->
+  <div id="s2-5" class="section">
+    <h3 class="section-title"><span class="section-num">2-5</span>電材タブ</h3>
+    <p style="font-size:13px;margin-bottom:8px">参照モジュール：<span class="chip">CustomModule19（電材表）</span></p>
+    <div class="steps">
+      <span class="step">カテゴリ選択</span><span class="step-arrow">→</span>
+      <span class="step">品名選択</span><span class="step-arrow">→</span>
+      <span class="step">型式選択</span><span class="step-arrow">→</span>
+      <span class="step">追加</span>
+    </div>
+  </div>
+
+  <!-- 2-6 -->
+  <div id="s2-6" class="section">
+    <h3 class="section-title"><span class="section-num">2-6</span>工事タブ</h3>
+    <ul>
+      <li>工事区分（機械工事 / 配管工事 / 雑工）と工事名称を選択して追加</li>
+      <li>工事名称はコード内マスタ（60項目）から選択、または手入力</li>
+    </ul>
+  </div>
+
+  <!-- 2-7 -->
+  <div id="s2-7" class="section">
+    <h3 class="section-title"><span class="section-num">2-7</span>標準項タブ</h3>
+    <p style="font-size:13px;margin-bottom:10px;color:var(--muted)">サブタブ：農用工事 / 熱機 / 衛生（全区分で利用可能）</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>サブタブ</th><th>参照モジュール</th><th>操作方法</th></tr></thead>
+        <tbody>
+          <tr><td><strong>農用工事</strong></td><td><span class="chip">CustomModule1（工事費）</span></td><td>型式を選択すると関連する工事費行を一括追加</td></tr>
+          <tr><td><strong>熱機</strong></td><td><span class="chip">CustomModule26（物販標準項マスター）</span></td><td>種別が「衛生」以外の行を表示して選択</td></tr>
+          <tr><td><strong>衛生</strong></td><td><span class="chip">CustomModule30（衛生マスター）</span></td><td>中分類 → 小分類 → 型式の順で選択</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 2-8 -->
+  <div id="s2-8" class="section">
+    <h3 class="section-title"><span class="section-num">2-8</span>テンプレートの保存と呼び出し</h3>
+    <p style="font-size:13px;margin-bottom:10px">現在の明細内容を所課別テンプレート（<span class="chip">CustomModule8</span>）として保存し、別の見積書で呼び出して再利用できます。</p>
+
+    <h4 class="subsection-title">テンプレートを保存</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>項目</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>上書き先</td><td>「— 新規保存 —」で新規作成。既存テンプレートを選ぶと上書き保存</td></tr>
+          <tr><td>テンプレート名</td><td>任意の名称（例：温室暖房標準）</td></tr>
+          <tr><td>説明</td><td>用途・適用条件など（省略可）</td></tr>
+          <tr><td>種別</td><td>検索・分類用のキーワード（例：暖房）</td></tr>
+          <tr><td>所課</td><td>保存先となる所課をドロップダウンから選択</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:13px;font-weight:600;margin:10px 0 6px">含める項目（チェックで選択）：</p>
+    <ul>
+      <li>見積条件（納期・納入条件・支払条件・有効日数）</li>
+      <li>鏡の備考欄</li>
+      <li>見積外工事</li>
+    </ul>
+
+    <h4 class="subsection-title">テンプレートの呼び出し</h4>
+    <div class="steps">
+      <span class="step">所課を選択</span><span class="step-arrow">→</span>
+      <span class="step">テンプレート一覧を表示</span><span class="step-arrow">→</span>
+      <span class="step">対象を選んで読み込む</span>
+    </div>
+    <div class="note tip"><span class="note-icon">💡</span>読み込んだ内容は現在の明細に<strong>追加</strong>されます（既存明細は保持されます）。</div>
+  </div>
+</div><!-- /ch2 -->
+
+<!-- ═══ 第3章 ═══ -->
+<div id="ch3" class="chapter">
+  <div class="chapter-title">
+    <span class="chapter-badge frp">第3章</span>
+    ② 見積明細タブ（FRPモード）
+  </div>
+  <div class="note frp"><span class="note-icon">🔧</span>FRPモードは「FRP見積モードに切り替え」ボタンで有効になります。起動時に <code>FRP_JSON</code> から自動復元されます。</div>
+
+  <!-- 3-1 -->
+  <div id="s3-1" class="section">
+    <h3 class="section-title"><span class="section-num frp">3-1</span>FRPモードの画面構成</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-title" style="color:var(--frp-bd)">FRP製品</div>
+        <div class="card-body">FRP本体。ウィザードで機種を選んで追加する</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--frp-bd)">大項目（セクション）</div>
+        <div class="card-body">FRP製品をグループ化する見出し行</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--frp-bd)">オプション品</div>
+        <div class="card-body">臭突管セット・仮固定バンド等のオプション部品</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3-2 -->
+  <div id="s3-2" class="section">
+    <h3 class="section-title"><span class="section-num frp">3-2</span>FRP製品の追加（ウィザード）</h3>
+    <p style="font-size:13px;margin-bottom:10px">参照モジュール：<span class="chip frp">FRP商品マスター</span></p>
+    <div class="steps">
+      <span class="step" style="background:var(--frp-bd)">Hz選択</span><span class="step-arrow">→</span>
+      <span class="step" style="background:var(--frp-bd)">種別</span><span class="step-arrow">→</span>
+      <span class="step" style="background:var(--frp-bd)">中分類</span><span class="step-arrow">→</span>
+      <span class="step" style="background:var(--frp-bd)">型式グループ</span><span class="step-arrow">→</span>
+      <span class="step" style="background:var(--frp-bd)">機種選択</span>
+    </div>
+  </div>
+
+  <!-- 3-3 -->
+  <div id="s3-3" class="section">
+    <h3 class="section-title"><span class="section-num frp">3-3</span>仕様の表示・非表示</h3>
+    <ul>
+      <li>「仕様 ▶」ボタンでトグル（表示 ↔ 非表示）</li>
+      <li>非表示にした仕様はPDF印刷にも反映されない</li>
+    </ul>
+  </div>
+
+  <!-- 3-4 -->
+  <div id="s3-4" class="section">
+    <h3 class="section-title"><span class="section-num frp">3-4</span>オプション品の追加</h3>
+    <ul>
+      <li>オプション選択ウィザードから追加</li>
+      <li><strong>臭突管セット</strong>：選択前にボタンをホバーすると画像プレビューが表示される</li>
+      <li><strong>仮固定バンド</strong>：「📄 参考図」ボタンでPDF参考図を別タブに表示できる</li>
+    </ul>
+  </div>
+
+  <!-- 3-5 -->
+  <div id="s3-5" class="section">
+    <h3 class="section-title"><span class="section-num frp">3-5</span>FRP明細行の編集</h3>
+    <ul>
+      <li>品番・数量・単価を直接編集できる</li>
+      <li>臭突管セット等の画像がある場合は「🖼 図」ボタンで確認できる</li>
+    </ul>
+  </div>
+
+  <!-- 3-6 -->
+  <div id="s3-6" class="section">
+    <h3 class="section-title"><span class="section-num frp">3-6</span>FRP設定</h3>
+    <p style="font-size:13px;margin-bottom:10px;color:var(--muted)">FRP設定モーダルから設定し、「保存」でCRM（<code>FRP_JSON</code>）に書き戻します。</p>
+
+    <h4 class="subsection-title">基本設定</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>設定項目</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>Hz</td><td>50Hz / 60Hz を選択（製品選択ウィザードのフィルターに反映）</td></tr>
+          <tr><td>図番印刷</td><td>ON/OFF。OFFにすると図番列をPDFに印字しない</td></tr>
+          <tr><td>仕様行の印刷</td><td>ON/OFF。ONにするとFRP仕様行も展開してPDFに印字する</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4 class="subsection-title">代理店・出精値引き</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>設定項目</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>代理店</td><td><span class="chip">Accounts（取引先）</span>から選択。代理店コードを自動取得してFRPモード用掛率に反映</td></tr>
+          <tr><td>出精値引き</td><td>円単位で入力。FRP鏡ページの合計から差し引かれる</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4 class="subsection-title">枠外文言（4セクション）</h4>
+    <p style="font-size:13px;margin-bottom:8px">PDFのFRP明細枠外に印字する文言。各セクションは有効/無効・タイトル・本文を個別に編集できます。</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>No.</th><th>デフォルトタイトル</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>ご注文について</td><td>OKサイン・受注製作品の注意事項</td></tr>
+          <tr><td>2</td><td>ご発注後の出荷日延期について</td><td>出荷延期の受付条件・保管費用</td></tr>
+          <tr><td>3</td><td>決算月に関する出荷について</td><td>決算月（3・6・9・12月）の出荷制限</td></tr>
+          <tr><td>4</td><td>アフターサービスについて</td><td>修理対応の制限事項</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div><!-- /ch3 -->
+
+<!-- ═══ 第4章 ═══ -->
+<div id="ch4" class="chapter">
+  <div class="chapter-title">
+    <span class="chapter-badge">第4章</span>
+    ③ PDF出力タブ
+  </div>
+
+  <!-- 4-1 -->
+  <div id="s4-1" class="section">
+    <h3 class="section-title"><span class="section-num">4-1</span>印刷モードの選択</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>モード</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>鏡のみ印刷</td><td>表紙（鏡）1ページのみ出力</td></tr>
+          <tr><td>鏡＋明細ページ印刷</td><td>表紙＋明細ページをまとめて出力</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note tip"><span class="note-icon">💡</span>内訳（資材費・労務費・法定福利費）の印刷オプションは、工事・作業カテゴリのみ表示されます。</div>
+  </div>
+
+  <!-- 4-2 -->
+  <div id="s4-2" class="section">
+    <h3 class="section-title"><span class="section-num">4-2</span>印刷オプション</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>オプション</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>顧客担当者を印刷する</td><td>鏡に顧客担当者名を表示</td></tr>
+          <tr><td>担当者（営業/事務）を印刷する</td><td>鏡に社内担当者名を表示</td></tr>
+          <tr><td>所長を印刷する</td><td>鏡に所長名を表示</td></tr>
+          <tr><td>鏡に品目コードを印刷する</td><td>表紙の品目列にコードを表示（工事カテゴリでは非表示）</td></tr>
+          <tr><td>明細に品目コードを印刷する</td><td>明細ページにコードを表示</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4-3 -->
+  <div id="s4-3" class="section">
+    <h3 class="section-title"><span class="section-num">4-3</span>PDFの生成</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-title">📄 簡略印刷</div>
+        <div class="card-body">算出カテゴリ別に集計した簡略版PDF</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 詳細印刷</div>
+        <div class="card-body">全明細行を展開した詳細版PDF</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4-4 -->
+  <div id="s4-4" class="section">
+    <h3 class="section-title"><span class="section-num">4-4</span>CRMへの保存</h3>
+    <p style="font-size:13px;margin-bottom:10px">「💾 CRMに保存（見積明細JSON）」ボタンで以下をCRM見積書レコードへ書き戻します。</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>CRM表示名</th><th>API名</th><th>保存内容</th></tr></thead>
+        <tbody>
+          <tr><td>件名</td><td><code>Subject</code></td><td>工事名</td></tr>
+          <tr><td>件名2行目に入れる項目</td><td><code>field8</code></td><td>工事名2行目</td></tr>
+          <tr><td>件名3行目に入れる項目</td><td><code>field7</code></td><td>工事名3行目</td></tr>
+          <tr><td>納期（ご注文後）</td><td><code>field6</code></td><td>納入条件</td></tr>
+          <tr><td>受渡し方法</td><td><code>field51</code></td><td>納入方法</td></tr>
+          <tr><td>見積連番</td><td><code>field55</code></td><td>採番連番</td></tr>
+          <tr><td>改訂番号</td><td><code>field56</code></td><td>枝番</td></tr>
+          <tr><td>支払い条件</td><td><code>field57</code></td><td>支払い条件</td></tr>
+          <tr><td>見積有効期限</td><td><code>field58</code></td><td>有効日数</td></tr>
+          <tr><td>備考</td><td><code>field59</code></td><td>備考</td></tr>
+          <tr><td>値引き額</td><td><code>field61</code></td><td>調整額</td></tr>
+          <tr><td>見積提出日</td><td><code>field64</code></td><td>見積提出日</td></tr>
+          <tr><td>見積明細JSON</td><td><code>JSON</code></td><td>明細データ一式（セクション・全行）</td></tr>
+          <tr><td>FRP_JSON</td><td><code>FRP_JSON</code></td><td>FRP設定・明細データ</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note"><span class="note-icon">⚠️</span>未保存の変更がある場合は画面上部に警告バナーが表示されます。タブを閉じる前に必ず保存してください。</div>
+  </div>
+</div><!-- /ch4 -->
+
+<!-- ═══ 第5章 ═══ -->
+<div id="ch5" class="chapter">
+  <div class="chapter-title">
+    <span class="chapter-badge">第5章</span>
+    ④ 見積まとめタブ
+  </div>
+
+  <!-- 5-1 -->
+  <div id="s5-1" class="section">
+    <h3 class="section-title"><span class="section-num">5-1</span>算出カテゴリ別集計</h3>
+    <p style="font-size:13px;margin-bottom:10px">算出カテゴリ（①〜⑦）ごとに金額を集計して表示します。</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>記号</th><th>表示ラベル</th></tr></thead>
+        <tbody>
+          <tr><td>①</td><td>①配管部材</td></tr>
+          <tr><td>②</td><td>②支持具・雑部材</td></tr>
+          <tr><td>③</td><td>③配線部材</td></tr>
+          <tr><td>④</td><td>④工事費</td></tr>
+          <tr><td>⑥</td><td>⑥配管材料</td></tr>
+          <tr><td>⑦</td><td>⑦支持具・雑材費</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 5-2 -->
+  <div id="s5-2" class="section">
+    <h3 class="section-title"><span class="section-num">5-2</span>代理店価格付き集計PDFの出力</h3>
+    <ul>
+      <li>「集計表PDFに代理店価格を含める」チェックを入れることで、代理店仕切価格を追加した集計PDFを出力できます。</li>
+    </ul>
+  </div>
+</div><!-- /ch5 -->
+
+<!-- ═══ 付録 ═══ -->
+<div id="appA" class="chapter">
+  <div class="chapter-title">
+    <span class="chapter-badge" style="background:var(--muted)">付録A</span>
+    CRM連携フィールド一覧
+  </div>
+
+  <details open>
+    <summary>A-1　読み込みのみの項目（Quotes モジュール）</summary>
+    <div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>CRM表示名</th><th>API名</th><th>アプリ項目</th></tr></thead>
+        <tbody>
+          <tr><td>取引先名(販売先)</td><td><code>Account_Name</code></td><td>見積提出先</td></tr>
+          <tr><td>顧客名</td><td><code>Contact_Name</code></td><td>顧客担当者</td></tr>
+          <tr><td>見積書の担当者</td><td><code>Owner</code></td><td>担当者（営業）</td></tr>
+          <tr><td>総計</td><td><code>Grand_Total</code></td><td>貴社お渡し価格の初期値</td></tr>
+          <tr><td>連絡先敬称</td><td><code>field3</code></td><td>顧客担当者の敬称</td></tr>
+          <tr><td>所課</td><td><code>field15</code></td><td>作成所課</td></tr>
+          <tr><td>見積番号</td><td><code>field37</code></td><td>CRM上の見積番号（参照のみ）</td></tr>
+          <tr><td>区分</td><td><code>field63</code></td><td>見積区分（表示のみ）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    </div>
+  </details>
+
+  <details open>
+    <summary>A-2　読み込み＋保存される項目（Quotes モジュール）</summary>
+    <div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>CRM表示名</th><th>API名</th><th>アプリ項目</th></tr></thead>
+        <tbody>
+          <tr><td>件名</td><td><code>Subject</code></td><td>工事名</td></tr>
+          <tr><td>取引先敬称</td><td><code>field4</code></td><td>見積提出先の敬称</td></tr>
+          <tr><td>件名2行目に入れる項目</td><td><code>field8</code></td><td>工事名2行目</td></tr>
+          <tr><td>件名3行目に入れる項目</td><td><code>field7</code></td><td>工事名3行目</td></tr>
+          <tr><td>納期（ご注文後）</td><td><code>field6</code></td><td>納入条件</td></tr>
+          <tr><td>受渡し方法</td><td><code>field51</code></td><td>納入方法</td></tr>
+          <tr><td>見積連番</td><td><code>field55</code></td><td>採番連番</td></tr>
+          <tr><td>改訂番号</td><td><code>field56</code></td><td>枝番</td></tr>
+          <tr><td>支払い条件</td><td><code>field57</code></td><td>支払い条件</td></tr>
+          <tr><td>見積有効期限</td><td><code>field58</code></td><td>有効日数</td></tr>
+          <tr><td>備考</td><td><code>field59</code></td><td>備考</td></tr>
+          <tr><td>値引き額</td><td><code>field61</code></td><td>調整額</td></tr>
+          <tr><td>見積提出日</td><td><code>field64</code></td><td>見積提出日</td></tr>
+          <tr><td>代理店掛率</td><td><code>main_rate</code></td><td>代理店掛率</td></tr>
+          <tr><td>製品掛率</td><td><code>item_rate</code></td><td>製品掛率</td></tr>
+          <tr><td>部品掛率</td><td><code>parts_rate</code></td><td>部品掛率</td></tr>
+          <tr><td>仕入れ品掛率</td><td><code>purchase_rate</code></td><td>仕入れ品掛率</td></tr>
+          <tr><td>見積の更新者</td><td><code>field68</code></td><td>更新者（事務）</td></tr>
+          <tr><td>見積明細JSON</td><td><code>JSON</code></td><td>見積明細データ一式</td></tr>
+          <tr><td>FRP_JSON</td><td><code>FRP_JSON</code></td><td>FRP設定・明細データ</td></tr>
+        </tbody>
+      </table>
+    </div>
+    </div>
+  </details>
+
+  <details open>
+    <summary>A-3　参照マスタモジュール一覧</summary>
+    <div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>CRM表示名</th><th>API名</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>工事費</td><td><code>CustomModule1</code></td><td>標準項タブ（農用工事）・工事費自動付与</td></tr>
+          <tr><td>所課別商品テンプレート</td><td><code>CustomModule8</code></td><td>テンプレートの保存・読み込み</td></tr>
+          <tr><td>管材表</td><td><code>CustomModule18</code></td><td>管材タブ</td></tr>
+          <tr><td>電材表</td><td><code>CustomModule19</code></td><td>電材タブ</td></tr>
+          <tr><td>機器仕様マスター</td><td><code>CustomModule21</code></td><td>商品追加時の機器仕様表示</td></tr>
+          <tr><td>工事用機器リスト</td><td><code>CustomModule23</code></td><td>機器タブ</td></tr>
+          <tr><td>物販標準項マスター</td><td><code>CustomModule26</code></td><td>標準項タブ（熱機）</td></tr>
+          <tr><td>採番管理</td><td><code>CustomModule27</code></td><td>見積連番の採番・更新</td></tr>
+          <tr><td>衛生マスター</td><td><code>CustomModule30</code></td><td>標準項タブ（衛生）</td></tr>
+          <tr><td>商品</td><td><code>Products</code></td><td>商品タブ</td></tr>
+          <tr><td>FRP商品マスター</td><td><code>FRP</code></td><td>FRPモードの製品選択ウィザード</td></tr>
+          <tr><td>取引先</td><td><code>Accounts</code></td><td>FRP代理店の代理店コード取得</td></tr>
+          <tr><td>所課マスター</td><td><code>DepartmentsList</code></td><td>作成所課・現場所課・テンプレート保存先</td></tr>
+        </tbody>
+      </table>
+    </div>
+    </div>
+  </details>
+</div>
+
+<div id="appB" class="chapter">
+  <div class="chapter-title">
+    <span class="chapter-badge" style="background:var(--muted)">付録B</span>
+    見積区分ごとの機能差一覧
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>機能</th><th>工事</th><th>物販</th><th>作業</th></tr></thead>
+      <tbody>
+        <tr><td>内訳印刷（資材費・労務費）</td><td>○</td><td>✕</td><td>○</td></tr>
+        <tr><td>機器仕様行の表示</td><td>✕</td><td>○</td><td>○</td></tr>
+        <tr><td>機器タブ</td><td>○</td><td>✕</td><td>✕</td></tr>
+        <tr><td>熱機タブ</td><td>○</td><td>✕</td><td>✕</td></tr>
+        <tr><td>標準項タブ</td><td>○</td><td>○</td><td>○</td></tr>
+        <tr><td>代理店価格合計の表示</td><td>○</td><td>○</td><td>○</td></tr>
+        <tr><td>調整額の表示</td><td>出精値引き</td><td>値引き</td><td>出精値引き</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="appC" class="chapter">
+  <div class="chapter-title">
+    <span class="chapter-badge" style="background:var(--muted)">付録C</span>
+    よくある質問
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>症状</th><th>確認・対処</th></tr></thead>
+      <tbody>
+        <tr><td>採番ボタンが押せない / 採番できない</td><td>Zoho接続（zohoReady）を確認。採番済みの場合は「採番クリア」してから再採番</td></tr>
+        <tr><td>CRMに保存したのに見積番号が反映されない</td><td>CRM側のフィールド（<code>field55</code>）を確認。保存時のエラーメッセージをコンソールで確認</td></tr>
+        <tr><td>PDFが文字化けする</td><td>NotoSansJP フォントファイルが必要です。管理者に問い合わせてください</td></tr>
+        <tr><td>掛率を変更したのに金額が変わらない</td><td>「全明細に反映」ボタンを押して明細に適用してください</td></tr>
+        <tr><td>FRPモードで保存した内容が消えた</td><td>「CRMに保存」を実行したか確認。FRP_JSONフィールドの内容をCRMで確認</td></tr>
+        <tr><td>FRP商品が選択できない（一部ユーザー）</td><td>CRM管理者にFRPモジュールの読み取り権限付与を依頼。コンソールで「FRP 取得件数: 0」またはエラーを確認</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /content-inner -->
+</main>
+</div><!-- /layout -->
+
+<button id="toTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+// ── Active nav on scroll ──
+const navItems = document.querySelectorAll('.nav-item[href^="#"]');
+const sections = [];
+navItems.forEach(a => {
+  const el = document.getElementById(a.getAttribute('href').slice(1));
+  if (el) sections.push({el, a});
+});
+
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const link = sections.find(s => s.el === e.target)?.a;
+      if (link) {
+        navItems.forEach(n => n.classList.remove('active'));
+        link.classList.add('active');
+        link.scrollIntoView({block:'nearest'});
+      }
+    }
+  });
+}, {rootMargin:'-10% 0px -80% 0px'});
+
+sections.forEach(s => io.observe(s.el));
+
+// ── Back to top ──
+const toTop = document.getElementById('toTop');
+window.addEventListener('scroll', () => {
+  toTop.classList.toggle('visible', window.scrollY > 300);
+});
+
+// ── Theme toggle ──
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+}
+
+// ── Mobile sidebar ──
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ── Init theme from OS ──
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+</script>
