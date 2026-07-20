@@ -2993,7 +2993,7 @@ const app = (() => {
     }
 
     if (product.source === 'product') {
-      // ── 商品マスタ: 商品1行 + 同型式の工事費を追加 ──────────────
+      // ── 商品マスタ: 商品1行を追加 ────────────────────────────────
       const item = createItem();
       item.productId   = product.id;
       item.name        = product.name;
@@ -3012,15 +3012,7 @@ const app = (() => {
       item.priceB    = product.priceB || 0;
       item.priceC    = product.priceC || 0;
       targetSection.items.push(item);
-
-      if (product.code) {
-        const matched = state.koujihi
-          .filter(k => k.model && normalize(k.model) === normalize(product.code))
-          .sort((a, b) => a.order - b.order);
-        matched.forEach(k => addKoujihiItem(targetSection, k));
-        if (matched.length > 0) showToast(`No.${targetSection.no} に ${product.name} と工事費 ${matched.length} 件を追加しました`);
-        else showToast(`No.${targetSection.no} に ${product.name} を追加しました`);
-      }
+      showToast(`No.${targetSection.no} に ${product.name} を追加しました`);
     } else {
       // ── 工事費マスタ: 同型式を field12順で全件追加 ────────────────
       const model   = product.model ? normalize(product.model) : '';
@@ -4159,8 +4151,7 @@ const app = (() => {
       showToast('FRPデータを読み込み中です。しばらくお待ちください。', 'warn');
       return;
     }
-    const _deptHzAuto = (DEPT_LIST.find(d => d.name === state.shoka)
-                      || DEPT_LIST.find(d => d.code === state.createDeptCode))?.hz;
+    const _deptHzAuto = DEPT_LIST.find(d => d.code === state.createDeptCode)?.hz;
     _frpWizard = {
       mode,
       hz:          _deptHzAuto || state.frpHz,
@@ -4428,11 +4419,7 @@ const app = (() => {
     let rowCount = 0;
     for (const cat of groupOrder) {
       groups[cat].forEach(({ r, idx }, ci) => {
-        const imgSrc = _getFrpRecordImageSrc(r);
         const pdfKey = ci === 0 ? _getFrpRecordPdfKey(r) : null;
-        const hoverAttrs = imgSrc
-          ? `onmouseenter="app._frpWizardShowImgPreview(event,'${imgSrc}')" onmouseleave="app._frpWizardHideImgPreview()"`
-          : '';
         const pdfBtn = pdfKey
           ? `<br><button onclick="app._frpWizardOpenPdf('${pdfKey}')"
                style="font-size:11px;padding:1px 7px;margin-top:3px;cursor:pointer;background:#fff3e0;border:1px solid #e0a854;border-radius:3px;color:#7a4800;">📄 参考図</button>`
@@ -4440,7 +4427,7 @@ const app = (() => {
         rows += `<tr>
           <td class="frp-opt-l1">${rowCount === 0 ? 'オプション部品' : ''}</td>
           <td class="frp-opt-l2">${ci === 0 ? escHtml(cat) + pdfBtn : ''}</td>
-          <td><button class="frp-opt-name-btn" onclick="app._frpWizardSelect(${idx})" ${hoverAttrs}>${escHtml(r.Name || r.itemnum || '')}</button></td>
+          <td><button class="frp-opt-name-btn" onclick="app._frpWizardSelect(${idx})">${escHtml(r.Name || r.itemnum || '')}</button></td>
         </tr>`;
         rowCount++;
       });
@@ -5101,11 +5088,6 @@ const app = (() => {
 
     state.frpItems.push(item);
 
-    // 製品アイテムの場合のみ送料行を自動追加（soryoKubun が設定されている場合）
-    if (item.type === 'product' && item.soryoKubun) {
-      state.frpItems.push(makeFrpSoryoItem(item.soryoKubun));
-    }
-
     // 送料行を常に最下段へ移動
     const soryoItems = state.frpItems.filter(i => i.type === 'soryo');
     const otherItems = state.frpItems.filter(i => i.type !== 'soryo');
@@ -5130,36 +5112,6 @@ const app = (() => {
     updateOutput();
   }
 
-  // ── FRPオプション品 画像プレビュー ──────────────────────────────
-  function _frpWizardShowImgPreview(event, src) {
-    let el = document.getElementById('frpHoverPreview');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'frpHoverPreview';
-      el.style.cssText = 'position:fixed;z-index:10000;pointer-events:none;background:#fff;border:1px solid #ccc;border-radius:6px;padding:6px;box-shadow:0 4px 16px rgba(0,0,0,0.25)';
-      el.innerHTML = '<img id="frpHoverPreviewImg" style="max-width:220px;max-height:180px;display:block">';
-      document.body.appendChild(el);
-    }
-    document.getElementById('frpHoverPreviewImg').src = src;
-    const x = event.clientX + 18;
-    const y = event.clientY - 90;
-    el.style.left = Math.min(x, window.innerWidth - 255) + 'px';
-    el.style.top  = Math.max(y, 8) + 'px';
-    el.style.display = 'block';
-  }
-
-  function _frpWizardHideImgPreview() {
-    const el = document.getElementById('frpHoverPreview');
-    if (el) el.style.display = 'none';
-  }
-
-  function _getFrpRecordImageSrc(r) {
-    const fields = [r.Name || '', r.itemnum || '', r.field4 || ''];
-    for (const key of Object.keys(FRP_OPTION_IMAGES)) {
-      if (fields.some(f => f.includes(key))) return FRP_OPTION_IMAGES[key];
-    }
-    return null;
-  }
 
   const FRP_OPTION_PDFS = ['仮固定バンド', '臭突管セット'];
 
@@ -5179,59 +5131,6 @@ const app = (() => {
     for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
     const blob = new Blob([arr], { type: 'application/pdf' });
     window.open(URL.createObjectURL(blob), '_blank');
-  }
-
-  const FRP_OPTION_IMAGES = {
-    'SYD-100A': 'images/SYD-100A.png',
-    'SYD-100W': 'images/SYD-100W.png',
-    'SYD-100B': 'images/SYD-100B.png',
-    'SYD-100T': 'images/SYD-100T.png',
-    'SYD-100C': 'images/SYD-100C.png',
-    'SYD-100D': 'images/SYD-100D.png',
-    'SYD-100E': 'images/SYD-100E.png',
-    'SYD-100F': 'images/SYD-100F.png',
-    'SYM-C':    'images/SYM-C.png',
-    'SYS-50A':  'images/SYS-50A.png',
-    'SYS-50C':  'images/SYS-50C.png',
-  };
-
-  function getFrpOptionImageKey(item) {
-    const fields = [item.hinmei || '', item.itemnum || '', item.chubunrui || '', item.name3 || ''];
-    for (const key of Object.keys(FRP_OPTION_IMAGES)) {
-      if (fields.some(f => f.includes(key))) return key;
-    }
-    return null;
-  }
-
-  function showFrpOptionImage(itemId) {
-    const item = state.frpItems.find(i => i.id === itemId);
-    if (!item) return;
-    const key = getFrpOptionImageKey(item);
-    if (!key) return;
-
-    let modal = document.getElementById('frpImageModal');
-    if (!modal) {
-      modal = document.createElement('div');
-      modal.id = 'frpImageModal';
-      modal.style.cssText = 'display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.65);z-index:9999;align-items:center;justify-content:center;cursor:pointer';
-      modal.innerHTML = `
-        <div style="background:#fff;padding:20px;border-radius:8px;max-width:90vw;max-height:90vh;overflow:auto;position:relative;cursor:default;box-shadow:0 4px 24px rgba(0,0,0,0.3)" onclick="event.stopPropagation()">
-          <button onclick="app.closeFrpImageModal()" style="position:absolute;top:8px;right:10px;background:none;border:none;font-size:22px;cursor:pointer;color:#666;line-height:1">✕</button>
-          <p id="frpImageModalTitle" style="font-weight:bold;margin:0 32px 12px 0;font-size:14px"></p>
-          <img id="frpImageModalImg" src="" alt="" style="max-width:100%;max-height:75vh;display:block">
-        </div>`;
-      modal.addEventListener('click', () => closeFrpImageModal());
-      document.body.appendChild(modal);
-    }
-    document.getElementById('frpImageModalTitle').textContent =
-      [item.hinmei, item.itemnum].filter(Boolean).join('　');
-    document.getElementById('frpImageModalImg').src = FRP_OPTION_IMAGES[key];
-    modal.style.display = 'flex';
-  }
-
-  function closeFrpImageModal() {
-    const modal = document.getElementById('frpImageModal');
-    if (modal) modal.style.display = 'none';
   }
 
   function toggleFrpSpecs(itemId) {
@@ -5337,9 +5236,7 @@ const app = (() => {
             <input type="text" class="frp-name-input frp-name-sub"
                    value="${escHtml(qty >= 2 ? (item.optSpec5 || '') : (item.name3 || ''))}"
                    data-frp-id="${item.id}" data-field="${qty >= 2 ? 'optSpec5' : 'name3'}">
-            ${getFrpOptionImageKey(item) ? `<button onclick="app.showFrpOptionImage(${item.id})"
-              style="font-size:11px;padding:1px 8px;margin-top:3px;cursor:pointer;background:#fff8e1;border:1px solid #cca;border-radius:3px;color:#664;">🖼 図</button>` : ''}
-            ` : `
+` : `
             <input type="text" class="frp-name-input frp-name-sub"
                    value="${escHtml(item.itemnum || '')}"
                    data-frp-id="${item.id}" data-field="itemnum">
@@ -10124,10 +10021,6 @@ const app = (() => {
     removeFrpItem,
     removeFrpSpec,
     toggleFrpSpecs,
-    showFrpOptionImage,
-    closeFrpImageModal,
-    _frpWizardShowImgPreview,
-    _frpWizardHideImgPreview,
     _frpWizardOpenPdf,
     moveFrpItem,
     openFrpWizard,
