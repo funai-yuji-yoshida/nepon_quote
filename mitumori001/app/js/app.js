@@ -1980,12 +1980,14 @@ const app = (() => {
           ...(wordRawRes?.data || []),
           ...(kanaRes?.data || []),
         ];
+        const SORT_PRODUCTS_BY_PRICE = true; // false に戻すと元の順序
         products = allData.filter(p => {
           if (!matchesSearch(p)) return false;
           if (seen.has(p.id)) return false;
           seen.add(p.id);
           return true;
-        }).map(mapProduct);
+        }).map(mapProduct)
+          .sort(SORT_PRODUCTS_BY_PRICE ? (a, b) => b.price - a.price : () => 0);
       }
       if (products.length === 0) { dd.style.display = 'none'; return; }
       state.searchResults = products;
@@ -8690,7 +8692,7 @@ const app = (() => {
           : (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
         if (baseUnit == null) return;
         let autoUnit = Math.round(baseUnit * rate);
-        if (state.roundingEnabled) autoUnit = roundUp(autoUnit);
+        if (state.roundingEnabled) autoUnit = roundUpNormal(autoUnit);
         const diff = autoUnit - item.dairiUnitPrice;
         if (diff > 0) totalLocked += diff * (Number(item.qty) || 1);
       });
@@ -9699,6 +9701,13 @@ const app = (() => {
   // ── 代理店単価 切り上げ表示 ──────────────────────────────────────
 
   function roundUp(price) {
+    if (!price || price <= 0) return price;
+    if (price < 10000)   return Math.ceil(price);
+    if (price < 1000000) return Math.ceil(price / 10)  * 10;
+    return                      Math.ceil(price / 100) * 100;
+  }
+
+  function roundUpNormal(price) {
     if (!price || price < 100) return price;
     if (price < 10000)   return Math.ceil(price / 10)   * 10;
     if (price < 1000000) return Math.ceil(price / 100)  * 100;
@@ -9716,7 +9725,7 @@ const app = (() => {
         : (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
       if (baseUnit != null) {
         const auto = Math.round(baseUnit * rate);
-        return state.roundingEnabled ? roundUp(auto) : auto;
+        return state.roundingEnabled ? roundUpNormal(auto) : auto;
       }
     }
     // 掛率なし → マスタ仕切り価格をフォールバック
