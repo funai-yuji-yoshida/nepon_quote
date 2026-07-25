@@ -300,6 +300,7 @@ const QuotationPDF = (() => {
           frpShowSpecs: data.frpShowSpecs !== false,
           frpDiscount:  data.frpDiscount || 0,
           roundingEnabled,
+          sections,
           adjustAmount, waribikiAmount,
           printDetail: data.printDetail !== false,
         }),
@@ -318,19 +319,6 @@ const QuotationPDF = (() => {
                 : buildBuppanSagyoDetailPages({ quoteNoStr, sectionTotals, grandTotal, mainRate: data.mainRate, pdfPriceMode: data.pdfPriceMode, dairiTotal: data.dairiTotal, showSubtotalBoth: data.showSubtotalBoth, roundingEnabled: data.roundingEnabled, showProductCode: data.showProductCode, quoteCategory, useBuppanDeliveryLabel: data.useBuppanDeliveryLabel || false, adjustAmount }))
           ),
         ] : []),
-
-        // FRPモード: 衛生設備セクションが登録されていれば別ページにFRP+衛生の合体明細を出力
-        ...(frpMode && sections.some(s => (s.items || []).some(i => (i.name || '').trim()))
-          ? [{ text: '', pageBreak: 'before' }, ...buildFrpCombinedDetailPage({
-              frpItems, frpPriceTotal, frpShikiriTotal,
-              frpDiscount:   data.frpDiscount  || 0,
-              frpFooterText: data.frpFooterText || '',
-              frpShowZuban:  data.frpShowZuban !== false,
-              sections,
-              mainRate: data.mainRate,
-              roundingEnabled,
-            })]
-          : []),
       ],
     };
   }
@@ -342,7 +330,7 @@ const QuotationPDF = (() => {
     mainRate, pdfPriceMode, dairiTotal, showUchiwake, showProductCode = false,
     frpMode, frpItems, frpPriceTotal, frpShikiriTotal,
     frpShowZuban = true, frpShowSpecs = true, frpDiscount = 0,
-    roundingEnabled = false,
+    roundingEnabled = false, sections = [],
     adjustAmount = 0, waribikiAmount = 0, printDetail = false }) {
     const isDairiAvailable = mainRate != null || dairiTotal != null;
     const isActiveDairi = pdfPriceMode !== 'teika' && isDairiAvailable;
@@ -377,10 +365,21 @@ const QuotationPDF = (() => {
     const useDiscountStyle = pdfPriceMode === 'dairi-discount' && isDairiAvailable;
     // dairi-discount は仕切を無視して「定価 - 出精値引き」を御見積金額にする
     const discountStylePrice = useDiscountStyle ? Math.max(0, grandTotal - discount) : deliveryPrice;
+    const eiseiSections = frpMode
+      ? (sections || []).filter(s => (s.items || []).some(i => (i.name || '').trim()))
+      : [];
+    const eiseiItems = eiseiSections.flatMap(s => (s.items || []).filter(i => (i.name || '').trim()));
+    const eiseiPriceTotal   = eiseiItems.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    const eiseiShikiriTotal = eiseiItems.reduce((sum, i) => {
+      const u = dairiUnit(i);
+      return sum + (u != null ? u * (Number(i.qty) || 1) : 0);
+    }, 0);
+    const combinedPriceTotal   = frpPriceTotal   + eiseiPriceTotal;
+    const combinedShikiriTotal = frpShikiriTotal + eiseiShikiriTotal;
     const displayPrice = frpMode
       ? (isTeika
-        ? (frpDiscount > 0 ? Math.max(0, frpPriceTotal - frpDiscount) : frpPriceTotal)
-        : (frpDiscount > 0 ? Math.max(0, frpShikiriTotal - frpDiscount) : frpShikiriTotal))
+        ? (frpDiscount > 0 ? Math.max(0, combinedPriceTotal - frpDiscount) : combinedPriceTotal)
+        : (frpDiscount > 0 ? Math.max(0, combinedShikiriTotal - frpDiscount) : combinedShikiriTotal))
       : (isTeika ? grandTotal : discountStylePrice);
 
     // 工事モードは鏡に品目行が表示されないため品目コード列は不要
@@ -494,13 +493,29 @@ const QuotationPDF = (() => {
         }
       });
     } else {
-      // FRPモード: frpItemsの各行をエントリとして追加
+      // FRPモード: 送料以外のFRPアイテム → 衛生アイテム → 送料の順で追加
+      const frpSoryo = [];
       frpItems.forEach(item => {
         const subEntries = [];
         if (item.soryoNote) subEntries.push({ type: 'frpNote', text: item.soryoNote });
         if (frpShowSpecs && item.type !== 'option' && item.specsHidden === false) {
           (item.specs || []).forEach(spec => subEntries.push({ type: 'frpSpec', text: spec }));
         }
+        if (item.type === 'soryo') {
+          frpSoryo.push({ item, subEntries });
+        } else {
+          mirrorEntries.push({ type: 'frpItem', item, hasSubRows: subEntries.length > 0 });
+          subEntries.forEach((e, i) => {
+            mirrorEntries.push({ ...e, isLastSub: i === subEntries.length - 1 });
+          });
+        }
+      });
+      // 衛生アイテム
+      eiseiItems.forEach(item => {
+        mirrorEntries.push({ type: 'eiseiItem', item });
+      });
+      // 送料を最後に
+      frpSoryo.forEach(({ item, subEntries }) => {
         mirrorEntries.push({ type: 'frpItem', item, hasSubRows: subEntries.length > 0 });
         subEntries.forEach((e, i) => {
           mirrorEntries.push({ ...e, isLastSub: i === subEntries.length - 1 });
@@ -603,6 +618,25 @@ const QuotationPDF = (() => {
             border: [true, false, c === COLS - 1, subBtm],
           }))
         );
+        return;
+      }
+      if (entry.type === 'eiseiItem') {
+        const item   = entry.item;
+        const qty    = Number(item.qty) || 1;
+        const uPrice = item.unitPrice || (Number(item.amount) > 0 ? Math.round(Number(item.amount) / qty) : 0);
+        const total  = Number(item.amount) || 0;
+        tableRows.push([
+          { text: String(rowNo++), alignment: 'center', fontSize: itemFs, border: [true, true, true, true] },
+          { text: item.name || '', bold: true, fontSize: itemFs, border: [true, true, true, true] },
+          { text: String(qty),     alignment: 'center', fontSize: itemFs, border: [true, true, true, true] },
+          { text: item.unit || '', alignment: 'center', fontSize: itemFs, border: [true, true, true, true] },
+          { text: uPrice > 0 ? fmt(uPrice) : '', alignment: 'right', fontSize: itemFs, border: [true, true, true, true] },
+          { text: total  > 0 ? fmt(total)  : '', alignment: 'right', fontSize: itemFs, border: [true, true, true, true] },
+          ...(isTeika ? [] : [
+            { text: dairiUnit(item) != null ? fmt(dairiUnit(item)) : '', alignment: 'right', fontSize: itemFs, border: [true, true, true, true] },
+            { text: dairi(item.amount, item) > 0 ? fmt(dairi(item.amount, item)) : '', alignment: 'right', fontSize: itemFs, border: [true, true, true, true] },
+          ]),
+        ]);
         return;
       }
       if (entry.type === 'section') {
@@ -742,7 +776,7 @@ const QuotationPDF = (() => {
           { text: '合　　計', alignment: 'center', bold: true, fontSize: itemFs, colSpan: 4,
             border: [false, true, false, false], fillColor: '#e8f0f8' },
           { text: '' }, { text: '' }, { text: '' },
-          { text: fmt(frpPriceTotal), alignment: 'right', bold: true, fontSize: itemFs,
+          { text: fmt(combinedPriceTotal), alignment: 'right', bold: true, fontSize: itemFs,
             border: [false, true, true, false], fillColor: '#e8f0f8' },
         ]);
         if (frpDiscount > 0) {
@@ -754,7 +788,7 @@ const QuotationPDF = (() => {
             { text: `▲ ${fmt(frpDiscount)}`, alignment: 'right', fontSize: itemFs, noWrap: true,
               border: [false, false, true, false], fillColor: '#fff' },
           ]);
-          const grandFrpTeika = Math.max(0, frpPriceTotal - frpDiscount);
+          const grandFrpTeika = Math.max(0, combinedPriceTotal - frpDiscount);
           tableRows.push([
             { text: '', border: [true, false, false, false], fillColor: '#dce8f7' },
             { text: '御見積金額（税別）', alignment: 'center', bold: true, fontSize: itemFs, colSpan: 4,
@@ -771,10 +805,10 @@ const QuotationPDF = (() => {
         { text: '合　　計', alignment: 'center', bold: true, fontSize: itemFs, colSpan: 4,
           border: [false, true, false, false], fillColor: '#e8f0f8' },
         { text: '' }, { text: '' }, { text: '' },
-        { text: fmt(frpPriceTotal),   alignment: 'right', bold: true, fontSize: itemFs,
+        { text: fmt(combinedPriceTotal),   alignment: 'right', bold: true, fontSize: itemFs,
           border: [false, true, false, false], fillColor: '#e8f0f8' },
         { text: '', border: [false, true, false, false], fillColor: '#e8f0f8' },
-        { text: fmt(frpShikiriTotal), alignment: 'right', bold: true, fontSize: itemFs,
+        { text: fmt(combinedShikiriTotal), alignment: 'right', bold: true, fontSize: itemFs,
           border: [false, true, true, false], fillColor: '#e8f0f8' },
       ]);
       if (frpDiscount > 0) {
@@ -788,7 +822,7 @@ const QuotationPDF = (() => {
           { text: `▲ ${fmt(frpDiscount)}`, alignment: 'right', fontSize: itemFs, noWrap: true,
             border: [false, false, true, false], fillColor: '#fff' },
         ]);
-        const grandFrp = Math.max(0, frpShikiriTotal - frpDiscount);
+        const grandFrp = Math.max(0, combinedShikiriTotal - frpDiscount);
         tableRows.push([
           { text: '', border: [true, false, false, false], fillColor: '#dce8f7' },
           { text: '御見積金額（税別）', alignment: 'center', bold: true, fontSize: itemFs, colSpan: 4,

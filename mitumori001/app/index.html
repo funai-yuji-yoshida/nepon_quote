@@ -1159,7 +1159,20 @@
         </div>
         <div class="modal-form-row">
           <label>種別</label>
-          <input type="text" id="tplSaveType" class="input-medium" placeholder="例: 暖房">
+          <select id="tplSaveCat" class="input-standard" onchange="app.onTplCatChange('save')">
+            <option value="">― 選択 ―</option>
+            <option value="農用">農用</option>
+            <option value="熱機">熱機</option>
+            <option value="衛生">衛生</option>
+            <option value="送料">送料</option>
+            <option value="部分セット品">部分セット品</option>
+          </select>
+          <select id="tplSaveSubcat" class="input-standard" style="display:none">
+            <option value="">― 選択 ―</option>
+            <option value="物販">物販</option>
+            <option value="作業">作業</option>
+            <option value="工事">工事</option>
+          </select>
         </div>
         <div class="modal-form-row">
           <label>所課</label>
@@ -1204,8 +1217,20 @@
           <select id="tplFilterDept" class="input-standard" onchange="app.filterTemplates()">
             <option value="">― 所課で絞り込み ―</option>
           </select>
-          <select id="tplFilterType" class="input-standard" onchange="app.filterTemplates()">
-            <option value="">― 種別で絞り込み ―</option>
+          <select id="tplFilterCat" class="input-standard" onchange="app.onTplCatChange('filter')">
+            <option value="">― 大分類 ―</option>
+            <option value="農用">農用</option>
+            <option value="熱機">熱機</option>
+            <option value="衛生">衛生</option>
+            <option value="送料">送料</option>
+            <option value="部分セット品">部分セット品</option>
+            <option value="__other__">その他（旧）</option>
+          </select>
+          <select id="tplFilterSubcat" class="input-standard" style="display:none" onchange="app.filterTemplates()">
+            <option value="">― 小分類 ―</option>
+            <option value="物販">物販</option>
+            <option value="作業">作業</option>
+            <option value="工事">工事</option>
           </select>
           <input type="text" id="tplFilterName" class="input-medium" placeholder="名前..." oninput="app.filterTemplates()">
           <select id="tplSortOrder" class="input-standard" style="min-width:90px" onchange="app.filterTemplates()">

@@ -985,64 +985,64 @@ const app = (() => {
   }
 
   const FRP_AREA_RATES = [
-    { code:'Y100', area:'株式会社YUASA（茨城）',              p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
-    { code:'Y100', area:'株式会社YUASA（栃木）',              p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
-    { code:'Y100', area:'株式会社YUASA（埼玉）',              p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
-    { code:'Y100', area:'株式会社YUASA（群馬）',              p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
-    { code:'Y100', area:'株式会社YUASA（千葉）',              p1:52, p2:52, b1:52, b2:52, b3:52, w1:52, w2:52, opt:65 },
-    { code:'F408', area:'冨士機材株式会社（茨城）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
-    { code:'F408', area:'冨士機材株式会社（栃木）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
-    { code:'F408', area:'冨士機材株式会社（埼玉）',           p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
-    { code:'F408', area:'冨士機材株式会社（群馬）',           p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
-    { code:'F408', area:'冨士機材株式会社（千葉）',           p1:52, p2:52, b1:52, b2:52, b3:52, w1:52, w2:52, opt:65 },
-    { code:'F408', area:'橋本総業株式会社（茨城）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
-    { code:'F408', area:'橋本総業株式会社（栃木）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
-    { code:'F408', area:'橋本総業株式会社（埼玉）',           p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
-    { code:'F408', area:'橋本総業株式会社（群馬）',           p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
-    { code:'F408', area:'橋本総業株式会社（千葉）',           p1:52, p2:52, b1:52, b2:52, b3:52, w1:52, w2:52, opt:65 },
-    { code:'Y001', area:'株式会社山善（茨城）',               p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
-    { code:'Y001', area:'株式会社山善（栃木）',               p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60 },
-    { code:'Y001', area:'株式会社山善（埼玉）',               p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
-    { code:'Y001', area:'株式会社山善（群馬）',               p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60 },
-    { code:'Y001', area:'株式会社山善（千葉）',               p1:52, p2:52, b1:52, b2:52, b3:52, w1:52, w2:52, opt:65 },
-    { code:'W001', area:'渡辺パイプ株式会社（茨城）',         p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
-    { code:'W001', area:'渡辺パイプ株式会社（栃木）',         p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
-    { code:'W001', area:'渡辺パイプ株式会社（埼玉）',         p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'W001', area:'渡辺パイプ株式会社（群馬）',         p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'W001', area:'渡辺パイプ株式会社（千葉）',         p1:52, p2:52, b1:52, b2:52, b3:52, w1:52, w2:52, opt:65 },
-    { code:'K952', area:'株式会社小泉東関東（茨城）',         p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
-    { code:'K952', area:'株式会社小泉東関東（栃木）',         p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
-    { code:'K952', area:'株式会社小泉東関東（千葉）',         p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65 },
-    { code:'K952', area:'株式会社小泉北関東（埼玉）',         p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'K952', area:'株式会社小泉北関東（群馬）',         p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'N038', area:'栃木サンケイ機器株式会社（栃木）',   p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
-    { code:'S348', area:'株式会社進栄管材（茨城）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
-    { code:'M171', area:'丸八管材株式会社（茨城）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
-    { code:'S013', area:'株式会社三協機材 （茨城）',          p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
-    { code:'KA72', area:'神奈川管材株式会社（千葉）',         p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65 },
-    { code:'T075', area:'株式会社タカムラ（茨城）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'T075', area:'株式会社タカムラ（栃木）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'T075', area:'株式会社タカムラ（埼玉）',           p1:58, p2:53, b1:53, b2:53, b3:53, w1:53, w2:53, opt:65 },
-    { code:'H052', area:'橋本産業株式会社（栃木）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'H052', area:'橋本産業株式会社（千葉）',           p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65 },
-    { code:'O282', area:'岡部バルブ工業株式会社（栃木）',     p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'O282', area:'岡部バルブ工業株式会社（埼玉）',     p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'O282', area:'岡部バルブ工業株式会社（千葉）',     p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65 },
-    { code:'O282', area:'岡部バルブ工業株式会社（茨城）',     p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'S160', area:'有限会社サンキョー（茨城）',         p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'T987', area:'ジャパン建材株式会社（茨城）',       p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'T987', area:'ジャパン建材株式会社（栃木）',       p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'T987', area:'ジャパン建材株式会社（埼玉）',       p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'T987', area:'ジャパン建材株式会社（群馬）',       p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'T987', area:'ジャパン建材株式会社（千葉）',       p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65 },
-    { code:'I257', area:'稲垣機材株式会社（埼玉）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'A178', area:'浅野機材株式会社（埼玉）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'A178', area:'浅野機材株式会社（栃木）',           p1:58, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65 },
-    { code:'A178', area:'浅野機材株式会社（千葉）',           p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65 },
-    { code:'A178', area:'浅野機材株式会社（群馬）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'A178', area:'浅野機材株式会社（茨城）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
-    { code:'A178', area:'浅野商事株式会社（千葉）',           p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65 },
-    { code:'A178', area:'浅野商事株式会社（栃木）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65 },
+    { code:'Y100', area:'株式会社YUASA（茨城）',              p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60, opt2:60 },
+    { code:'Y100', area:'株式会社YUASA（栃木）',              p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60, opt2:60 },
+    { code:'Y100', area:'株式会社YUASA（埼玉）',              p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60, opt2:60 },
+    { code:'Y100', area:'株式会社YUASA（群馬）',              p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60, opt2:60 },
+    { code:'Y100', area:'株式会社YUASA（千葉）',              p1:52, p2:52, b1:52, b2:52, b3:52, w1:52, w2:52, opt:65, opt2:65 },
+    { code:'F408', area:'冨士機材株式会社（茨城）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60, opt2:60 },
+    { code:'F408', area:'冨士機材株式会社（栃木）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60, opt2:60 },
+    { code:'F408', area:'冨士機材株式会社（埼玉）',           p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60, opt2:60 },
+    { code:'F408', area:'冨士機材株式会社（群馬）',           p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60, opt2:60 },
+    { code:'F408', area:'冨士機材株式会社（千葉）',           p1:52, p2:52, b1:52, b2:52, b3:52, w1:52, w2:52, opt:65, opt2:65 },
+    { code:'F408', area:'橋本総業株式会社（茨城）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60, opt2:60 },
+    { code:'F408', area:'橋本総業株式会社（栃木）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60, opt2:60 },
+    { code:'F408', area:'橋本総業株式会社（埼玉）',           p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60, opt2:60 },
+    { code:'F408', area:'橋本総業株式会社（群馬）',           p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60, opt2:60 },
+    { code:'F408', area:'橋本総業株式会社（千葉）',           p1:52, p2:52, b1:52, b2:52, b3:52, w1:52, w2:52, opt:65, opt2:65 },
+    { code:'Y001', area:'株式会社山善（茨城）',               p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60, opt2:60 },
+    { code:'Y001', area:'株式会社山善（栃木）',               p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:60, opt2:60 },
+    { code:'Y001', area:'株式会社山善（埼玉）',               p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60, opt2:60 },
+    { code:'Y001', area:'株式会社山善（群馬）',               p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:60, opt2:60 },
+    { code:'Y001', area:'株式会社山善（千葉）',               p1:52, p2:52, b1:52, b2:52, b3:52, w1:52, w2:52, opt:65, opt2:65 },
+    { code:'W001', area:'渡辺パイプ株式会社（茨城）',         p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65, opt2:65 },
+    { code:'W001', area:'渡辺パイプ株式会社（栃木）',         p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65, opt2:65 },
+    { code:'W001', area:'渡辺パイプ株式会社（埼玉）',         p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'W001', area:'渡辺パイプ株式会社（群馬）',         p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'W001', area:'渡辺パイプ株式会社（千葉）',         p1:52, p2:52, b1:52, b2:52, b3:52, w1:52, w2:52, opt:65, opt2:65 },
+    { code:'K952', area:'株式会社小泉東関東（茨城）',         p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65, opt2:65 },
+    { code:'K952', area:'株式会社小泉東関東（栃木）',         p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65, opt2:65 },
+    { code:'K952', area:'株式会社小泉東関東（千葉）',         p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65, opt2:65 },
+    { code:'K952', area:'株式会社小泉北関東（埼玉）',         p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'K952', area:'株式会社小泉北関東（群馬）',         p1:55, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'N038', area:'栃木サンケイ機器株式会社（栃木）',   p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65, opt2:65 },
+    { code:'S348', area:'株式会社進栄管材（茨城）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65, opt2:65 },
+    { code:'M171', area:'丸八管材株式会社（茨城）',           p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65, opt2:65 },
+    { code:'S013', area:'株式会社三協機材 （茨城）',          p1:55, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65, opt2:65 },
+    { code:'KA72', area:'神奈川管材株式会社（千葉）',         p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65, opt2:65 },
+    { code:'T075', area:'株式会社タカムラ（茨城）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'T075', area:'株式会社タカムラ（栃木）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'T075', area:'株式会社タカムラ（埼玉）',           p1:58, p2:53, b1:53, b2:53, b3:53, w1:53, w2:53, opt:65, opt2:65 },
+    { code:'H052', area:'橋本産業株式会社（栃木）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'H052', area:'橋本産業株式会社（千葉）',           p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65, opt2:65 },
+    { code:'O282', area:'岡部バルブ工業株式会社（栃木）',     p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'O282', area:'岡部バルブ工業株式会社（埼玉）',     p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'O282', area:'岡部バルブ工業株式会社（千葉）',     p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65, opt2:65 },
+    { code:'O282', area:'岡部バルブ工業株式会社（茨城）',     p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'S160', area:'有限会社サンキョー（茨城）',         p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'T987', area:'ジャパン建材株式会社（茨城）',       p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'T987', area:'ジャパン建材株式会社（栃木）',       p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'T987', area:'ジャパン建材株式会社（埼玉）',       p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'T987', area:'ジャパン建材株式会社（群馬）',       p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'T987', area:'ジャパン建材株式会社（千葉）',       p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65, opt2:65 },
+    { code:'I257', area:'稲垣機材株式会社（埼玉）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'A178', area:'浅野機材株式会社（埼玉）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'A178', area:'浅野機材株式会社（栃木）',           p1:58, p2:48, b1:48, b2:48, b3:48, w1:48, w2:48, opt:65, opt2:65 },
+    { code:'A178', area:'浅野機材株式会社（千葉）',           p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65, opt2:65 },
+    { code:'A178', area:'浅野機材株式会社（群馬）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'A178', area:'浅野機材株式会社（茨城）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
+    { code:'A178', area:'浅野商事株式会社（千葉）',           p1:55, p2:55, b1:55, b2:55, b3:55, w1:55, w2:55, opt:65, opt2:65 },
+    { code:'A178', area:'浅野商事株式会社（栃木）',           p1:58, p2:50, b1:50, b2:50, b3:50, w1:50, w2:50, opt:65, opt2:65 },
   ];
 
   const FRP_HINSHU_OPTIONS = [
@@ -1053,7 +1053,8 @@ const app = (() => {
     { key: 'b3',  label: 'くみ取り排水槽' },
     { key: 'w1',  label: '小型埋設受水槽' },
     { key: 'w2',  label: '特殊受水槽' },
-    { key: 'opt', label: 'オプション部品' },
+    { key: 'opt',  label: 'オプション部品' },
+    { key: 'opt2', label: 'オプション２' },
   ];
 
   let state = {
@@ -4400,7 +4401,7 @@ const app = (() => {
     if (titleEl) titleEl.textContent = 'オプション部品を選択';
 
     const FRP_OPT_ORDER = ['かさ上げ', '警報盤セット', 'フロートスイッチセット', '臭突管セット', '仮固定バンド', '片ユニオンスイングチャッキ'];
-    const allItems = cache.filter(r => r.field3 === 'オプション部品');
+    const allItems = cache.filter(r => r.field3 === 'オプション部品' || r.field3 === 'オプション２');
     const groups = {};
     const groupOrder = [];
     allItems.forEach((r, idx) => {
@@ -4629,20 +4630,31 @@ const app = (() => {
 
   function loadFrpSettings() {
     const saved = state._frpSettingsRaw;
+    // さいたま営業所（コード28）のみ枠外文言を初期ON、それ以外はOFF
+    const _defEnabled = state.createDeptCode === '28';
     if (saved) {
       state.frpHz        = saved.hz        || '50Hz';
       state.frpShowZuban = saved.showZuban !== false;
       state.frpShowSpecs = saved.showSpecs === true;
-      state.frpFooterSections = FRP_DEFAULT_SECTIONS.map((def, i) => {
-        const s = saved.footerSections?.[i];
-        return s ? { title: s.title ?? def.title, enabled: s.enabled !== false, text: s.text ?? def.text }
-                 : { ...def };
-      });
+      if (saved.footerSectionsV2) {
+        // v2以降: ユーザーが明示保存した値を使用
+        state.frpFooterSections = FRP_DEFAULT_SECTIONS.map((def, i) => {
+          const s = saved.footerSections?.[i];
+          return s ? { title: s.title ?? def.title, enabled: s.enabled !== false, text: s.text ?? def.text }
+                   : { ...def, enabled: _defEnabled };
+        });
+      } else {
+        // v1以前の旧保存データ: 枠外文言は所課デフォルトを適用
+        state.frpFooterSections = FRP_DEFAULT_SECTIONS.map((def, i) => {
+          const s = saved.footerSections?.[i];
+          return { title: (s?.title ?? def.title), enabled: _defEnabled, text: (s?.text ?? def.text) };
+        });
+      }
     } else {
       state.frpHz             = '50Hz';
       state.frpShowZuban      = true;
       state.frpShowSpecs      = false;
-      state.frpFooterSections = FRP_DEFAULT_SECTIONS.map(s => ({ ...s }));
+      state.frpFooterSections = FRP_DEFAULT_SECTIONS.map(s => ({ ...s, enabled: _defEnabled }));
     }
   }
 
@@ -4893,10 +4905,11 @@ const app = (() => {
     });
 
     const frpJson = JSON.stringify({
-      hz:             state.frpHz,
-      showZuban:      state.frpShowZuban,
-      showSpecs:      state.frpShowSpecs,
-      footerSections: state.frpFooterSections,
+      hz:               state.frpHz,
+      showZuban:        state.frpShowZuban,
+      showSpecs:        state.frpShowSpecs,
+      footerSectionsV2: true,
+      footerSections:   state.frpFooterSections,
     });
 
     try {
@@ -4919,11 +4932,12 @@ const app = (() => {
   }
 
   function resetFrpSettings() {
+    const _defEnabled = state.createDeptCode === '28';
     FRP_DEFAULT_SECTIONS.forEach((def, i) => {
       const cb    = document.getElementById(`frpSection${i}Enabled`);
       const title = document.getElementById(`frpSection${i}Title`);
       const ta    = document.getElementById(`frpSection${i}Text`);
-      if (cb)    cb.checked  = def.enabled !== false;
+      if (cb)    cb.checked  = _defEnabled;
       if (title) title.value = def.title;
       if (ta)    ta.value    = def.text;
     });
@@ -5031,9 +5045,17 @@ const app = (() => {
     }
   }
 
+  function _getFrpRate(rateRow, hinshu) {
+    if (!rateRow || !hinshu) return null;
+    const rate = rateRow[hinshu];
+    if (hinshu === 'opt2' && !rate) return rateRow['opt'] ?? null;
+    return rate ?? null;
+  }
+
   function _autoHinshu(item) {
-    if (item.type === 'option') return 'opt';
     const s = item.shubetsu  || '';
+    if (s === 'オプション２')   return 'opt2';
+    if (item.type === 'option') return 'opt';
     const c = item.chubunrui || '';
     if (s === 'ポンプアップ槽')         return 'p2';
     if (s === 'ポンプアップ槽【槽のみ】') return 'p1';
@@ -5056,24 +5078,25 @@ const app = (() => {
       if (v) specs.push(v);
     }
     const soryoKubun = Number(record.field2) || 0;
-    const isOpt = record.field3 === 'オプション部品';
+    const isOpt  = record.field3 === 'オプション部品';
+    const isOpt2 = record.field3 === 'オプション２';
     const item = {
       id:          state.nextFrpId++,
-      type:        isOpt ? 'option' : 'product',
+      type:        (isOpt || isOpt2) ? 'option' : 'product',
       shubetsu:    record.field3  || '',
-      chubunrui:   isOpt ? (record.spec3 || '') : (record.field4 || ''),
+      chubunrui:   (isOpt || isOpt2) ? (record.spec3 || '') : (record.field4 || ''),
       kashira:     record.field1  || '',
-      hinmei:      isOpt ? (record.spec2 || '') : (record.field3 || record.Name || ''),
-      name3:       isOpt ? (record.spec4 || '') : '',
-      optSpec5:    isOpt ? (record.spec5 || '') : '',
+      hinmei:      (isOpt || isOpt2) ? (record.spec2 || '') : (record.field3 || record.Name || ''),
+      name3:       (isOpt || isOpt2) ? (record.spec4 || '') : '',
+      optSpec5:    (isOpt || isOpt2) ? (record.spec5 || '') : '',
       itemnum:     record.itemnum || '',
       zuban:       record.field  || '',
       hinban:      record.field5 || '',
       qty:         1,
       unit:        record.unit    || '',
       price:       Number(record.price) || 0,
-      priceA:      Number(record.A)     || 0,
-      priceB:      Number(record.B)     || 0,
+      priceA:      0,
+      priceB:      0,
       soryoKubun,
       soryoNote:   '',
       specs,
@@ -5082,8 +5105,9 @@ const app = (() => {
     item.hinshu = _autoHinshu(item);
     if (item.hinshu && state.frpDealerCode && state.frpArea) {
       const rateRow = state.frpAreaRates.find(r => r.code === state.frpDealerCode && r.area === state.frpArea);
-      if (rateRow && rateRow[item.hinshu] != null) {
-        item.frpRate = rateRow[item.hinshu] / 100;
+      const rate0 = _getFrpRate(rateRow, item.hinshu);
+      if (rate0 != null) {
+        item.frpRate = rate0 / 100;
         item.priceA  = Math.round((item.price || 0) * item.frpRate);
       }
     }
@@ -5207,7 +5231,7 @@ const app = (() => {
       const qty          = Number(item.qty) || 1;
       const priceTotal   = item.price * qty;
       const shikiriTotal = shikiri    * qty;
-      const rateVal      = (rateRow && item.hinshu && rateRow[item.hinshu] != null) ? rateRow[item.hinshu] : null;
+      const rateVal      = (rateRow && item.hinshu) ? _getFrpRate(rateRow, item.hinshu) : null;
       const rateTxt      = rateVal != null ? (rateVal / 100).toFixed(2) : '—';
 
       // 品名・型式（編集可能）
@@ -5439,8 +5463,8 @@ const app = (() => {
         item.hinshu = sel.value || null;
         if (item.hinshu && state.frpArea && state.frpDealerCode) {
           const rateRow = state.frpAreaRates.find(r => r.code === state.frpDealerCode && r.area === state.frpArea);
-          if (rateRow && rateRow[item.hinshu] != null) {
-            const rate = rateRow[item.hinshu];
+          const rate = _getFrpRate(rateRow, item.hinshu);
+          if (rateRow && rate != null) {
             item.frpRate = rate / 100;
             item.priceA  = Math.round((item.price || 0) * item.frpRate);
             item.priceB  = Math.round((item.price || 0) * item.frpRate);
@@ -5579,7 +5603,7 @@ const app = (() => {
       if (item.type === 'soryo') return;
       if (!item.hinshu) item.hinshu = _autoHinshu(item);
       if (!item.hinshu) return;
-      const rate = rateRow[item.hinshu];
+      const rate = _getFrpRate(rateRow, item.hinshu);
       if (rate == null) return;
       item.frpRate = rate / 100;
       item.priceA  = Math.round((item.price || 0) * item.frpRate);
@@ -7242,8 +7266,9 @@ const app = (() => {
           b2:  Number(r.b2)  || 0,
           b3:  Number(r.b3)  || 0,
           w1:  Number(r.w1)  || 0,
-          w2:  Number(r.w2)  || 0,
-          opt: Number(r.opt) || 0,
+          w2:   Number(r.w2)    || 0,
+          opt:  Number(r.opt)   || 0,
+          opt2: Number(r.opt_2) || 0,
         }));
         console.log(`[FRP] 掛率マスタ読み込み完了: ${state.frpAreaRates.length}件 (所課「${label}」)`);
         // 所課コードが未確定かつfield15（所課）も未設定の場合のみ、FRP1.field1 から逆引きして createDept を更新
@@ -7931,11 +7956,22 @@ const app = (() => {
     const tpl = state.templateList.find(t => t.id === id);
     if (!tpl) return;
     const nameEl = document.getElementById('tplSaveName');
-    const typeEl = document.getElementById('tplSaveType');
-    const deptEl = document.getElementById('tplSaveDept');
-    const descEl = document.getElementById('tplSaveDescription');
+    const catEl    = document.getElementById('tplSaveCat');
+    const subcatEl = document.getElementById('tplSaveSubcat');
+    const deptEl   = document.getElementById('tplSaveDept');
+    const descEl   = document.getElementById('tplSaveDescription');
     if (nameEl) nameEl.value = tpl.name;
-    if (typeEl) typeEl.value = tpl.type || '';
+    if (catEl && subcatEl) {
+      const { cat, subcat } = _parseTplType(tpl.type || '');
+      catEl.value = cat;
+      if (TPL_CATS_WITH_SUBCAT.includes(cat)) {
+        subcatEl.style.display = '';
+        subcatEl.value = subcat;
+      } else {
+        subcatEl.value = '';
+        subcatEl.style.display = 'none';
+      }
+    }
     if (deptEl && tpl.deptId) deptEl.value = tpl.deptId;
     if (descEl) descEl.value = tpl.description || '';
   }
@@ -7944,7 +7980,9 @@ const app = (() => {
     const overwriteId = document.getElementById('tplSaveOverwriteTarget')?.value || '';
     const name = (document.getElementById('tplSaveName')?.value || '').trim();
     if (!name) { showToast('テンプレート名を入力してください', 'warn'); return; }
-    const type        = (document.getElementById('tplSaveType')?.value || '').trim();
+    const cat         = (document.getElementById('tplSaveCat')?.value || '').trim();
+    const saveSubcat  = (document.getElementById('tplSaveSubcat')?.value || '').trim();
+    const type        = cat && saveSubcat ? cat + '_' + saveSubcat : cat;
     const description = (document.getElementById('tplSaveDescription')?.value || '').trim();
     const deptId = document.getElementById('tplSaveDept')?.value || '';
     const deptName = deptId
@@ -8035,7 +8073,10 @@ const app = (() => {
 
     const currentDept = state.templateDepts.find(d => d.name === state.shoka);
     document.getElementById('tplFilterDept').value = currentDept ? currentDept.id : '';
-    document.getElementById('tplFilterType').value = '';
+    const filterCatEl = document.getElementById('tplFilterCat');
+    const filterSubcatEl = document.getElementById('tplFilterSubcat');
+    if (filterCatEl) filterCatEl.value = '';
+    if (filterSubcatEl) { filterSubcatEl.value = ''; filterSubcatEl.style.display = 'none'; }
     document.getElementById('tplFilterName').value = '';
     state.selectedTemplateId = null;
     document.getElementById('btnTplLoad').disabled = true;
@@ -8045,29 +8086,52 @@ const app = (() => {
     listEl.innerHTML = '<div class="tpl-loading">読み込み中...</div>';
 
     await loadAllTemplates();
-
-    // 種別セレクトを templateList の type 値で動的構築
-    const typeEl = document.getElementById('tplFilterType');
-    if (typeEl) {
-      const types = [...new Set(state.templateList.map(t => t.type).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ja'));
-      typeEl.innerHTML = '<option value="">― 種別で絞り込み ―</option>' +
-        types.map(t => `<option value="${escHtml(t)}">${escHtml(t)}</option>`).join('');
-      typeEl.value = '';
-    }
-
     filterTemplates();
+  }
+
+  const TPL_CATS_WITH_SUBCAT = ['農用', '熱機', '衛生'];
+  const TPL_ALL_CATS = ['農用', '熱機', '衛生', '送料', '部分セット品'];
+
+  function onTplCatChange(context) {
+    const catId    = context === 'save' ? 'tplSaveCat'    : 'tplFilterCat';
+    const subcatId = context === 'save' ? 'tplSaveSubcat' : 'tplFilterSubcat';
+    const cat      = document.getElementById(catId)?.value || '';
+    const subcatEl = document.getElementById(subcatId);
+    if (!subcatEl) return;
+    if (TPL_CATS_WITH_SUBCAT.includes(cat)) {
+      subcatEl.style.display = '';
+    } else {
+      subcatEl.value = '';
+      subcatEl.style.display = 'none';
+    }
+    if (context === 'filter') filterTemplates();
+  }
+
+  function _parseTplType(type) {
+    const sep = type.lastIndexOf('_');
+    if (sep === -1) return { cat: type, subcat: '' };
+    const subcat = type.slice(sep + 1);
+    if (['物販', '作業', '工事'].includes(subcat)) return { cat: type.slice(0, sep), subcat };
+    return { cat: type, subcat: '' };
   }
 
   function filterTemplates() {
     const deptId = document.getElementById('tplFilterDept')?.value || '';
-    const typeQ  = document.getElementById('tplFilterType')?.value || '';
+    const cat    = document.getElementById('tplFilterCat')?.value || '';
+    const subcat = document.getElementById('tplFilterSubcat')?.value || '';
     const nameQ  = (document.getElementById('tplFilterName')?.value || '').trim().toLowerCase();
 
     const sortOrder = document.getElementById('tplSortOrder')?.value || 'name_asc';
 
     let filtered = state.templateList.slice();
     if (deptId) filtered = filtered.filter(t => t.deptId === deptId);
-    if (typeQ)  filtered = filtered.filter(t => t.type === typeQ);
+    if (cat === '__other__') {
+      filtered = filtered.filter(t => !TPL_ALL_CATS.some(c => t.type === c || t.type.startsWith(c + '_')));
+    } else if (cat && subcat) {
+      filtered = filtered.filter(t => t.type === cat + '_' + subcat);
+    } else if (cat) {
+      filtered = filtered.filter(t => t.type === cat || t.type.startsWith(cat + '_'));
+    }
     if (nameQ)  filtered = filtered.filter(t => t.name.toLowerCase().includes(nameQ));
 
     filtered.sort((a, b) => {
@@ -8097,9 +8161,35 @@ const app = (() => {
         </div>
         <button class="tpl-detail-btn" onclick="event.stopPropagation();app.toggleTplDetail('${t.id}')"
                 data-detail-id="${t.id}" style="margin-left:auto;padding:2px 8px;font-size:12px;background:none;border:1px solid #ccc;border-radius:4px;cursor:pointer;white-space:nowrap">▶ 詳細</button>
+        <button class="tpl-delete-btn" data-tpl-id="${escHtml(t.id)}" data-tpl-name="${escHtml(t.name)}"
+                style="margin-left:6px;padding:2px 8px;font-size:12px;background:none;border:1px solid #e57373;border-radius:4px;cursor:pointer;color:#c62828;white-space:nowrap">🗑 削除</button>
       </div>
       <div class="tpl-detail-panel" id="tpl-detail-${t.id}" style="display:none;padding:6px 12px 8px 36px;font-size:12px;color:#444;background:#f9f9f9;border-bottom:1px solid #e0e0e0"></div>
     `).join('');
+
+    listEl.querySelectorAll('.tpl-delete-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        deleteTemplate(btn.dataset.tplId, btn.dataset.tplName);
+      });
+    });
+  }
+
+  async function deleteTemplate(id, name) {
+    if (!confirm(`「${name}」を削除しますか？\nこの操作は取り消せません。`)) return;
+    try {
+      await ZOHO.CRM.API.deleteRecord({ Entity: 'CustomModule8', RecordID: id });
+      state.templateList = state.templateList.filter(t => t.id !== id);
+      if (state.selectedTemplateId === id) {
+        state.selectedTemplateId = null;
+        document.getElementById('btnTplLoad').disabled = true;
+      }
+      filterTemplates();
+      showToast('テンプレートを削除しました');
+    } catch (e) {
+      console.error('deleteTemplate error:', e);
+      showToast('削除に失敗しました', 'error');
+    }
   }
 
   function toggleTplDetail(id) {
@@ -9701,10 +9791,10 @@ const app = (() => {
   // ── 代理店単価 切り上げ表示 ──────────────────────────────────────
 
   function roundUp(price) {
-    if (!price || price <= 0) return price;
-    if (price < 10000)   return Math.ceil(price);
-    if (price < 1000000) return Math.ceil(price / 10)  * 10;
-    return                      Math.ceil(price / 100) * 100;
+    if (!price || price < 100) return price;
+    if (price < 10000)   return Math.ceil(price / 10)   * 10;
+    if (price < 1000000) return Math.ceil(price / 100)  * 100;
+    return                      Math.ceil(price / 1000) * 1000;
   }
 
   function roundUpNormal(price) {
@@ -10001,7 +10091,9 @@ const app = (() => {
     onTplOverwriteTargetChange,
     showTemplateLoadDialog,
     filterTemplates,
+    onTplCatChange,
     toggleTplDetail,
+    deleteTemplate,
     selectTemplate,
     execTemplateLoad,
     showSetProductDialog,
