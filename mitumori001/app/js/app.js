@@ -2052,31 +2052,30 @@ const app = (() => {
   }
 
   // ── 管材カテゴリ定義（依存ドロップダウン用）─────────────────────
-  // prefixes: CRMの品名フィールドの先頭部分。「品名　型式」形式でも先頭一致でマッチする。
-  // 管材CRMにカテゴリフィールドが存在しないため、品名プレフィックスでカテゴリを判定する。
+  // CRM CustomModule18 の field6 にカテゴリが格納されている。
   const KANZAI_CATEGORIES = [
-    { label: '1.SGP鋼管',            prefixes: ['SGP鋼管(白)', 'SGP鋼管'] },
-    { label: '2.STK鋼管',            prefixes: ['STK鋼管', 'STK鋼管(5.5m)'] },
-    { label: '3.ﾗｲﾆﾝｸﾞ鋼管',        prefixes: ['外面被覆鋼管'] },
-    { label: '4.ｽﾃﾝﾚｽ管・継手',     prefixes: ['ｽﾃﾝﾚｽ管', 'ｽﾃﾝﾚｽ ｴﾙﾎﾞ', 'ｽﾃﾝﾚｽ ﾁ-ｽﾞ', 'ｽﾃﾝﾚｽ ﾁｰｽﾞ', 'ｽﾃﾝﾚｽ ﾕﾆｵﾝ'] },
-    { label: '5.塩ﾋﾞ管・耐熱塩ビ管', prefixes: ['塩ﾋﾞ管', '塩ﾋﾞ管(耐衝撃性)', '塩ﾋﾞ管(耐熱性)'] },
-    { label: '6.ﾎﾟﾘ管・ﾎﾟﾘﾌﾞﾃﾞﾝ管', prefixes: ['硬質ﾎﾟﾘ管', 'ﾎﾟﾘｼﾞｮｲﾝﾄ', 'ﾎﾟﾘ管用ｿｹｯﾄ', 'ﾎﾟﾘ管用ｴﾙﾎﾞ', 'ﾎﾟﾘ管用ﾁｰｽﾞ', 'ﾎﾟﾘﾌﾞﾃﾞﾝ管', 'ﾎﾟﾘﾌﾞﾃﾞﾝ　ｿｹｯﾄ', 'ﾎﾟﾘﾌﾞﾃﾞﾝ　ｴﾙﾎﾞ'] },
-    { label: '7.ｹﾞｰﾄ弁',             prefixes: ['ｹﾞｰﾄ弁'] },
-    { label: '8.ﾁｬｯｷ弁',             prefixes: ['ﾁｬｯｷ弁'] },
-    { label: '9.ﾊﾞﾀﾌﾗｲ弁',            prefixes: ['ﾊﾞﾀﾌﾗｲ弁'] },
-    { label: '10.ｸﾞﾛｰﾌﾞ弁',           prefixes: ['ｸﾞﾛｰﾌﾞ弁'] },
-    { label: '11.ﾏﾚｰﾌﾞﾙ弁',           prefixes: ['ﾏﾚｰﾌﾞﾙ弁'] },
-    { label: '12.ﾎﾞｰﾙ弁',             prefixes: ['ﾎﾞｰﾙ弁(2方)', 'ﾎﾞｰﾙ弁(3方)', 'ﾎﾞｰﾙ弁(ｱﾝｸﾞﾙ)'] },
-    { label: '13.ｽﾄﾚｰﾅ',             prefixes: ['Yｽﾄﾚｰﾅ', 'ｵｲﾙｽﾄﾚｰﾅ(複式)'] },
-    { label: '14.電動弁･混合三方弁',  prefixes: ['電動ﾎﾞｰﾙ弁(2方)', '電動ﾎﾞｰﾙ弁(3方)', '電動ﾊﾞﾀﾌﾗｲ弁', '電動混合三方弁(ﾎﾞｰﾙ)', '電動混合三方弁(ﾌﾗﾝｼﾞ)'] },
-    { label: '15.ﾌﾚｷｼﾞｮｲﾝﾄ',          prefixes: ['ﾌﾚｷｼﾞｮｲﾝﾄ(U)', 'ﾌﾚｷｼﾞｮｲﾝﾄ(F)', 'ﾎﾞｰﾙﾌﾚｷｼﾞｮｲﾝﾄ'] },
-    { label: '16.伸縮継手・ﾊｲﾊﾟｰﾛｯｸ', prefixes: ['伸縮継手', 'ﾒｶﾆｶﾙ配管接手'] },
-    { label: '17.蒸気関連・落水防止弁', prefixes: ['減圧弁(蒸気用)', '温度調節弁', '管末ﾄﾗｯﾌﾟ', '多量ﾄﾗｯﾌﾟ', '安全弁', '減圧弁(水用)', '落水防止弁'] },
-    { label: '18.温度・圧力計・空気抜弁', prefixes: ['温度計', '水高温度計', '圧力計', 'ｻｲﾎﾝﾊﾟｲﾌﾟ', '空気抜弁', '空気抜弁(逆止弁付）'] },
-    { label: '19.油配管部材・ｷﾞﾔﾎﾟﾝﾌﾟ', prefixes: ['油配管ｾｯﾄ', '逃し管ｾｯﾄ', 'ﾌﾚｷｼﾌﾞﾙﾎｰｽ', '注油口', 'ｷﾞﾔﾎﾟﾝﾌﾟ'] },
-    { label: '20.配管保温(材工)',       prefixes: ['保温(ｶﾗｰﾗｯｷﾝｸﾞ)', '保温(ｽﾃﾝﾗｯｷﾝｸﾞ)', '保温(ﾃｰﾌﾟ巻)', '煙道保温工事', 'ﾀﾝｸ 保温工事', '同上保温工事'] },
-    { label: '21.配管亀甲保温(材工)',   prefixes: ['保温(亀甲巻き)', '煙道保温工事', 'ﾀﾝｸ保温工事', '同上保温工事'] },
-    { label: '22.ﾊﾟｲﾌﾟｶﾞｰﾄﾞ･その他',  prefixes: ['ﾗｲﾄｶﾊﾞｰ', 'ﾊﾟｲﾌﾟｶﾞｰﾄﾞ', '煙道保温工事', 'ﾀﾝｸ保温工事', '同上保温工事'] },
+    { label: '1.SGP鋼管' },
+    { label: '2.STK鋼管' },
+    { label: '3.ﾗｲﾆﾝｸﾞ鋼管' },
+    { label: '4.ｽﾃﾝﾚｽ管・継手' },
+    { label: '5.塩ﾋﾞ管・耐熱塩ビ管' },
+    { label: '6.ﾎﾟﾘ管・ﾎﾟﾘﾌﾞﾃﾞﾝ管' },
+    { label: '7.ｹﾞｰﾄ弁' },
+    { label: '8.ﾁｬｯｷ弁' },
+    { label: '9.ﾊﾞﾀﾌﾗｲ弁' },
+    { label: '10.ｸﾞﾛｰﾌﾞ弁' },
+    { label: '11.ﾏﾚｰﾌﾞﾙ弁' },
+    { label: '12.ﾎﾞｰﾙ弁' },
+    { label: '13.ｽﾄﾚｰﾅ' },
+    { label: '14.電動弁･混合三方弁' },
+    { label: '15.ﾌﾚｷｼﾞｮｲﾝﾄ' },
+    { label: '16.伸縮継手・ﾊｲﾊﾟｰﾛｯｸ' },
+    { label: '17.蒸気関連・落水防止弁' },
+    { label: '18.温度・圧力計・空気抜弁' },
+    { label: '19.油配管部材・ｷﾞﾔﾎﾟﾝﾌﾟ' },
+    { label: '20.配管保温(材工)' },
+    { label: '21.配管亀甲保温(材工)' },
+    { label: '22.ﾊﾟｲﾌﾟｶﾞｰﾄﾞ･その他' },
   ];
 
   // ── 管材マスタ（CustomModule18）────────────────────────────────
@@ -2086,15 +2085,16 @@ const app = (() => {
     try {
       const data = await fetchAllRecords('CustomModule18', 'Name');
       state.kanzai = data.map(r => ({
-        id:     r.id,
-        name:   r.Name    || '',
-        model:  r.field2  || '',   // 型式
-        unit:   r.field   || '個', // 単位
-        price:  Number(r.field1) || 0,  // 価格
-        cost:   Number(r.field3) || 0,  // 原価
-        houdan: parseFloat(r.field4) || 0, // 歩単
-        code:   r.field5  || '',   // 品番
-        source: 'kanzai',
+        id:       r.id,
+        name:     r.Name    || '',
+        model:    r.field2  || '',   // 型式
+        unit:     r.field   || '個', // 単位
+        price:    Number(r.field1) || 0,  // 価格
+        cost:     Number(r.field3) || 0,  // 原価
+        houdan:   parseFloat(r.field4) || 0, // 歩単
+        code:     r.field5  || '',   // 品番
+        category: r.field6  || '',   // カテゴリ
+        source:   'kanzai',
       }));
       console.log(`管材マスタ ${state.kanzai.length} 件読み込み`);
     } catch (e) {
@@ -2103,46 +2103,14 @@ const app = (() => {
   }
 
   // ── 電材カテゴリ定義（依存ドロップダウン用）─────────────────────
-  // prefixes: CRMの品名フィールドの先頭部分。「品名　型式」形式でも先頭一致でマッチする。
-  // 電材CRMにカテゴリフィールドが存在しないため、品名プレフィックスでカテゴリを判定する。
+  // CRM CustomModule19 の field6 にカテゴリが格納されている。
   const DENZAI_CATEGORIES = [
-    {
-      label: '1.複合環境制御・ｱｸﾞﾘﾈｯﾄ',
-      prefixes: [
-        '温室環境制御盤', '統合環境制御盤',
-        '湿度ｾﾝｻｰｾｯﾄ', '温湿度ｾﾝｻｰｾｯﾄ', '室温ｾﾝｻｰｾｯﾄ', 'ｾﾝｻｰｶﾊﾞｰ',
-        'CO2ｾﾝｻｰ', '日射ｾﾝｻｰ', '雨ｾﾝｻｰ', '温度ｾﾝｻｰ',
-        '水温･地温ｾﾝｻｰ', '土壌水分ｾﾝｻｰ', '土壌水分+温度+ECｾﾝｻｰ',
-        '風速ｾﾝｻｰ', '風向+風速ｾﾝｻｰ',
-        '変換ｺﾈｸﾀA', '変換ｺﾈｸﾀB', '変換ｺﾈｸﾀC', '変換ｺﾈｸﾀD', '変換ｺﾈｸﾀE', '変換ｺﾈｸﾀF', '変換ｺﾈｸﾀJ',
-        '雨･風速・風向感知器', '雨･風速感知器', '雨感知器', '風速感知器', '避雷器',
-        'ANｱﾄﾞﾊﾞﾝｽ AN-BOX', 'ﾓﾆﾀﾘﾝｸﾞｾﾝｻｰ', 'AN-BOX用警報入力ﾕﾆｯﾄ', 'AN-BOX登録料',
-        'ANｱﾄﾞﾊﾞﾝｽ遠隔機器利用料', 'ANｱﾄﾞﾊﾞﾝｽﾓﾆﾀﾘﾝｸﾞ機器利用料', 'ANｱﾄﾞﾊﾞﾝｽ警報機器利用料',
-      ],
-    },
-    {
-      label: '2.天窓側窓関連',
-      prefixes: [
-        '4段ｻｰﾓ', '多段ｻｰﾓ', 'CO2ｺﾝﾄﾛｰﾗ', 'ﾈﾎﾟﾝｻｰﾓ', 'ｷｬｽﾉｰﾙ',
-        'ﾎﾟﾝﾌﾟｺﾝﾄﾛｰﾗ', '感震器', '不完全燃焼警報器', 'ﾈﾎﾟﾝﾀｲﾏBOX',
-      ],
-    },
-    {
-      label: '3.周辺機器制御',
-      prefixes: ['換気窓制御盤', '天窓減速機'],
-    },
-    {
-      label: '8.電線管（材工単価）',
-      prefixes: ['電線管(露出)', 'ﾗｲﾆﾝｸﾞ鋼管(埋設)'],
-    },
-    {
-      label: '9.電線（材工単価）',
-      prefixes: ['ﾋﾞﾆﾙｼｰｽｹｰﾌﾞﾙ', 'ｹｰﾌﾞﾙ(管内配線)', 'ｹｰﾌﾞﾙ(ﾗｯｸ配線)', 'ｼｰﾙﾄﾞ線', 'ﾋﾞﾆｰﾙｷｬﾌﾞﾀｲﾔｺｰﾄﾞ'],
-    },
-    {
-      label: '10.遮断器（材工単価）',
-      prefixes: ['ｵｰﾄﾌﾞﾚｰｶ'],
-    },
+    { label: '1.複合環境制御・ｱｸﾞﾘﾈｯﾄ' },
+    { label: '2.天窓側窓関連' },
+    { label: '3.周辺機器制御' },
+    { label: '8.電線管（材工単価）' },
+    { label: '9.電線（材工単価）' },
+    { label: '10.遮断器（材工単価）' },
   ];
 
   // ── 電材マスタ（CustomModule19）────────────────────────────────
@@ -2152,15 +2120,16 @@ const app = (() => {
     try {
       const data = await fetchAllRecords('CustomModule19', 'Name');
       state.denzai = data.map(r => ({
-        id:     r.id,
-        name:   r.Name    || '',
-        model:  r.field1  || '',   // 型式
-        unit:   r.field3  || '個', // 単位
-        price:  Number(r.field) || 0,   // 価格
-        cost:   Number(r.field2) || 0,  // 原価
-        houdan: parseFloat(r.field4) || 0, // 歩単
-        note:   r.field5  || '',   // 備考
-        source: 'denzai',
+        id:       r.id,
+        name:     r.Name    || '',
+        model:    r.field1  || '',   // 型式
+        unit:     r.field3  || '個', // 単位
+        price:    Number(r.field) || 0,   // 価格
+        cost:     Number(r.field2) || 0,  // 原価
+        houdan:   parseFloat(r.field4) || 0, // 歩単
+        note:     r.field5  || '',   // 備考
+        category: r.field6  || '',   // カテゴリ
+        source:   'denzai',
       }));
       console.log(`電材マスタ ${state.denzai.length} 件読み込み`);
     } catch (e) {
@@ -3106,11 +3075,8 @@ const app = (() => {
     _kanzaiFilteredRecords = [];
     state.pendingKanzai = null;
     if (!catLabel) return;
-    const cat = KANZAI_CATEGORIES.find(c => c.label === catLabel);
-    if (!cat) return;
-    _kanzaiFilteredRecords = cat.prefixes.reduce((arr, prefix) => {
-      return arr.concat(state.kanzai.filter(r => r.name === prefix || r.name.startsWith(prefix + '　')));
-    }, []);
+    if (!KANZAI_CATEGORIES.some(c => c.label === catLabel)) return;
+    _kanzaiFilteredRecords = state.kanzai.filter(r => r.category === catLabel);
     _kanzaiFilteredRecords.forEach((r, i) => {
       const opt = document.createElement('option');
       opt.value = i;
@@ -3213,11 +3179,8 @@ const app = (() => {
     _denzaiFilteredRecords = [];
     state.pendingDenzai = null;
     if (!catLabel) return;
-    const cat = DENZAI_CATEGORIES.find(c => c.label === catLabel);
-    if (!cat) return;
-    _denzaiFilteredRecords = cat.prefixes.reduce((arr, prefix) => {
-      return arr.concat(state.denzai.filter(r => r.name === prefix || r.name.startsWith(prefix + '　')));
-    }, []);
+    if (!DENZAI_CATEGORIES.some(c => c.label === catLabel)) return;
+    _denzaiFilteredRecords = state.denzai.filter(r => r.category === catLabel);
     _denzaiFilteredRecords.forEach((r, i) => {
       const opt = document.createElement('option');
       opt.value = i;
