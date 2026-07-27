@@ -212,7 +212,7 @@
               <input type="checkbox" id="chkDiscountEnabled" title="値引き額を印刷する" style="display:none" checked>
               <div class="price-group">
                 <span class="currency-sign">¥</span>
-                <input type="number" id="discountAmount" placeholder="0" min="0" class="input-price">
+                <input type="number" id="discountAmount" placeholder="0" class="input-price">
               </div>
             </div>
             <div class="form-row" id="rowSesseiWabiki" style="display:none">
@@ -704,7 +704,7 @@
       <!-- 残調整額ヒントバー（調整額 > 0 のときのみ表示） -->
       <div id="adjustHintBar" class="adjust-hint-bar" style="display:none">
         <div class="adjust-hint-row">
-          <span class="adjust-hint-item">調整額 ¥<input type="number" id="adjustHintAmountInput" class="adjust-hint-input" min="0" placeholder="0" oninput="app.syncAdjustAmountFromHint(this.value)"></span>
+          <span class="adjust-hint-item">調整額 ¥<input type="number" id="adjustHintAmountInput" class="adjust-hint-input" placeholder="0" oninput="app.syncAdjustAmountFromHint(this.value)"></span>
           <span class="adjust-hint-sep">→</span>
           <span class="adjust-hint-item">調整済み <strong id="adjustHintDone">¥0</strong></span>
           <span class="adjust-hint-sep">／</span>
@@ -1455,6 +1455,16 @@
   <script src="js/app.js"></script>
 
   <!-- PDF プレビューモーダル -->
+  <div id="customConfirmModal" class="modal-overlay" style="display:none">
+    <div style="background:#fff;padding:24px 28px;border-radius:8px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+      <p id="customConfirmMessage" style="margin:0 0 20px;font-size:14px;white-space:pre-line;line-height:1.6"></p>
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button id="customConfirmCancel" style="padding:7px 18px;border:1px solid #ccc;border-radius:4px;background:#f5f5f5;cursor:pointer;font-size:13px">キャンセル</button>
+        <button id="customConfirmOk" style="padding:7px 18px;border:none;border-radius:4px;background:#c0392b;color:#fff;cursor:pointer;font-size:13px;font-weight:bold">OK</button>
+      </div>
+    </div>
+  </div>
+
   <div id="pdfPreviewModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)app.closePdfPreview()">
     <div style="background:#fff;width:92vw;height:92vh;border-radius:8px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.3)">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid #ddd;flex-shrink:0">

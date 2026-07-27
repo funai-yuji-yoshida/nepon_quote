@@ -8734,14 +8734,30 @@ const app = (() => {
     const bar = document.getElementById('adjustHintBar');
     if (!bar) return;
     const adjustAmount = state.adjustAmount || 0;
-    if (adjustAmount <= 0 || state.frpMode) { bar.style.display = 'none'; return; }
+    if (adjustAmount === 0 || state.frpMode) { bar.style.display = 'none'; return; }
     const hintInput = document.getElementById('adjustHintAmountInput');
     if (hintInput && hintInput !== document.activeElement) {
       hintInput.value = adjustAmount;
     }
 
+    // マイナス調整額: 分配機能なし・金額表示のみ
+    if (adjustAmount < 0) {
+      const fmt = v => '¥' + Math.abs(v).toLocaleString('ja-JP');
+      setText('adjustHintDone', '¥0');
+      setText('adjustHintRest', '▲' + fmt(adjustAmount));
+      const restEl = document.getElementById('adjustHintRest');
+      if (restEl) restEl.classList.remove('done');
+      const prog = document.getElementById('adjustHintProgress');
+      if (prog) prog.style.width = '0%';
+      const syncWrap = document.getElementById('adjustHintSyncWrap');
+      if (syncWrap) syncWrap.style.display = 'none';
+      state._adjustRest = adjustAmount;
+      bar.style.display = '';
+      return;
+    }
+
     // 元の調整額（ユーザーが入力した基準値）を使って「調整済み」を計算
-    const baseAdjust = state.baseAdjustAmount > 0 ? state.baseAdjustAmount : adjustAmount;
+    const baseAdjust = state.baseAdjustAmount !== 0 ? state.baseAdjustAmount : adjustAmount;
 
     let totalLocked = 0;
     state.sections.forEach(sec => {
@@ -8936,6 +8952,41 @@ const app = (() => {
     const dateVal = getValue('quoteDate');
     state.submitDate = dateVal ? new Date(dateVal) : null;
     state.date = state.submitDate || null;
+    // 掛率入力欄の現在値を state へ反映（適用ボタン未押しでも保存対象にする）
+    const _rMain = parseFloat(document.getElementById('rateMain')?.value);
+    if (!isNaN(_rMain) && _rMain > 0) state.mainRate = _rMain;
+    const _rItem = parseFloat(document.getElementById('rateItem')?.value);
+    if (!isNaN(_rItem) && _rItem > 0) state.itemRate = _rItem;
+    const _rParts = parseFloat(document.getElementById('rateParts')?.value);
+    if (!isNaN(_rParts) && _rParts > 0) state.partsRate = _rParts;
+    const _rPurchase = parseFloat(document.getElementById('ratePurchase')?.value);
+    if (!isNaN(_rPurchase) && _rPurchase > 0) state.purchaseRate = _rPurchase;
+  }
+
+  // ── カスタム確認ダイアログ（confirm()はZoho blob URL環境でブロックされるため使用不可）──
+  function showCustomConfirm(message, okLabel) {
+    return new Promise(resolve => {
+      const modal   = document.getElementById('customConfirmModal');
+      const msgEl   = document.getElementById('customConfirmMessage');
+      const okBtn   = document.getElementById('customConfirmOk');
+      const cancelBtn = document.getElementById('customConfirmCancel');
+      if (!modal) { resolve(true); return; }
+      msgEl.textContent = message;
+      okBtn.textContent = okLabel || 'OK';
+      modal.style.display = 'flex';
+      function cleanup() {
+        modal.style.display = 'none';
+        okBtn.removeEventListener('click', onOk);
+        cancelBtn.removeEventListener('click', onCancel);
+        modal.removeEventListener('click', onBackdrop);
+      }
+      function onOk()      { cleanup(); resolve(true);  }
+      function onCancel()  { cleanup(); resolve(false); }
+      function onBackdrop(e) { if (e.target === modal) { cleanup(); resolve(false); } }
+      okBtn.addEventListener('click', onOk);
+      cancelBtn.addEventListener('click', onCancel);
+      modal.addEventListener('click', onBackdrop);
+    });
   }
 
   // ── PDF 生成 ─────────────────────────────────────────────────
@@ -8948,11 +8999,9 @@ const app = (() => {
     }
 
     const _adjWarn = (state.discountEnabled !== false) ? (Number(getValue('discountAmount')) || 0) : 0;
-    if (_adjWarn > 0) {
-      const _modeN = (!state.frpMode && (state.quoteCategory || '').includes('工事')) ? 'pdfPriceModeKouji' : 'pdfPriceMode';
-      const _modeV = ([...document.getElementsByName(_modeN)].find(r => r.checked)?.value || 'teika');
-      if ((_modeV === 'dairi-bulk' || _modeV === 'dairi-discount') &&
-          !confirm('調整額が投入されています！\nこのまま印刷しますか？')) return;
+    if (_adjWarn !== 0) {
+      const ok = await showCustomConfirm('調整額が投入されています！\nこのまま印刷しますか？', 'このまま印刷');
+      if (!ok) return;
     }
 
     // 原価未入力チェック（停止中）
@@ -9007,11 +9056,9 @@ const app = (() => {
     readFormToState();
 
     const _adjWarn = (state.discountEnabled !== false) ? (Number(getValue('discountAmount')) || 0) : 0;
-    if (_adjWarn > 0) {
-      const _modeN = (!state.frpMode && (state.quoteCategory || '').includes('工事')) ? 'pdfPriceModeKouji' : 'pdfPriceMode';
-      const _modeV = ([...document.getElementsByName(_modeN)].find(r => r.checked)?.value || 'teika');
-      if ((_modeV === 'dairi-bulk' || _modeV === 'dairi-discount') &&
-          !confirm('調整額が投入されています！\nこのままプレビューしますか？')) return;
+    if (_adjWarn !== 0) {
+      const ok = await showCustomConfirm('調整額が投入されています！\nこのままプレビューしますか？', 'このままプレビュー');
+      if (!ok) return;
     }
 
     const modal   = document.getElementById('pdfPreviewModal');
@@ -9331,11 +9378,27 @@ const app = (() => {
         field15: state.shokaId      || undefined, // 所課（ルックアップID）
         field8:  state.projectName2 || undefined, // 件名2行目
         field7:  state.projectName3 || undefined, // 件名3行目
+        main_rate:     state.mainRate     != null ? state.mainRate     : undefined, // 代理店掛率
+        item_rate:     state.itemRate     != null ? state.itemRate     : undefined, // 製品掛率
+        parts_rate:    state.partsRate    != null ? state.partsRate    : undefined, // 部品掛率
+        purchase_rate: state.purchaseRate != null ? state.purchaseRate : undefined, // 仕入れ品掛率
         // サブフォームは後続の処理で deleteRecord + updateRecord で個別処理
         // ここでは挿入データのみ準備する
-        _subformCurrentItems: state.sections.flatMap(sec =>
-          sec.items.filter(item => item.name || item.unitPrice)
-        ),
+        _subformCurrentItems: state.frpMode
+          ? state.frpItems
+              .filter(item => item.hinmei || item.price)
+              .map(item => ({
+                name:      item.hinmei   || '',
+                spec:      item.itemnum  || '',
+                qty:       item.qty      || 1,
+                unit:      item.unit     || '台',
+                unitPrice: item.price    || 0,
+                amount:    (item.price   || 0) * (item.qty || 1),
+                genka:     item.priceA   || 0,
+              }))
+          : state.sections.flatMap(sec =>
+              sec.items.filter(item => item.name || item.unitPrice)
+            ),
       };
       // undefined のキーを除去
       Object.keys(apiData).forEach(k => { if (apiData[k] === undefined) delete apiData[k]; });
@@ -9405,7 +9468,6 @@ const app = (() => {
           field15:      Math.round((Number(item.genka) || 0) * (Number(item.qty) || 1)),
           field8:       item.name              || '',
         }));
-        console.log('【サブフォーム挿入行】', insertRows.map(r => ({ name: r.quoteType, genka: r.field13, amount: r.field10 })));
         const insRes = await ZOHO.CRM.API.updateRecord({
           Entity:  'Quotes',
           APIData: { id: state.quoteId, LinkingModule1: insertRows },

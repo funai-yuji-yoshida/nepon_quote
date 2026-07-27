@@ -1,0 +1,6 @@
+[error] [2026-07-16T08:37:53.896Z] : ✖ Below file formats are not allowed in Sigma
+[info] [2026-07-16T08:37:53.904Z] :  ==> app\images\仮固定バンド参考図.pdf
+[info] [2026-07-16T08:37:53.905Z] : Note - File formats that can be packed are: txt, md, xml, dre, jpg, jpeg, png, gif, css, js, html, json, mp3, svg, woff, ttf, eot, webm, mp4, and woff2
+[error] [2026-07-16T08:37:53.912Z] : ✖ Below file formats are not allowed in Sigma
+[info] [2026-07-16T08:37:53.913Z] :  ==> app\images\仮固定バンド参考図.pdf
+[info] [2026-07-16T08:37:53.914Z] : Note - File formats that can be packed are: txt, md, xml, dre, jpg, jpeg, png, gif, css, js, html, json, mp3, svg, woff, ttf, eot, webm, mp4, and woff2
