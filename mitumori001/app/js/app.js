@@ -1195,7 +1195,10 @@ const app = (() => {
 
     // イベント: 値引き額・労務費・法定福利費率 変更 → 即時再計算
     document.getElementById('discountAmount').addEventListener('input', function () {
-      state.baseAdjustAmount = Number(this.value) || 0;
+      const val = Number(this.value) || 0;
+      const warnEl = document.getElementById('adjNegWarn');
+      if (warnEl) warnEl.style.display = val < 0 ? '' : 'none';
+      state.baseAdjustAmount = val;
       updateOutput();
     });
     document.getElementById('chkDiscountEnabled').addEventListener('change', function () {
@@ -9550,7 +9553,13 @@ const app = (() => {
     const adjAmount   = state.adjustAmount || 0;
     const fmt         = v => '¥' + v.toLocaleString('ja-JP');
     const msg         = document.getElementById('adjustWarnMsg');
-    if (msg) msg.textContent = `調整額 ${fmt(adjAmount)} に対し、代理店単価への反映残額が ${fmt(rest)} あります。①基本情報と②見積明細の金額が一致していません。`;
+    if (msg) {
+      if (adjAmount < 0) {
+        msg.textContent = `調整額 ▲${fmt(Math.abs(adjAmount))} が入力されています。見積金額が増加しています。印刷前に確認してください。`;
+      } else {
+        msg.textContent = `調整額 ${fmt(adjAmount)} に対し、代理店単価への反映残額が ${fmt(rest)} あります。①基本情報と②見積明細の金額が一致していません。`;
+      }
+    }
     document.getElementById('adjustWarnModal').style.display = '';
   }
 
@@ -9569,13 +9578,15 @@ const app = (() => {
   function _needsAdjustUpdate() {
     if (state.frpMode) return false;
     const adjAmount = state.adjustAmount || 0;
-    const rest      = state._adjustRest;
-    return adjAmount > 0 && rest != null && rest > 0;
+    if (adjAmount === 0) return false;
+    if (adjAmount < 0) return true; // マイナス調整は常に警告
+    const rest = state._adjustRest;
+    return rest != null && rest > 0;
   }
 
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      if (_needsAdjustUpdate() && btn.dataset.tab !== 'items') {
+      if (_needsAdjustUpdate() && btn.dataset.tab === 'output') {
         _showAdjustWarnModal(btn.dataset.tab);
         return;
       }
