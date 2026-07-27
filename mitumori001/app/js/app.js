@@ -2314,11 +2314,15 @@ const app = (() => {
         } else if (mainItem) {
           // order=3+: 付属品行（個別行として追加）
           const subItem = createItem();
-          subItem.name        = r.name;
-          subItem.spec        = r.model  || '';
-          subItem.productCode = r.hinban || '';
-          subItem.qty         = r.qty;
-          subItem.unit        = r.unit;
+          subItem.name           = r.name;
+          subItem.spec           = r.model  || '';
+          subItem.productCode    = r.hinban || '';
+          subItem.qty            = r.qty;
+          subItem.unit           = r.unit;
+          subItem.unitPrice      = r.teika  || null;
+          subItem.amount         = (r.teika || 0) * r.qty;
+          subItem.genka          = r.shikiri;
+          subItem.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
           targetSection.items.push(subItem);
         }
       } else {
@@ -2342,11 +2346,15 @@ const app = (() => {
         } else if (mainItem) {
           // 付属品行（個別行として追加）
           const subItem = createItem();
-          subItem.name        = r.name;
-          subItem.spec        = r.model  || '';
-          subItem.productCode = r.hinban || '';
-          subItem.qty         = r.qty;
-          subItem.unit        = r.unit;
+          subItem.name           = r.name;
+          subItem.spec           = r.model  || '';
+          subItem.productCode    = r.hinban || '';
+          subItem.qty            = r.qty;
+          subItem.unit           = r.unit;
+          subItem.unitPrice      = r.teika  || null;
+          subItem.amount         = (r.teika || 0) * r.qty;
+          subItem.genka          = r.shikiri;
+          subItem.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
           targetSection.items.push(subItem);
         }
       }
@@ -9394,7 +9402,10 @@ const app = (() => {
           Usage_Unit:   item.unit              || '式',
           Unit_Price:   Number(item.unitPrice) || 0,
           field10:      Number(item.amount)    || 0,
+          field15:      Math.round((Number(item.genka) || 0) * (Number(item.qty) || 1)),
+          field8:       item.name              || '',
         }));
+        console.log('【サブフォーム挿入行】', insertRows.map(r => ({ name: r.quoteType, genka: r.field13, amount: r.field10 })));
         const insRes = await ZOHO.CRM.API.updateRecord({
           Entity:  'Quotes',
           APIData: { id: state.quoteId, LinkingModule1: insertRows },

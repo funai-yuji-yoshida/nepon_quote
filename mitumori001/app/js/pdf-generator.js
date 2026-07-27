@@ -726,7 +726,7 @@ const QuotationPDF = (() => {
           tableRows.push(row);
           return;
         }
-        const rowNoText = String(rowNo++);
+        const rowNoText = item.isNetsukiMain ? '' : String(rowNo++);
         const row = [
           { text: rowNoText, alignment: 'right', fontSize: itemFs },
           { text: item.name || '', fontSize: itemFs },
@@ -2005,6 +2005,8 @@ const QuotationPDF = (() => {
             { text: isShikiOnly ? fmt(dairiItemAmt(item)) : fmt(item.amount), alignment: 'right' },
           ]);
         }
+        const _sl = (item.specLines || []).filter(l => (l || '').trim());
+        _sl.forEach(line => rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]));
       });
 
       // カテゴリあり → 集計行
@@ -2247,8 +2249,11 @@ const QuotationPDF = (() => {
         }
       });
 
-      normalItems.forEach(({ item }, nIdx) => {
-        const noCell = { text: String(nIdx + 1), alignment: 'right', fontSize: 8 };
+      let bsItemNo = 1;
+      normalItems.forEach(({ item }) => {
+        const noCell = item.isNetsukiMain
+          ? { text: '', alignment: 'right', fontSize: 8 }
+          : { text: String(bsItemNo++), alignment: 'right', fontSize: 8 };
         if (useDairi) {
           rows.push([
             noCell,
@@ -2284,6 +2289,8 @@ const QuotationPDF = (() => {
             });
           }
         }
+        const _sl = (item.specLines || []).filter(l => (l || '').trim());
+        _sl.forEach(line => rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]));
       });
 
       // カテゴリあり → 集計行
@@ -2828,7 +2835,9 @@ const QuotationPDF = (() => {
           return;
         }
         const qtyStr = item.qty != null && item.qty !== '' ? String(item.qty) : '';
-        const noCell = { text: String(itemNo++), alignment: 'right', fontSize: 8 };
+        const noCell = item.isNetsukiMain
+          ? { text: '', alignment: 'right', fontSize: 8 }
+          : { text: String(itemNo++), alignment: 'right', fontSize: 8 };
         if (useDairi) {
           rows.push([
             noCell,
