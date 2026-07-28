@@ -5190,6 +5190,32 @@ const app = (() => {
     updateOutput();
   }
 
+  let _frpZubanTargetId = null;
+
+  function openFrpZubanModal(itemId) {
+    const item = state.frpItems.find(i => i.id === itemId);
+    if (!item) return;
+    _frpZubanTargetId = itemId;
+    const zubanEl  = document.getElementById('frpZubanInput');
+    const hinbanEl = document.getElementById('frpHinbanInput');
+    if (zubanEl)  zubanEl.value  = item.zuban  || '';
+    if (hinbanEl) hinbanEl.value = item.hinban || '';
+    document.getElementById('frpZubanModal').style.display = 'flex';
+    if (zubanEl) zubanEl.focus();
+  }
+
+  function execFrpZubanSave() {
+    if (_frpZubanTargetId == null) return;
+    const item = state.frpItems.find(i => i.id === _frpZubanTargetId);
+    if (!item) return;
+    item.zuban  = (document.getElementById('frpZubanInput')?.value  || '').trim();
+    item.hinban = (document.getElementById('frpHinbanInput')?.value || '').trim();
+    _frpZubanTargetId = null;
+    document.getElementById('frpZubanModal').style.display = 'none';
+    markDirty();
+    renderFrpItems();
+  }
+
   function renderFrpItems() {
     const tbody = document.getElementById('frpItemsTbody');
     if (!tbody) return;
@@ -5279,6 +5305,8 @@ const app = (() => {
           </td>
           <td class="frp-col-shikiri-total" style="text-align:right">${fmtFrp(shikiriTotal)}</td>
           <td class="frp-col-del">
+            ${item.type !== 'soryo' ? `<button onclick="app.openFrpZubanModal(${item.id})"
+                    style="background:none;border:none;cursor:pointer;font-size:13px;color:#555;margin-right:4px" title="図番・品番を編集">✏️</button>` : ''}
             <button onclick="app.removeFrpItem(${item.id})"
                     style="color:#c00;background:none;border:none;cursor:pointer;font-size:14px;">✕</button>
           </td>
@@ -10276,6 +10304,7 @@ const app = (() => {
     removeFrpItem,
     removeFrpSpec,
     toggleFrpSpecs,
+    openFrpZubanModal, execFrpZubanSave,
     _frpWizardOpenPdf,
     moveFrpItem,
     openFrpWizard,

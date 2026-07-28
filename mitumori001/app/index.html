@@ -1437,6 +1437,30 @@
     </div>
   </div>
 
+  <!-- FRP 図番・品番編集モーダル -->
+  <div id="frpZubanModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog" style="width:360px">
+      <div class="modal-header">
+        <span>図番・品番を編集</span>
+        <button class="modal-close" onclick="document.getElementById('frpZubanModal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-form-row">
+          <label style="min-width:48px">図番</label>
+          <input type="text" id="frpZubanInput" class="input-wide" placeholder="例：CK01-No42A">
+        </div>
+        <div class="modal-form-row">
+          <label style="min-width:48px">品番</label>
+          <input type="text" id="frpHinbanInput" class="input-wide" placeholder="例：026135000">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('frpZubanModal').style.display='none'">キャンセル</button>
+        <button class="btn-primary" onclick="app.execFrpZubanSave()">✔ 確定</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 調整額残額警告モーダル -->
   <div id="adjustWarnModal" class="modal-overlay" style="display:none">
     <div class="modal-dialog" style="width:340px">
