@@ -9464,7 +9464,7 @@ const app = (() => {
       if (currentItems.length > 0) {
         const insertRows = currentItems.map(item => ({
           quoteType:    item.name              || '',
-          Product_Code: item.spec              || '',
+          Product_Code: item.productCode        || '',
           quantity:     Number(item.qty)       || 1,
           Usage_Unit:   item.unit              || '式',
           Unit_Price:   Number(item.unitPrice) || 0,
