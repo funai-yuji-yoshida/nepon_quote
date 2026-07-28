@@ -630,8 +630,9 @@
             <button class="btn-frp-add" onclick="app.openSoryoModal()">＋ 送料</button>
             <button class="btn-rounding" id="btnToggleRoundingFrp" onclick="app.toggleRounding()" title="単価を桁数に応じて切り上げ表示">切り上げ</button>
             <button class="btn-frp-settings" onclick="app.openFrpSettings()">⚙ 設定</button>
+            <button class="btn-tpl-load" onclick="app.showTemplateLoadDialog()">📂 読み込み</button>
+            <button class="btn-tpl-save" onclick="app.showTemplateSaveDialog()">💾 登録</button>
           </div>
-          <button class="btn-frp-back" onclick="app.switchFrpMode()">← 通常モードに戻す</button>
         </div>
 
         <table class="frp-table">
@@ -1139,7 +1140,7 @@
   <div id="tplSaveModal" class="modal-overlay" style="display:none">
     <div class="modal-dialog">
       <div class="modal-header">
-        <span>テンプレートを保存</span>
+        <span id="tplSaveModalTitle">テンプレートを保存</span>
         <button class="modal-close" onclick="document.getElementById('tplSaveModal').style.display='none'">✕</button>
       </div>
       <div class="modal-body">
@@ -1158,7 +1159,7 @@
           <label>説明</label>
           <textarea id="tplSaveDescription" class="input-wide" rows="2" placeholder="用途・適用条件など（省略可）" style="resize:vertical;font-size:13px"></textarea>
         </div>
-        <div class="modal-form-row">
+        <div id="tplSaveCatRow" class="modal-form-row">
           <label>種別</label>
           <select id="tplSaveCat" class="input-standard" onchange="app.onTplCatChange('save')">
             <option value="">― 選択 ―</option>
@@ -1181,7 +1182,7 @@
             <option value="">― 選択 ―</option>
           </select>
         </div>
-        <div class="modal-form-row">
+        <div id="tplSaveIncludeRow" class="modal-form-row">
           <label>含める項目</label>
           <div style="display:flex;flex-direction:column;gap:4px;flex:1">
             <label style="font-weight:normal;display:flex;align-items:center;gap:6px;white-space:nowrap">
@@ -1210,7 +1211,7 @@
   <div id="tplLoadModal" class="modal-overlay" style="display:none">
     <div class="modal-dialog tpl-load-dialog">
       <div class="modal-header">
-        <span>テンプレートを読み込み</span>
+        <span id="tplLoadModalTitle">テンプレートを読み込み</span>
         <button class="modal-close" onclick="document.getElementById('tplLoadModal').style.display='none'">✕</button>
       </div>
       <div class="modal-body">
@@ -1244,11 +1245,11 @@
         <div id="tplList" class="tpl-list">
           <div class="tpl-loading">読み込み中...</div>
         </div>
-        <div class="tpl-load-mode">
+        <div id="tplLoadModeRow" class="tpl-load-mode">
           <label><input type="radio" name="tplLoadMode" value="add" checked> 現在の明細に追加</label>
           <label><input type="radio" name="tplLoadMode" value="replace"> 現在の明細を置き換え</label>
         </div>
-        <div class="tpl-restore-options" style="margin-top:8px;display:flex;gap:16px">
+        <div id="tplRestoreOptRow" class="tpl-restore-options" style="margin-top:8px;display:flex;gap:16px">
           <label style="font-weight:normal;display:flex;align-items:center;gap:6px">
             <input type="checkbox" id="tplRestoreConditions" checked disabled>
             見積条件を復元

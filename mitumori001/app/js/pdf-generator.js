@@ -404,8 +404,8 @@ const QuotationPDF = (() => {
         { text: '品　　　名', style: 'tableHeader' },
         { text: '数量',     style: 'tableHeader' },
         { text: '単位',     style: 'tableHeader' },
-        { text: '希望小売単価', style: 'tableHeader' },
-        { text: '希望小売合計', style: 'tableHeader' },
+        { text: '単　価', style: 'tableHeader' },
+        { text: '金　　額', style: 'tableHeader' },
         ...(isTeika ? [] : [
           { text: '仕切単価', style: 'tableHeader' },
           { text: '仕切合計', style: 'tableHeader' },
@@ -1064,14 +1064,14 @@ const QuotationPDF = (() => {
     const amountMgn  = compact ? 3   : 6;
 
     return [
-      // ── タイトル〜定型文（左列）＋ 社印・会社情報（右列） ──
+      // ── タイトル（A4全幅センタリング） ──
+      { text: '御　見　積　書', fontSize: titleFs, bold: true, characterSpacing: 8, alignment: 'center' },
+      // ── 定型文（左列）＋ 社印・会社情報（右列） ──
       {
         columns: [
           {
             width: '*',
             stack: [
-              // タイトル
-              { text: '御　見　積　書', fontSize: titleFs, bold: true, characterSpacing: 8, alignment: 'center' },
               // 顧客名
               {
                 margin: [25, topMargin, 0, 0],
@@ -1121,7 +1121,7 @@ const QuotationPDF = (() => {
             width: 210,
             stack: [
               { text: quoteNoStr, alignment: 'right', fontSize: 9, font: fontLoaded ? 'NotoSansJP' : 'Roboto' },
-              { text: dateStr, alignment: 'right', fontSize: 9, margin: [0, 29, 0, 0] },
+              { text: dateStr, alignment: 'right', fontSize: 9, margin: [0, 4, 0, 0] },
               { text: branch.postal,  fontSize: 8, alignment: 'right', margin: [0, compact ? 2 : 4, 0, 0] },
               { text: branch.address, fontSize: 7.5, alignment: 'right' },
               { text: 'ネポン株式会社', fontSize: 9, bold: true, alignment: 'right' },
@@ -1692,8 +1692,8 @@ const QuotationPDF = (() => {
       { text: '品名',         style: 'tableHeader' },
       { text: '数量',         style: 'tableHeader' },
       { text: '単位',         style: 'tableHeader' },
-      { text: '希望小売単価', style: 'tableHeader' },
-      { text: '希望小売合計', style: 'tableHeader' },
+      { text: '単　価', style: 'tableHeader' },
+      { text: '金　　額', style: 'tableHeader' },
       { text: '仕切単価',     style: 'tableHeader' },
       { text: '仕切合計',     style: 'tableHeader' },
     ]];

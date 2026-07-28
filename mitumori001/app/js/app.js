@@ -4187,7 +4187,7 @@ const app = (() => {
     } else if (step === 2) {
       if (titleEl) titleEl.textContent = '② 種別を選択';
       const types = [...new Set(cache
-        .filter(r => r.field3 && r.field3 !== 'オプション部品')
+        .filter(r => r.field3 && r.field3 !== 'オプション部品' && r.field3 !== 'オプション２')
         .map(r => r.field3))].sort();
       bodyEl.innerHTML = `
         <div class="frp-wizard-choices">
@@ -7580,13 +7580,16 @@ const app = (() => {
   }
 
   function populateDeptSelects() {
-    const opts = '<option value="">― 選択 ―</option>' +
-      state.templateDepts.map(d => `<option value="${d.id}">${escHtml(d.name)}</option>`).join('');
+    // DEPT_LIST の順序・表示に合わせ、CRM ID を code でマッチして引き当てる
+    const deptOpts = DEPT_LIST.map(d => {
+      const crm = state.templateDepts.find(td => td.code === d.code || td.name === d.name);
+      return `<option value="${escHtml(crm ? crm.id : '')}">${escHtml(d.code)}：${escHtml(d.name)}</option>`;
+    }).join('');
+    const opts = '<option value="">― 選択 ―</option>' + deptOpts;
     const saveEl = document.getElementById('tplSaveDept');
     const filterEl = document.getElementById('tplFilterDept');
     if (saveEl) saveEl.innerHTML = opts;
-    if (filterEl) filterEl.innerHTML = '<option value="">― 所課で絞り込み ―</option>' +
-      state.templateDepts.map(d => `<option value="${d.id}">${escHtml(d.name)}</option>`).join('');
+    if (filterEl) filterEl.innerHTML = '<option value="">― 所課で絞り込み ―</option>' + deptOpts;
   }
 
   function showSetProductSaveDialog(existingId) {
@@ -7605,10 +7608,13 @@ const app = (() => {
     const setPrEl = document.getElementById('spSaveSetPrice');
     const titleEl = document.getElementById('setProductSaveTitle');
 
-    // 所課ドロップダウンを構築
+    // 所課ドロップダウンを構築（DEPT_LIST 順・CRM ID でマッチ）
     if (deptEl) {
       deptEl.innerHTML = '<option value="">― 選択 ―</option>' +
-        state.templateDepts.map(d => `<option value="${d.id}">${escHtml(d.name)}</option>`).join('');
+        DEPT_LIST.map(d => {
+          const crm = state.templateDepts.find(td => td.code === d.code || td.name === d.name);
+          return `<option value="${escHtml(crm ? crm.id : '')}">${escHtml(d.code)}：${escHtml(d.name)}</option>`;
+        }).join('');
       const currentDept = state.templateDepts.find(d => d.name === state.shoka);
       if (currentDept) deptEl.value = currentDept.id;
     }
@@ -7897,9 +7903,49 @@ const app = (() => {
 
   async function showTemplateSaveDialog() {
     if (!zohoReady) { showToast('Zoho未接続', 'warn'); return; }
-    if (state.sections.length === 0) { showToast('保存する明細がありません', 'warn'); return; }
     if (state.templateDepts.length === 0) await loadDepartments();
     populateDeptSelects();
+
+    const catRow  = document.getElementById('tplSaveCatRow');
+    const inclRow = document.getElementById('tplSaveIncludeRow');
+    const titleEl = document.getElementById('tplSaveModalTitle');
+
+    if (state.frpMode) {
+      const frpSaveItems = state.frpItems.filter(i => i.type !== 'soryo');
+      if (frpSaveItems.length === 0) { showToast('保存するFRPアイテムがありません', 'warn'); return; }
+      if (titleEl) titleEl.textContent = 'FRPテンプレートを保存';
+      if (catRow)  catRow.style.display  = 'none';
+      if (inclRow) inclRow.style.display = 'none';
+
+      const currentDept = state.templateDepts.find(d => d.code === state.createDeptCode || d.name === state.shoka);
+      const deptEl = document.getElementById('tplSaveDept');
+      if (deptEl && currentDept) deptEl.value = currentDept.id;
+
+      const overwriteEl = document.getElementById('tplSaveOverwriteTarget');
+      if (overwriteEl) {
+        const frpTpls = currentDept
+          ? state.templateList.filter(t => t.type === 'FRP' && t.deptId === currentDept.id)
+          : state.templateList.filter(t => t.type === 'FRP');
+        overwriteEl.innerHTML = '<option value="">― 新規保存 ―</option>' +
+          frpTpls.map(t =>
+            `<option value="${t.id}">${escHtml(t.name)}${t.deptName ? '　' + escHtml(t.deptName) : ''}</option>`
+          ).join('');
+        overwriteEl.value = '';
+      }
+      const nameEl = document.getElementById('tplSaveName');
+      if (nameEl) nameEl.value = '';
+      const descEl = document.getElementById('tplSaveDescription');
+      if (descEl) descEl.value = '';
+      const el = document.getElementById('tplSaveModal');
+      if (el) el.style.display = 'flex';
+      return;
+    }
+
+    if (titleEl) titleEl.textContent = 'テンプレートを保存';
+    if (catRow)  catRow.style.display  = '';
+    if (inclRow) inclRow.style.display = '';
+    if (state.sections.length === 0) { showToast('保存する明細がありません', 'warn'); return; }
+
     const currentDept = state.templateDepts.find(d => d.name === state.shoka);
     const deptEl = document.getElementById('tplSaveDept');
     if (deptEl && currentDept) deptEl.value = currentDept.id;
@@ -7955,55 +8001,73 @@ const app = (() => {
     const overwriteId = document.getElementById('tplSaveOverwriteTarget')?.value || '';
     const name = (document.getElementById('tplSaveName')?.value || '').trim();
     if (!name) { showToast('テンプレート名を入力してください', 'warn'); return; }
-    const cat         = (document.getElementById('tplSaveCat')?.value || '').trim();
-    const saveSubcat  = (document.getElementById('tplSaveSubcat')?.value || '').trim();
-    const type        = cat && saveSubcat ? cat + '_' + saveSubcat : cat;
     const description = (document.getElementById('tplSaveDescription')?.value || '').trim();
     const deptId = document.getElementById('tplSaveDept')?.value || '';
     const deptName = deptId
       ? (state.templateDepts.find(d => d.id === deptId)?.name || '')
       : '';
 
-    const includeConditions  = document.getElementById('tplSaveIncludeConditions')?.checked;
-    const includeRemarks     = document.getElementById('tplSaveIncludeRemarks')?.checked;
-    const includeExclusions  = document.getElementById('tplSaveIncludeExclusions')?.checked;
+    let type, payload;
 
-    const payload = {
-      description,
-      sections: state.sections.map(sec => ({
-        name:   sec.name,
-        cat:    sec.cat || '',
-        secQty: sec.secQty || 1,
-        items: sec.items.map(item => ({
-          name: item.name, spec: item.spec, qty: item.qty, unit: item.unit,
-          unitPrice: item.unitPrice, amount: item.amount, genka: item.genka,
-          includeInLabor: item.includeInLabor,
-          dairiRate: item.dairiRate, calcCategory: item.calcCategory,
-          houdan: item.houdan, houkouDirect: item.houkouDirect,
-          houkouKubun: item.houkouKubun,
-          gensuiKubun: item.gensuiKubun, gensuiA: item.gensuiA, gensuiB: item.gensuiB,
-          gensuiEnabled: item.gensuiEnabled,
-          kojiCategory: item.kojiCategory,
-          specLines: item.specLines,
-          machineSpec: item.machineSpec,
-          specMasterContent: item.specMasterContent,
-          machineSpecHidden: item.machineSpecHidden || false,
+    if (state.frpMode) {
+      type = 'FRP';
+      const frpSaveItems = state.frpItems
+        .filter(i => i.type !== 'soryo')
+        .map(i => ({
+          type: i.type, shubetsu: i.shubetsu, chubunrui: i.chubunrui, kashira: i.kashira,
+          hinmei: i.hinmei, name3: i.name3, optSpec5: i.optSpec5,
+          itemnum: i.itemnum, zuban: i.zuban, hinban: i.hinban,
+          qty: i.qty, unit: i.unit, price: i.price, priceA: i.priceA, priceB: i.priceB,
+          soryoKubun: i.soryoKubun, soryoNote: i.soryoNote,
+          specs: i.specs, hinshu: i.hinshu,
+          _bandFor: i._bandFor, _bandQtyPer: i._bandQtyPer,
+        }));
+      payload = { description, frpItems: frpSaveItems };
+    } else {
+      const cat         = (document.getElementById('tplSaveCat')?.value || '').trim();
+      const saveSubcat  = (document.getElementById('tplSaveSubcat')?.value || '').trim();
+      type              = cat && saveSubcat ? cat + '_' + saveSubcat : cat;
+      const includeConditions  = document.getElementById('tplSaveIncludeConditions')?.checked;
+      const includeRemarks     = document.getElementById('tplSaveIncludeRemarks')?.checked;
+      const includeExclusions  = document.getElementById('tplSaveIncludeExclusions')?.checked;
+      payload = {
+        description,
+        sections: state.sections.map(sec => ({
+          name:   sec.name,
+          cat:    sec.cat || '',
+          secQty: sec.secQty || 1,
+          items: sec.items.map(item => ({
+            name: item.name, spec: item.spec, qty: item.qty, unit: item.unit,
+            unitPrice: item.unitPrice, amount: item.amount, genka: item.genka,
+            includeInLabor: item.includeInLabor,
+            dairiRate: item.dairiRate, calcCategory: item.calcCategory,
+            houdan: item.houdan, houkouDirect: item.houkouDirect,
+            houkouKubun: item.houkouKubun,
+            gensuiKubun: item.gensuiKubun, gensuiA: item.gensuiA, gensuiB: item.gensuiB,
+            gensuiEnabled: item.gensuiEnabled,
+            kojiCategory: item.kojiCategory,
+            specLines: item.specLines,
+            machineSpec: item.machineSpec,
+            specMasterContent: item.specMasterContent,
+            machineSpecHidden: item.machineSpecHidden || false,
+          })),
         })),
-      })),
-    };
-    if (includeConditions) {
-      payload.deliveryTerm   = getValue('deliveryTerm')   || '';
-      payload.deliveryMethod = getValue('deliveryMethod') || '';
-      payload.paymentTerm    = getValue('paymentTerm')    || '';
-      payload.validDays      = getValue('validDays')      || '';
+      };
+      if (includeConditions) {
+        payload.deliveryTerm   = getValue('deliveryTerm')   || '';
+        payload.deliveryMethod = getValue('deliveryMethod') || '';
+        payload.paymentTerm    = getValue('paymentTerm')    || '';
+        payload.validDays      = getValue('validDays')      || '';
+      }
+      if (includeRemarks) {
+        payload.remarks = getValue('remarks') || '';
+      }
+      if (includeExclusions) {
+        collectExclusions();
+        payload.exclusions = state.exclusions.slice();
+      }
     }
-    if (includeRemarks) {
-      payload.remarks = getValue('remarks') || '';
-    }
-    if (includeExclusions) {
-      collectExclusions();
-      payload.exclusions = state.exclusions.slice();
-    }
+
     const tplData = JSON.stringify(payload);
 
     try {
@@ -8048,10 +8112,26 @@ const app = (() => {
 
     const currentDept = state.templateDepts.find(d => d.name === state.shoka);
     document.getElementById('tplFilterDept').value = currentDept ? currentDept.id : '';
-    const filterCatEl = document.getElementById('tplFilterCat');
+    const filterCatEl    = document.getElementById('tplFilterCat');
     const filterSubcatEl = document.getElementById('tplFilterSubcat');
-    if (filterCatEl) filterCatEl.value = '';
-    if (filterSubcatEl) { filterSubcatEl.value = ''; filterSubcatEl.style.display = 'none'; }
+    const titleEl        = document.getElementById('tplLoadModalTitle');
+    const loadModeRow    = document.getElementById('tplLoadModeRow');
+    const restoreOptRow  = document.getElementById('tplRestoreOptRow');
+
+    if (state.frpMode) {
+      if (titleEl) titleEl.textContent = 'FRPテンプレートを読み込み';
+      if (filterCatEl)    { filterCatEl.value    = ''; filterCatEl.style.display    = 'none'; }
+      if (filterSubcatEl) { filterSubcatEl.value = ''; filterSubcatEl.style.display = 'none'; }
+      if (loadModeRow)   loadModeRow.style.display   = 'none';
+      if (restoreOptRow) restoreOptRow.style.display = 'none';
+    } else {
+      if (titleEl) titleEl.textContent = 'テンプレートを読み込み';
+      if (filterCatEl)    { filterCatEl.value    = ''; filterCatEl.style.display    = ''; }
+      if (filterSubcatEl) { filterSubcatEl.value = ''; filterSubcatEl.style.display = 'none'; }
+      if (loadModeRow)   loadModeRow.style.display   = '';
+      if (restoreOptRow) restoreOptRow.style.display = '';
+    }
+
     document.getElementById('tplFilterName').value = '';
     state.selectedTemplateId = null;
     document.getElementById('btnTplLoad').disabled = true;
@@ -8099,14 +8179,20 @@ const app = (() => {
     const sortOrder = document.getElementById('tplSortOrder')?.value || 'name_asc';
 
     let filtered = state.templateList.slice();
-    if (deptId) filtered = filtered.filter(t => t.deptId === deptId);
-    if (cat === '__other__') {
-      filtered = filtered.filter(t => !TPL_ALL_CATS.some(c => t.type === c || t.type.startsWith(c + '_')));
-    } else if (cat && subcat) {
-      filtered = filtered.filter(t => t.type === cat + '_' + subcat);
-    } else if (cat) {
-      filtered = filtered.filter(t => t.type === cat || t.type.startsWith(cat + '_'));
+
+    if (state.frpMode) {
+      filtered = filtered.filter(t => t.type === 'FRP');
+    } else {
+      if (cat === '__other__') {
+        filtered = filtered.filter(t => !TPL_ALL_CATS.some(c => t.type === c || t.type.startsWith(c + '_')));
+      } else if (cat && subcat) {
+        filtered = filtered.filter(t => t.type === cat + '_' + subcat);
+      } else if (cat) {
+        filtered = filtered.filter(t => t.type === cat || t.type.startsWith(cat + '_'));
+      }
     }
+
+    if (deptId) filtered = filtered.filter(t => t.deptId === deptId);
     if (nameQ)  filtered = filtered.filter(t => t.name.toLowerCase().includes(nameQ));
 
     filtered.sort((a, b) => {
@@ -8188,6 +8274,13 @@ const app = (() => {
     const d = tpl.data;
     const lines = [];
     if (tpl.description) lines.push('【説明】' + escHtml(tpl.description).replace(/\n/g, '<br>'));
+    if (d.frpItems && Array.isArray(d.frpItems)) {
+      const count  = d.frpItems.length;
+      const sample = d.frpItems.slice(0, 3).map(i => escHtml(i.hinmei || i.name3 || '')).filter(Boolean);
+      const extra  = count > 3 ? `他${count - 3}件` : '';
+      const items  = [...sample, ...(extra ? [extra] : [])].join('、');
+      lines.push(`【FRP】${count}件${items ? '：' + items : ''}`);
+    }
     if (d.sections && d.sections.length) {
       const sectionSummary = d.sections.map(sec => {
         const rowCount = sec.items ? sec.items.length : 0;
@@ -8256,6 +8349,19 @@ const app = (() => {
     } catch (e) {
       console.error('テンプレート読み込みエラー:', e);
       showToast('読み込みに失敗しました', 'err');
+      return;
+    }
+
+    // FRP テンプレートの場合は frpItems を復元
+    if (tplData.frpItems && Array.isArray(tplData.frpItems)) {
+      if (!confirm('現在のFRPアイテムを置き換えますか？')) return;
+      const soryoItems = state.frpItems.filter(i => i.type === 'soryo');
+      state.frpItems = [...tplData.frpItems, ...soryoItems];
+      renderFrpItems();
+      updateFrpTotals();
+      markDirty();
+      document.getElementById('tplLoadModal').style.display = 'none';
+      showToast('FRPテンプレートを読み込みました');
       return;
     }
 
