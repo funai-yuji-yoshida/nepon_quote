@@ -2155,9 +2155,10 @@ const app = (() => {
         qty:      Number(r.field4) || 1,
         unit:     r.field3 || '式',
         order:    Number(r.field5) || 99,
-        teika:    Number(r.field8) || 0,
-        shikiri:  Number(r.field7) || 0,
-        spec:     r.field9 || '',        // 熱機仕様
+        teika:    Number(r.field8)  || 0,
+        shikiri:  Number(r.field7)  || 0,
+        genka:    Number(r.field12) || 0,
+        spec:     r.field9  || '',       // 熱機仕様
         shubetsu: r.field10 || '',       // 種別（熱機/農用/衛生）
       }));
       console.log(`物販標準項マスタ ${state.buppanStandard.length} 件読み込み`);
@@ -2300,8 +2301,8 @@ const app = (() => {
           item.unit           = r.unit;
           item.unitPrice      = r.teika  || null;
           item.amount         = (r.teika || 0) * r.qty;
-          item.genka          = r.shikiri;
-          item.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
+          item.genka          = r.genka;
+          item.dairiUnitPrice = null;
           if (r.spec) {
             const cleanedSpec = r.spec.split('\n')
               .map(l => l.split('\t').map(t => t.trim()).filter(t => t).join('　'))
@@ -2324,8 +2325,8 @@ const app = (() => {
           subItem.unit           = r.unit;
           subItem.unitPrice      = r.teika  || null;
           subItem.amount         = (r.teika || 0) * r.qty;
-          subItem.genka          = r.shikiri;
-          subItem.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
+          subItem.genka          = r.genka;
+          subItem.dairiUnitPrice = null;
           targetSection.items.push(subItem);
         }
       } else {
@@ -2340,8 +2341,8 @@ const app = (() => {
           item.unit           = r.unit;
           item.unitPrice      = r.teika  || null;
           item.amount         = (r.teika || 0) * r.qty;
-          item.genka          = r.shikiri;
-          item.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
+          item.genka          = r.genka;
+          item.dairiUnitPrice = null;
           item.model          = model;
           item.printModel     = true;
           mainItem = item;
@@ -2356,8 +2357,8 @@ const app = (() => {
           subItem.unit           = r.unit;
           subItem.unitPrice      = r.teika  || null;
           subItem.amount         = (r.teika || 0) * r.qty;
-          subItem.genka          = r.shikiri;
-          subItem.dairiUnitPrice = r.shikiri > 0 ? r.shikiri : null;
+          subItem.genka          = r.genka;
+          subItem.dairiUnitPrice = null;
           targetSection.items.push(subItem);
         }
       }

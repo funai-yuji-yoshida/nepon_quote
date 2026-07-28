@@ -717,7 +717,7 @@ const QuotationPDF = (() => {
         if (item.isNetsukiHeader) {
           const row = [
             { text: String(rowNo++), alignment: 'right', fontSize: itemFs },
-            { text: item.name || '', fontSize: itemFs },
+            { text: (item.name || '').replace(/（[^）]*）\s*$/, '').trim(), fontSize: itemFs },
             ...(showProductCode ? [{ text: '', fontSize: itemFs }] : []),
             { text: '', fontSize: itemFs }, { text: '', fontSize: itemFs },
             { text: '', fontSize: itemFs }, { text: '', fontSize: itemFs },
@@ -2545,7 +2545,7 @@ const QuotationPDF = (() => {
 
         // 熱機ヘッダー行（品名のみ、数量・価格なし・No.あり）
         if (item.isNetsukiHeader) {
-          rows.push([{ text: String(itemNo++), alignment: 'right' }, { text: item.name || '' }, ...emp(COLS - 2)]);
+          rows.push([{ text: String(itemNo++), alignment: 'right' }, { text: (item.name || '').replace(/（[^）]*）\s*$/, '').trim() }, ...emp(COLS - 2)]);
           return;
         }
 
@@ -2831,10 +2831,11 @@ const QuotationPDF = (() => {
       (section.items || []).forEach(item => {
         // 熱機ヘッダー行（タイトル）: 数量・価格なし・No.あり
         if (item.isNetsukiHeader) {
-          rows.push([{ text: String(itemNo++), alignment: 'right', fontSize: 8 }, { text: item.name || '' }, ...emp(COLS - 2)]);
+          rows.push([{ text: String(itemNo++), alignment: 'right', fontSize: 8 }, { text: (item.name || '').replace(/（[^）]*）\s*$/, '').trim() }, ...emp(COLS - 2)]);
           return;
         }
         const qtyStr = item.qty != null && item.qty !== '' ? String(item.qty) : '';
+        // 熱機本機行は No. なし（ヘッダー行の続きとして扱う）
         const noCell = item.isNetsukiMain
           ? { text: '', alignment: 'right', fontSize: 8 }
           : { text: String(itemNo++), alignment: 'right', fontSize: 8 };
