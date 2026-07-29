@@ -1975,8 +1975,7 @@ input.item-gensui-b::-webkit-inner-spin-button {
 .frp-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
+  padding: 6px 12px;
   background: #eef3fa;
   border-radius: 6px 6px 0 0;
   border: 1px solid #c2d3ea;
