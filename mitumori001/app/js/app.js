@@ -29,6 +29,7 @@ const app = (() => {
     { col: 'col-hanbaika',       label: '販売価格',    def: false, disabled: true },
     { col: 'col-genka',         label: '原価',      def: false, buhanDef: true },
     { col: 'col-genka-amount',  label: '原価合計',  def: false, buhanDef: true },
+    { col: 'col-bikou',         label: '備考',      def: false },
     { col: 'col-gensui-kubun',  label: '減衰区分',  def: false },
     { col: 'col-koji-category', label: '工事カテゴリ', def: false },
     { col: 'col-gensui-a',      label: '減衰A',     def: false },
@@ -212,6 +213,100 @@ const app = (() => {
     localStorage.removeItem(COL_RESIZE_KEY);
     const style = document.getElementById('colResizeStyle');
     if (style) style.textContent = '';
+  }
+
+  // ── FRPテーブル列幅リサイズ ──────────────────────────────────────
+  const FRP_COL_RESIZE_KEY = 'nepon_frp_col_widths';
+
+  function initFrpColResize() {
+    document.querySelectorAll('.frp-table thead th').forEach(th => {
+      if (th.querySelector('.col-resizer')) return;
+      const colClass = Array.from(th.classList).find(c => c.startsWith('frp-col-'));
+      if (!colClass) return;
+      const handle = document.createElement('div');
+      handle.className = 'col-resizer';
+      th.appendChild(handle);
+    });
+    const frpContainer = document.getElementById('frpContainer');
+    if (frpContainer) {
+      frpContainer.addEventListener('mousedown', e => {
+        if (!e.target.classList.contains('col-resizer')) return;
+        const th = e.target.parentElement;
+        const colClass = Array.from(th.classList).find(c => c.startsWith('frp-col-'));
+        if (!colClass) return;
+        _startFrpColResize(e, th, colClass);
+      });
+    }
+    _loadFrpColWidths();
+  }
+
+  function _startFrpColResize(e, th, colClass) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = th.offsetWidth;
+    const handle = e.target;
+    handle.classList.add('is-resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    function onMove(ev) {
+      const newW = Math.max(30, startW + (ev.clientX - startX));
+      _applyFrpColWidth(colClass, newW);
+    }
+    function onUp() {
+      handle.classList.remove('is-resizing');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      _saveFrpColWidths();
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
+  function _applyFrpColWidth(colClass, width) {
+    let style = document.getElementById('colFrpResizeStyle');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'colFrpResizeStyle';
+      document.head.appendChild(style);
+    }
+    const rules = _parseFrpResizeRules(style.textContent);
+    rules[colClass] = width;
+    style.textContent = Object.entries(rules)
+      .map(([cls, w]) => `.frp-table .${cls} { width: ${w}px !important; min-width: ${w}px !important; }`)
+      .join('\n');
+  }
+
+  function _parseFrpResizeRules(css) {
+    const rules = {};
+    const re = /\.frp-table \.(frp-col-[\w-]+)\s*\{[^}]*width:\s*(\d+)px/g;
+    let m;
+    while ((m = re.exec(css)) !== null) rules[m[1]] = parseInt(m[2]);
+    return rules;
+  }
+
+  function _saveFrpColWidths() {
+    const style = document.getElementById('colFrpResizeStyle');
+    if (!style) return;
+    localStorage.setItem(FRP_COL_RESIZE_KEY, JSON.stringify(_parseFrpResizeRules(style.textContent)));
+  }
+
+  function _loadFrpColWidths() {
+    const saved = localStorage.getItem(FRP_COL_RESIZE_KEY);
+    if (!saved) return;
+    try {
+      const rules = JSON.parse(saved);
+      let style = document.getElementById('colFrpResizeStyle');
+      if (!style) {
+        style = document.createElement('style');
+        style.id = 'colFrpResizeStyle';
+        document.head.appendChild(style);
+      }
+      style.textContent = Object.entries(rules)
+        .map(([cls, w]) => `.frp-table .${cls} { width: ${w}px !important; min-width: ${w}px !important; }`)
+        .join('\n');
+    } catch(e) {}
   }
 
   // ── 見積外工事マスタリスト ──────────────────────────────────────
@@ -1179,6 +1274,7 @@ const app = (() => {
   function init() {
     initColVisibility();
     initColResize();
+    initFrpColResize();
     // machine-specs.json を非同期で読み込み（商品検索の仕様アイコン用）
     fetch('data/machine-specs.json')
       .then(r => r.json())
@@ -2457,9 +2553,9 @@ const app = (() => {
     } catch(e) { /* 商品マスタに存在しない場合は空のまま */ }
 
     const item = createItem();
-    item.name        = mainRecord.model + (mainRecord.hinban ? '　' + mainRecord.hinban : '');
+    item.name        = mainRecord.model;
     item.unit        = '式';
-    item.spec        = mainRecord.model || '';
+    item.spec        = '';
     item.productCode = productCode;
     item.qty         = 1;
     item.unitPrice   = unitPrice;
@@ -5069,9 +5165,11 @@ const app = (() => {
       hinban:      record.field5 || '',
       qty:         1,
       unit:        record.unit    || '',
-      price:       Number(record.price) || 0,
+      price:       Number(record.price)  || 0,
       priceA:      0,
       priceB:      0,
+      genka:       Number(record.field8) || 0,
+      priceS:      Number(record.field7) || 0,
       soryoKubun,
       soryoNote:   '',
       specs,
@@ -5151,6 +5249,24 @@ const app = (() => {
     item.specs.splice(specIdx, 1);
     markDirty();
     renderFrpItems();
+  }
+
+  function addFrpSpec(itemId) {
+    const item = state.frpItems.find(i => i.id === itemId);
+    if (!item) return;
+    if (!item.specs) item.specs = [];
+    item.specs.push('');
+    item.specsHidden = false;
+    markDirty();
+    renderFrpItems();
+    // 追加後にスペック行を展開表示
+    const specRows = document.querySelectorAll(`.frp-spec-row[data-frp-id="${itemId}"]`);
+    specRows.forEach(r => { r.style.display = ''; });
+    const btn = document.querySelector(`.frp-spec-toggle-btn[data-frp-id="${itemId}"]`);
+    if (btn) btn.textContent = '仕様 ▲';
+    // 追加した最後の入力欄にフォーカス
+    const lastInput = [...specRows].pop()?.querySelector('.frp-spec-input');
+    if (lastInput) lastInput.focus();
   }
 
   function addFrpManualItem() {
@@ -5271,6 +5387,8 @@ const app = (() => {
             ${(item.specLines && item.specLines.length)
               ? item.specLines.map(l => `<div class="frp-spec-line">${escHtml(l)}</div>`).join('')
               : ''}
+            <button onclick="app.addFrpSpec(${item.id})"
+                    style="font-size:11px;padding:1px 6px;margin-top:3px;cursor:pointer;background:#f0fff4;border:1px solid #8b8;border-radius:3px;color:#363;">＋仕様</button>
             ${(item.specs && item.specs.length)
               ? `<button class="frp-spec-toggle-btn" data-frp-id="${item.id}"
                          onclick="app.toggleFrpSpecs(${item.id})"
@@ -5304,6 +5422,10 @@ const app = (() => {
                    min="0" step="1" data-frp-id="${item.id}" data-field="shikiri">
           </td>
           <td class="frp-col-shikiri-total" style="text-align:right">${fmtFrp(shikiriTotal)}</td>
+          <td class="frp-col-genka">
+            ${item.type === 'soryo' ? (item.genka != null && item.genka !== 0 ? fmtFrp(item.genka) : '') : `<input type="number" class="frp-genka-input" value="${item.genka || ''}" min="0" step="1" data-frp-id="${item.id}">`}
+          </td>
+          <td class="frp-col-genka-total" style="text-align:right">${item.genka != null && item.genka !== 0 ? fmtFrp((item.genka || 0) * qty) : ''}</td>
           <td class="frp-col-del">
             ${item.type !== 'soryo' ? `<button onclick="app.openFrpZubanModal(${item.id})"
                     style="background:none;border:none;cursor:pointer;font-size:13px;color:#555;margin-right:4px" title="図番・品番を編集">✏️</button>` : ''}
@@ -5318,7 +5440,7 @@ const app = (() => {
         rows.push(`
           <tr class="frp-soryo-row">
             <td></td>
-            <td colspan="10" class="frp-soryo-note">${escHtml(item.soryoNote)}</td>
+            <td colspan="12" class="frp-soryo-note">${escHtml(item.soryoNote)}</td>
           </tr>
         `);
       }
@@ -5329,7 +5451,7 @@ const app = (() => {
           rows.push(`
             <tr class="frp-spec-row" data-frp-id="${item.id}" style="display:none">
               <td></td>
-              <td colspan="8">
+              <td colspan="10">
                 <input type="text" class="frp-spec-input"
                        value="${escHtml(spec)}"
                        data-frp-id="${item.id}" data-spec-idx="${si}">
@@ -5452,6 +5574,23 @@ const app = (() => {
         const item = state.frpItems.find(i => i.id === id);
         if (!item) return;
         item.specs[idx] = input.value;
+        updateOutput();
+        markDirty();
+      });
+    });
+
+    // 原価入力イベント
+    tbody.querySelectorAll('.frp-genka-input').forEach(input => {
+      input.addEventListener('change', () => {
+        const id = Number(input.dataset.frpId);
+        const item = state.frpItems.find(i => i.id === id);
+        if (!item) return;
+        item.genka = Number(input.value) || 0;
+        const qty = Number(item.qty) || 1;
+        const row = input.closest('tr');
+        const totalCell = row.querySelector('.frp-col-genka-total');
+        if (totalCell) totalCell.textContent = item.genka ? fmtFrp(item.genka * qty) : '';
+        updateFrpTotals();
         updateOutput();
         markDirty();
       });
@@ -6288,6 +6427,8 @@ const app = (() => {
     item.spec      = specEl?.value   || '';
     item.qty       = Number(qtyEl?.value)   || 0;
     item.unit      = unitEl?.value   || '式';
+    const bikouEl  = row.querySelector('.item-bikou');
+    item.bikou     = bikouEl?.value || '';
 
     // 歩単（手動入力可）→ state に反映
     const houdanInputEl = row.querySelector('.item-houdan');
@@ -6316,7 +6457,7 @@ const app = (() => {
         const koHoukouEl     = koRow.querySelector('.item-houkou');
         const koDairiEl      = koRow.querySelector('.item-dairi');
         if (koPriceEl    && koPriceEl    !== document.activeElement) koPriceEl.value  = koItem.unitPrice || '';
-        if (koGenkaEl    && koGenkaEl    !== document.activeElement) koGenkaEl.value  = koItem.genka ? koItem.genka.toLocaleString('ja-JP') : '';
+        if (koGenkaEl    && koGenkaEl    !== document.activeElement) koGenkaEl.value  = koItem.genka ? koItem.genka : '';
         if (koGenkaAmtEl) koGenkaAmtEl.textContent = koItem.genka ? (koItem.genka * (Number(koItem.qty) || 1)).toLocaleString('ja-JP') : '';
         if (koAmountEl   && koAmountEl   !== document.activeElement) koAmountEl.value = koItem.amount    || '';
         if (koGoukeiEl   && koGoukeiEl   !== document.activeElement) {
@@ -6453,7 +6594,7 @@ const app = (() => {
 
     // 原価（手動入力可）→ state に反映
     const genkaInputEl = row.querySelector('.item-genka');
-    if (genkaInputEl) item.genka = Number(genkaInputEl.value) || 0;
+    if (genkaInputEl) item.genka = Number((genkaInputEl.value || '').replace(/,/g, '')) || 0;
 
     // 減衰A・減衰B（手動入力可）→ state に反映
     const gensuiAInputEl = row.querySelector('.item-gensui-a');
@@ -6516,7 +6657,7 @@ const app = (() => {
           const koHoukouEl   = koRow.querySelector('.item-houkou');
           const koDairiEl    = koRow.querySelector('.item-dairi');
           if (koPriceEl    && koPriceEl    !== document.activeElement) koPriceEl.value  = koItem.unitPrice ? koItem.unitPrice.toLocaleString('ja-JP') : '';
-          if (koGenkaEl    && koGenkaEl    !== document.activeElement) koGenkaEl.value  = koItem.genka ? koItem.genka.toLocaleString('ja-JP') : '';
+          if (koGenkaEl    && koGenkaEl    !== document.activeElement) koGenkaEl.value  = koItem.genka ? koItem.genka : '';
           if (koGenkaAmtEl) koGenkaAmtEl.textContent = koItem.genka ? (koItem.genka * (Number(koItem.qty) || 1)).toLocaleString('ja-JP') : '';
           if (koAmountEl   && koAmountEl   !== document.activeElement) koAmountEl.value = koItem.amount ? koItem.amount.toLocaleString('ja-JP') : '';
           if (koGoukeiEl   && koGoukeiEl   !== document.activeElement) {
@@ -6595,7 +6736,7 @@ const app = (() => {
         const koHoukouEl   = koRow.querySelector('.item-houkou');
         const koDairiEl    = koRow.querySelector('.item-dairi');
         if (koPriceEl    && koPriceEl    !== document.activeElement) koPriceEl.value  = koItem.unitPrice ? koItem.unitPrice.toLocaleString('ja-JP') : '';
-        if (koGenkaEl    && koGenkaEl    !== document.activeElement) koGenkaEl.value  = koItem.genka ? koItem.genka.toLocaleString('ja-JP') : '';
+        if (koGenkaEl    && koGenkaEl    !== document.activeElement) koGenkaEl.value  = koItem.genka ? koItem.genka : '';
         if (koGenkaAmtEl) koGenkaAmtEl.textContent = koItem.genka ? (koItem.genka * (Number(koItem.qty) || 1)).toLocaleString('ja-JP') : '';
         if (koAmountEl   && koAmountEl   !== document.activeElement) koAmountEl.value = koItem.amount    ? koItem.amount.toLocaleString('ja-JP')    : '';
         if (koGoukeiEl   && koGoukeiEl   !== document.activeElement) koGoukeiEl.value = koItem.houkouGoukei ? koItem.houkouGoukei.toFixed(2) : '';
@@ -6671,6 +6812,12 @@ const app = (() => {
       if (secQtyInput && secQtyInput !== document.activeElement) {
         const qv = String(Number(sec.secQty) || 1);
         if (secQtyInput.value !== qv) secQtyInput.value = qv;
+      }
+
+      const secBikouInput = block.querySelector('.section-bikou-input');
+      if (secBikouInput && secBikouInput !== document.activeElement) {
+        const bv = sec.bikou || '';
+        if (secBikouInput.value !== bv) secBikouInput.value = bv;
       }
 
       renderSection(sec, block);
@@ -6754,6 +6901,15 @@ const app = (() => {
       });
     }
 
+    // 備考入力 → state 更新
+    const secBikouInput = block.querySelector('.section-bikou-input');
+    if (secBikouInput) {
+      secBikouInput.addEventListener('input', () => {
+        const s = state.sections.find(s => s.id === sec.id);
+        if (s) s.bikou = secBikouInput.value;
+      });
+    }
+
     // 折りたたみトグル
     const toggleBtn = block.querySelector('.section-toggle');
     toggleBtn.addEventListener('click', () => {
@@ -6817,6 +6973,8 @@ const app = (() => {
         row.querySelector('.item-unit').value   = item.unit || '';
         row.querySelector('.item-price').value  = item.unitPrice != null ? Number(item.unitPrice).toLocaleString('ja-JP') : '';
         row.querySelector('.item-amount').value = item.amount ? Number(item.amount).toLocaleString('ja-JP') : '';
+        const bikouEl2 = row.querySelector('.item-bikou');
+        if (bikouEl2) bikouEl2.value = item.bikou || '';
       }
       // 算出カテゴリドロップダウンを常に同期
       const calcCatEl = row.querySelector('.item-calc-cat');
@@ -8046,6 +8204,7 @@ const app = (() => {
           hinmei: i.hinmei, name3: i.name3, optSpec5: i.optSpec5,
           itemnum: i.itemnum, zuban: i.zuban, hinban: i.hinban,
           qty: i.qty, unit: i.unit, price: i.price, priceA: i.priceA, priceB: i.priceB,
+          genka: i.genka, priceS: i.priceS,
           soryoKubun: i.soryoKubun, soryoNote: i.soryoNote,
           specs: i.specs, hinshu: i.hinshu,
           _bandFor: i._bandFor, _bandQtyPer: i._bandQtyPer,
@@ -8639,7 +8798,7 @@ const app = (() => {
           const genkaAmtEl3 = row.querySelector('.item-genka-amount');
           const amountEl   = row.querySelector('.item-amount');
           if (priceEl    && priceEl    !== document.activeElement) priceEl.value    = item.unitPrice ? item.unitPrice.toLocaleString('ja-JP') : '';
-          if (genkaEl2   && genkaEl2   !== document.activeElement) genkaEl2.value   = item.genka     ? item.genka.toLocaleString('ja-JP')     : '';
+          if (genkaEl2   && genkaEl2   !== document.activeElement) genkaEl2.value   = item.genka     ? item.genka                          : '';
           if (genkaAmtEl3) genkaAmtEl3.textContent = item.genka ? (item.genka * (Number(item.qty) || 1)).toLocaleString('ja-JP') : '';
           if (amountEl   && amountEl   !== document.activeElement) amountEl.value   = item.amount    ? item.amount.toLocaleString('ja-JP')    : '';
         }
@@ -9367,6 +9526,18 @@ const app = (() => {
       showShocho: (() => {
         const cb = document.getElementById('printShocho');
         return cb ? cb.checked : false;
+      })(),
+      showTaxIncluded: (() => {
+        const cb = document.getElementById('printTaxIncluded');
+        return cb ? cb.checked : false;
+      })(),
+      showBikou: (() => {
+        const cb = document.getElementById('printBikou');
+        return cb ? cb.checked : false;
+      })(),
+      showTeikaTotal: (() => {
+        const cb = document.getElementById('printTeikaTotal');
+        return cb ? cb.checked : true;
       })(),
     };
   }
@@ -10181,6 +10352,7 @@ const app = (() => {
     switchCatTab,
     switchStandardSub,
     execCatAdd,
+    execKoujiAdd,
     onKoujiKubunChange,
     // 明細行
     addItem,
@@ -10303,6 +10475,7 @@ const app = (() => {
     _frpAddKonzaiSoryo, _frpOpenCharterModal, _frpAddCharterSoryo,
     removeFrpItem,
     removeFrpSpec,
+    addFrpSpec,
     toggleFrpSpecs,
     openFrpZubanModal, execFrpZubanSave,
     _frpWizardOpenPdf,

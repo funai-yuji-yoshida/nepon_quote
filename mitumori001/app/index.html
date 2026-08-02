@@ -645,6 +645,8 @@
               <th class="frp-col-rate">掛率</th>
               <th class="frp-col-shikiri">仕切単価</th>
               <th class="frp-col-shikiri-total">仕切合計</th>
+              <th class="frp-col-genka">原価</th>
+              <th class="frp-col-genka-total">原価合計</th>
               <th class="frp-col-del"></th>
             </tr>
           </thead>
@@ -831,6 +833,13 @@
 
           <div class="print-detail-option">
             <label class="print-detail-label">
+              <input type="checkbox" id="printTaxIncluded">
+              税込み金額を印刷する
+            </label>
+          </div>
+
+          <div class="print-detail-option">
+            <label class="print-detail-label">
               <input type="checkbox" id="printProductCodeCover">
               鏡に品目コードを印刷する
             </label>
@@ -839,6 +848,20 @@
             <label class="print-detail-label">
               <input type="checkbox" id="printProductCode">
               明細に品目コードを印刷する
+            </label>
+          </div>
+
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printBikou">
+              備考列を印刷する
+            </label>
+          </div>
+
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printTeikaTotal" checked>
+              希望小売合計を印刷する
             </label>
           </div>
 
@@ -973,6 +996,7 @@
           <input type="text" class="section-name-input" placeholder="大項目名を入力..." autocomplete="off">
         </div>
         <label class="section-qty-label" title="式数"><input type="text" class="section-qty-input" value="1">式</label>
+        <div class="section-bikou-wrap"><span class="section-bikou-label">備考</span><input type="text" class="section-bikou-input" placeholder=""></div>
         <span class="section-collapsed-info"></span>
         <div class="section-actions">
           <button class="btn-icon" onclick="app.moveSectionUp(this)" title="上へ">▲</button>
@@ -1014,6 +1038,7 @@
             <th class="col-houkou-kubun">歩工区分</th>
             <th class="col-houkou-goukei">歩工合計</th>
             <th class="col-houkou">歩工</th>
+            <th class="col-bikou">備考</th>
             <th class="col-actions"></th>
           </tr>
         </thead>
@@ -1106,6 +1131,7 @@
       <td class="col-houkou-kubun"><span class="item-houkou-kubun"></span></td>
       <td class="col-houkou-goukei"><input type="text" inputmode="decimal" class="item-houkou-goukei" placeholder="-" title="手動入力で自動計算を上書き"></td>
       <td class="col-houkou"><span class="item-houkou"></span></td>
+      <td class="col-bikou"><input type="text" class="item-bikou" placeholder=""></td>
       <td class="col-item-actions">
         <div class="item-action-btns">
           <button class="btn-icon btn-danger" onclick="app.removeItem(this)" title="削除">✕</button>
