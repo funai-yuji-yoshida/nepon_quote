@@ -1631,7 +1631,7 @@ const app = (() => {
     setRateEl('ratePurchase', state.purchaseRate);
     // 見積区分表示
     const catEl = document.getElementById('quoteCategoryDisplay');
-    if (catEl) catEl.textContent = state.quoteCategory || '―';
+    if (catEl) catEl.value = state.quoteCategory || '';
     // 値引き額ラベル切り替え（工事を含む場合→出精値引き）
     const isKouji = (state.quoteCategory || '').includes('工事');
     // 農用・熱機タブは標準項サブボタン経由のみ（常時非表示）
@@ -1883,6 +1883,40 @@ const app = (() => {
     updateExclusionCount();
   }
 
+  /** カスタム行を DOM に追加（内部共通処理） */
+  function _appendCustomExclusionRow(value) {
+    const container = document.getElementById('exclusionCustomList');
+    if (!container) return;
+    const row = document.createElement('div');
+    row.className = 'excl-custom-row';
+    row.innerHTML = `
+      <button class="btn-excl-del" onclick="app.removeCustomExclusion(this)" title="削除">✕</button>
+      <input type="text" class="excl-custom-input" placeholder="見積外工事の内容を入力"
+             value="${value.replace(/"/g, '&quot;')}" oninput="app.updateExclusionCount()">
+    `;
+    container.appendChild(row);
+  }
+
+  /** 手入力行を追加 */
+  function addCustomExclusion() {
+    const checks = document.querySelectorAll('.excl-check');
+    const checked = [...checks].filter(c => c.checked).length;
+    const customCount = document.querySelectorAll('.excl-custom-row').length;
+    if (checked + customCount >= 15) return;
+    _appendCustomExclusionRow('');
+    updateExclusionCount();
+    // 追加した入力欄にフォーカス
+    const inputs = document.querySelectorAll('.excl-custom-input');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  }
+
+  /** 手入力行を削除 */
+  function removeCustomExclusion(btn) {
+    const row = btn.closest('.excl-custom-row');
+    if (row) row.remove();
+    updateExclusionCount();
+  }
+
   /** チェック状態変更 */
   function onExclusionChange(cb) {
     const i = cb.dataset.index;
@@ -1895,13 +1929,17 @@ const app = (() => {
   function updateExclusionCount() {
     const checks = document.querySelectorAll('.excl-check');
     const checked = [...checks].filter(c => c.checked).length;
+    const customCount = document.querySelectorAll('.excl-custom-row').length;
+    const total = checked + customCount;
     const countEl = document.getElementById('exclusionCount');
     if (countEl) {
-      countEl.textContent = `${checked}/15`;
-      countEl.className = 'exclusion-count' + (checked >= 15 ? ' over' : '');
+      countEl.textContent = `${total}/15`;
+      countEl.className = 'exclusion-count' + (total >= 15 ? ' over' : '');
     }
-    const limit = checked >= 15;
+    const limit = total >= 15;
     checks.forEach(c => { if (!c.checked) c.disabled = limit; });
+    const addBtn = document.getElementById('btnAddCustomExcl');
+    if (addBtn) addBtn.disabled = limit;
   }
 
   /** DOM から state.exclusions を収集 */
@@ -1912,12 +1950,23 @@ const app = (() => {
       const editEl = document.querySelector(`.excl-edit[data-index="${i}"]`);
       result.push(editEl ? (editEl.value.trim() || EXCLUSION_MASTER[i]) : EXCLUSION_MASTER[i]);
     });
+    document.querySelectorAll('.excl-custom-input').forEach(inp => {
+      const v = inp.value.trim();
+      if (v) result.push(v);
+    });
     state.exclusions = result;
   }
 
   /** state.exclusions をフォームのチェック状態に反映 */
   function applyExclusionsToForm() {
-    if (!state.exclusions || state.exclusions.length === 0) return;
+    // カスタム行を全消去
+    const customList = document.getElementById('exclusionCustomList');
+    if (customList) customList.innerHTML = '';
+
+    if (!state.exclusions || state.exclusions.length === 0) {
+      updateExclusionCount();
+      return;
+    }
     // まず全チェック解除
     document.querySelectorAll('.excl-check').forEach(cb => {
       cb.checked = false;
@@ -1925,21 +1974,17 @@ const app = (() => {
       if (editEl) editEl.style.display = 'none';
     });
     state.exclusions.forEach(text => {
-      // マスタから最も近いindexを探す（完全一致 → 前方一致 → 0番目）
+      // マスタから完全一致 → 前方一致で探す
       let idx = EXCLUSION_MASTER.indexOf(text);
       if (idx === -1) idx = EXCLUSION_MASTER.findIndex(m => text.startsWith(m.slice(0, 5)));
-      if (idx === -1) {
-        // マスタにない文字列 → 最初の未使用行に追加
-        const freeCheck = document.querySelector('.excl-check:not(:checked)');
-        if (freeCheck) {
-          idx = Number(freeCheck.dataset.index);
-        }
-      }
       if (idx >= 0) {
         const cb = document.querySelector(`.excl-check[data-index="${idx}"]`);
         const editEl = document.querySelector(`.excl-edit[data-index="${idx}"]`);
         if (cb) { cb.checked = true; }
         if (editEl) { editEl.value = text; editEl.style.display = 'block'; }
+      } else {
+        // マスタにない → カスタム行として追加
+        _appendCustomExclusionRow(text);
       }
     });
     updateExclusionCount();
@@ -9201,10 +9246,28 @@ const app = (() => {
     state._thresholdSide = null; // 次回 updateOutput() で再初期化
 
     const catEl = document.getElementById('quoteCategoryDisplay');
-    if (catEl) catEl.textContent = state.quoteCategory;
+    if (catEl) catEl.value = state.quoteCategory || '';
     initColVisibility();
     applyStateToForm(); // 採番UI・カテゴリ依存UIを一括更新
     updateOutput();
+
+    try { ZDK.Page.getField('field63').setValue(newCategory); } catch(e) { console.warn('[category] ZDK setValue failed', e); }
+  }
+
+  function onCategorySelectChange(newCategory) {
+    if (!newCategory || newCategory === state.quoteCategory) return;
+    state.quoteCategory  = newCategory;
+    state.seqNo          = '';
+    state.koujiCategory  = '';
+    state._thresholdSide = null;
+
+    const catEl = document.getElementById('quoteCategoryDisplay');
+    if (catEl) catEl.value = state.quoteCategory || '';
+    initColVisibility();
+    applyStateToForm();
+    updateOutput();
+
+    try { ZDK.Page.getField('field63').setValue(newCategory); } catch(e) { console.warn('[category] ZDK setValue failed', e); }
   }
 
   function declineCategoryChange() {
@@ -10407,6 +10470,8 @@ const app = (() => {
     // 見積外工事
     onExclusionChange,
     updateExclusionCount,
+    addCustomExclusion,
+    removeCustomExclusion,
     applyExclusionPreset,
     // PDF
     generatePDF,
@@ -10466,6 +10531,7 @@ const app = (() => {
     // カテゴリ変更確認ダイアログ
     confirmCategoryChange,
     declineCategoryChange,
+    onCategorySelectChange,
     // CRM保存
     saveToCRM,
     // FRPモード

@@ -148,7 +148,12 @@
             </div>
             <div class="form-row">
               <label>見積区分</label>
-              <span id="quoteCategoryDisplay" class="quote-category-badge">―</span>
+              <select id="quoteCategoryDisplay" class="quote-category-badge" onchange="app.onCategorySelectChange(this.value)">
+                <option value="">―</option>
+                <option value="物販">物販</option>
+                <option value="作業（100万以下）">作業（100万以下）</option>
+                <option value="工事（100万超）">工事（100万超）</option>
+              </select>
             </div>
           </div>
           <div class="rate-panel">
@@ -366,6 +371,8 @@
           <button class="btn-excl-preset" onclick="app.applyExclusionPreset('general')">一般（全項目）</button>
         </div>
         <div class="exclusion-list" id="exclusionList"></div>
+        <div class="exclusion-custom-list" id="exclusionCustomList"></div>
+        <button class="btn-excl-add" id="btnAddCustomExcl" onclick="app.addCustomExclusion()">＋手入力追加</button>
       </div>
 
       <div class="form-section">
@@ -909,6 +916,9 @@
               📋 詳細印刷
             </button>
           </div>
+          <p class="hint-small" style="margin-top:4px">
+            📄 簡略：品目を集約してセクション小計のみ表示　／　📋 詳細：全品目の明細行を展開して表示
+          </p>
           <div class="pdf-btn-group" style="margin-top:6px">
             <button class="btn-secondary" id="btnPreviewSimplePDF" onclick="app.previewPDF('simple')" disabled>
               🔍 簡略プレビュー

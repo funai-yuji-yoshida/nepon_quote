@@ -160,6 +160,15 @@ body {
   padding: 2px 12px;
   border-radius: 4px;
 }
+select.quote-category-badge {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 22px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%231a3a6a'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+}
 
 .form-row {
   display: flex;
@@ -1392,6 +1401,45 @@ button {
   border-radius: 3px;
   background: #f1f8e9;
 }
+.excl-custom-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.excl-custom-input {
+  flex: 1;
+  padding: 3px 6px;
+  font-size: 12px;
+  border: 1px solid #aac;
+  border-radius: 3px;
+  background: #f5f7ff;
+}
+.btn-excl-del {
+  flex-shrink: 0;
+  font-size: 11px;
+  padding: 1px 5px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  cursor: pointer;
+  color: #c00;
+}
+.btn-excl-del:hover { background: #ffebee; }
+.btn-excl-add {
+  display: block;
+  margin: 6px 8px 2px;
+  font-size: 12px;
+  padding: 3px 10px;
+  background: #fff;
+  border: 1px dashed #aac;
+  border-radius: 3px;
+  cursor: pointer;
+  color: #1a3a6a;
+}
+.btn-excl-add:hover { background: #eef2fa; }
+.btn-excl-add:disabled { color: #bbb; border-color: #ddd; cursor: default; background: #fff; }
 
 /* ----------------------------------------
    減衰区分・工事カテゴリ・減衰A・減衰B 列
