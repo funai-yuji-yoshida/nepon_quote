@@ -528,6 +528,15 @@ const app = (() => {
         if (item.calcCategory === '④工事費' && (Number(item.houdan) || 0) > 0) return;
         item.houkouGoukei = Number(item.houkouDirect);
         totalReducedHoukou += item.houkouGoukei * secQty;
+        // ④工事費かつhoudan=0でhoukouDirectが設定されている行はここでサマリーに追加
+        if (item.calcCategory === '④工事費') {
+          const dDirect = item.houkouGoukei * secQty;
+          summaryRows.push({
+            category: item.kojiCategory || item.name || '④工事費',
+            d: dDirect, rate: 1.0,
+            before: dDirect, after: dDirect,
+          });
+        }
       });
     });
 
@@ -617,6 +626,12 @@ const app = (() => {
           if (itemD > 0) {
             gi.houkouGoukei = Math.floor(itemD * 100 + 0.5) / 100;
             totalReducedHoukou += gi.houkouGoukei * secQty;
+            summaryRows.push({
+              category: gi.kojiCategory || gi.gensuiKubun || gi.name || gi.calcCategory || '（その他）',
+              d: itemD * secQty, rate: 1.0,
+              before: Math.round(itemD * secQty * 100) / 100,
+              after:  gi.houkouGoukei * secQty,
+            });
           }
         });
         group = [];
@@ -7465,7 +7480,7 @@ const app = (() => {
         state.frpAreaRates = records.map(r => ({
           code:       r.field2 || '',
           dealerName: r.field3 || '',
-          area:       r.field4 || '',
+          area:       [r.field4, r.field5].filter(x => x && x !== '-').join(' ') || '',
           p1:  Number(r.p1)  || 0,
           p2:  Number(r.p2)  || 0,
           b1:  Number(r.b1)  || 0,
