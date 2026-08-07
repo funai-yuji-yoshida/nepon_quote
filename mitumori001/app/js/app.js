@@ -1457,6 +1457,7 @@ const app = (() => {
       const d = document.getElementById('btnDetailPDF'); if (d) d.disabled = false;
       const ps = document.getElementById('btnPreviewSimplePDF'); if (ps) ps.disabled = false;
       const pd = document.getElementById('btnPreviewDetailPDF'); if (pd) pd.disabled = false;
+      const ec = document.getElementById('btnExportCsv'); if (ec) ec.disabled = false;
     } else {
       el.innerHTML = '⚠️ フォント読み込み失敗 - <a href="https://fonts.google.com/noto/specimen/Noto+Sans+JP" target="_blank">NotoSansJP-Regular.ttf</a> を widget/fonts/ に配置してください';
       el.className = 'font-status err';
@@ -1465,6 +1466,7 @@ const app = (() => {
       const d = document.getElementById('btnDetailPDF'); if (d) d.disabled = false;
       const ps = document.getElementById('btnPreviewSimplePDF'); if (ps) ps.disabled = false;
       const pd = document.getElementById('btnPreviewDetailPDF'); if (pd) pd.disabled = false;
+      const ec = document.getElementById('btnExportCsv'); if (ec) ec.disabled = false;
     }
   }
 
@@ -9616,6 +9618,69 @@ const app = (() => {
     if (dfEl && s.dateFormat) dfEl.value = s.dateFormat;
   }
 
+  function exportCsv() {
+    if (!state.sections || state.sections.length === 0) {
+      showToast('明細がありません', 'warn');
+      return;
+    }
+
+    const mainRate = state.mainRate ?? 0;
+
+    const headers = [
+      '大項目No', '大項目名', 'カテゴリ',
+      '品名', '型式', '品目コード',
+      '数量', '単位',
+      '単価', '金額',
+      '仕切単価', '仕切金額',
+      '原価', '計算区分',
+    ];
+
+    const rows = [headers];
+    state.sections.forEach(sec => {
+      (sec.items || []).forEach(item => {
+        if (!item.name && !item.spec && !item.unitPrice && !item.amount) return;
+        const rate = item.dairiRate ?? mainRate;
+        const dairiUnit = item.dairiUnitPrice != null
+          ? item.dairiUnitPrice
+          : (item.unitPrice != null ? Math.round(item.unitPrice * rate) : '');
+        const dairiAmount = (dairiUnit !== '' && item.qty != null)
+          ? Math.round(Number(dairiUnit) * Number(item.qty))
+          : '';
+        rows.push([
+          sec.no ?? '',
+          sec.name ?? '',
+          sec.cat  ?? '',
+          item.name        ?? '',
+          item.spec        ?? '',
+          item.productCode ?? '',
+          item.qty         ?? '',
+          item.unit        ?? '',
+          item.unitPrice   ?? '',
+          item.amount      ?? '',
+          dairiUnit,
+          dairiAmount,
+          item.genka       ?? '',
+          item.calcCategory ?? '',
+        ]);
+      });
+    });
+
+    const csv = rows.map(r =>
+      r.map(c => `"${String(c == null ? '' : c).replace(/"/g, '""')}"`).join(',')
+    ).join('\r\n');
+
+    const quoteNo = state.seqNo || '';
+    const customer = state.customerName || getValue('customerName') || '';
+    const filename = [quoteNo, customer, '明細'].filter(Boolean).join('_') + '.csv';
+
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
   /** PDF 生成用データオブジェクトを組み立てる */
   function buildPdfData(mode = 'detail') {
     collectExclusions();
@@ -10692,9 +10757,10 @@ const app = (() => {
     addCustomExclusion,
     removeCustomExclusion,
     applyExclusionPreset,
-    // PDF
+    // PDF / CSV
     generatePDF,
     previewPDF,
+    exportCsv,
     closePdfPreview,
     generateSummaryPDF,
     updatePdfModeDesc,
