@@ -739,8 +739,8 @@ const app = (() => {
               rate = Math.min(1.0, Math.floor(item.gensuiA * Math.pow(rawD / item.gensuiB, -0.3) * 100 + 0.5) / 100);
             }
             const houkouTotal = Math.floor(rawD * rate * 100 + 0.5) / 100;
-            item.unitPrice    = Math.round(RODO_TANKA * houkouTotal / 1000) * 1000;
-            item.genka        = Math.round(RODO_GENKA  * houkouTotal / 1000) * 1000;
+            if (!item._unitPriceManual) item.unitPrice = Math.round(RODO_TANKA * houkouTotal / 1000) * 1000;
+            if (!item._genkaManual)     item.genka     = Math.round(RODO_GENKA  * houkouTotal / 1000) * 1000;
             item.amount       = item.unitPrice * (Number(item.qty) || 1);
             item.houkouGoukei = houkouTotal;
             item.houkouDirect = houkouTotal;
@@ -789,8 +789,8 @@ const app = (() => {
           }
           const houkouTotal = Math.floor((directTotal + calcTotal) * 100 + 0.5) / 100;
           if (houkouTotal > 0) {
-            item.unitPrice    = Math.round(RODO_TANKA * houkouTotal / 1000) * 1000;
-            item.genka        = Math.round(RODO_GENKA  * houkouTotal / 1000) * 1000;
+            if (!item._unitPriceManual) item.unitPrice = Math.round(RODO_TANKA * houkouTotal / 1000) * 1000;
+            if (!item._genkaManual)     item.genka     = Math.round(RODO_GENKA  * houkouTotal / 1000) * 1000;
             item.amount       = item.unitPrice * (Number(item.qty) || 1);
             item.houkouGoukei = houkouTotal;
             item.houkouDirect = houkouTotal; // calcGensui が上書きしないよう同期
@@ -804,8 +804,8 @@ const app = (() => {
               rate = Math.min(1.0, Math.floor(item.gensuiA * Math.pow(rawD / item.gensuiB, -0.3) * 100 + 0.5) / 100);
             }
             const houkouTotal = Math.floor(rawD * rate * 100 + 0.5) / 100;
-            item.unitPrice    = Math.round(RODO_TANKA * houkouTotal / 1000) * 1000;
-            item.genka        = Math.round(RODO_GENKA  * houkouTotal / 1000) * 1000;
+            if (!item._unitPriceManual) item.unitPrice = Math.round(RODO_TANKA * houkouTotal / 1000) * 1000;
+            if (!item._genkaManual)     item.genka     = Math.round(RODO_GENKA  * houkouTotal / 1000) * 1000;
             item.amount       = item.unitPrice * (Number(item.qty) || 1);
             item.houkouGoukei = houkouTotal;
             item.houkouDirect = houkouTotal;
@@ -822,8 +822,8 @@ const app = (() => {
             rate = Math.min(1.0, Math.floor(item.gensuiA * Math.pow(d / item.gensuiB, -0.3) * 100 + 0.5) / 100);
           }
           const houkouTotal = Math.floor(d * rate * 100 + 0.5) / 100;
-          item.unitPrice    = Math.round(RODO_TANKA * houkouTotal / 1000) * 1000;
-          item.genka        = Math.round(RODO_GENKA  * houkouTotal / 1000) * 1000;
+          if (!item._unitPriceManual) item.unitPrice = Math.round(RODO_TANKA * houkouTotal / 1000) * 1000;
+          if (!item._genkaManual)     item.genka     = Math.round(RODO_GENKA  * houkouTotal / 1000) * 1000;
           item.amount       = item.unitPrice;
           item.houkouGoukei = houkouTotal;
           item.houkouDirect = houkouTotal;
@@ -838,8 +838,8 @@ const app = (() => {
             rate = Math.min(1.0, Math.floor(item.gensuiA * Math.pow(d / item.gensuiB, -0.3) * 100 + 0.5) / 100);
           }
           const houkouTotal = Math.floor(d * rate * 100 + 0.5) / 100;
-          item.unitPrice    = Math.round(RODO_TANKA * houkouTotal / 1000) * 1000;
-          item.genka        = Math.round(RODO_GENKA  * houkouTotal / 1000) * 1000;
+          if (!item._unitPriceManual) item.unitPrice = Math.round(RODO_TANKA * houkouTotal / 1000) * 1000;
+          if (!item._genkaManual)     item.genka     = Math.round(RODO_GENKA  * houkouTotal / 1000) * 1000;
           item.amount       = item.unitPrice;
           item.houkouGoukei = houkouTotal;
           item.houkouDirect = houkouTotal;
@@ -1303,6 +1303,34 @@ const app = (() => {
     // イベント: 数量・単価 → 金額 自動計算
     document.getElementById('sectionsContainer').addEventListener('input', onItemInput);
     document.getElementById('sectionsContainer').addEventListener('change', onItemInput);
+    // 代理店単価フィールドのフォーカスアウト時に確実にstateへ反映（change未発火の補完）
+    document.addEventListener('focusout', function(e) {
+      const el = e.target;
+      if (!el.classList.contains('item-dairi-unit')) return;
+      const row = el.closest('.item-row');
+      if (!row) return;
+      const block = el.closest('.section-block');
+      if (!block) return;
+      const sec = state.sections.find(s => s.id === Number(block.dataset.sectionId));
+      if (!sec) return;
+      const item = sec.items.find(i => i.id === Number(row.dataset.itemId));
+      if (!item) return;
+      const raw = el.value.replace(/,/g, '').trim();
+      if (raw === '') {
+        item.dairiUnitPrice = null;
+        item._dairiManual = false;
+        el.classList.remove('is-manual');
+        const lock = row.querySelector('.btn-dairi-unit-lock');
+        if (lock) lock.style.display = 'none';
+      } else {
+        const num = Number(raw) || 0;
+        item.dairiUnitPrice = num;
+        item._dairiManual = true;
+        el.classList.add('is-manual');
+        const lock = row.querySelector('.btn-dairi-unit-lock');
+        if (lock) lock.style.display = '';
+      }
+    });
 
     // イベント: 値引き額・労務費・法定福利費率 変更 → 即時再計算
     document.getElementById('discountAmount').addEventListener('input', function () {
@@ -1350,6 +1378,22 @@ const app = (() => {
       });
     }
 
+    // 品目コード表示位置グループの表示/非表示制御
+    const _pcCoverCb = document.getElementById('printProductCodeCover');
+    if (_pcCoverCb) {
+      _pcCoverCb.addEventListener('change', () => {
+        const grp = document.getElementById('productCodeCoverPositionGroup');
+        if (grp) grp.style.display = _pcCoverCb.checked ? '' : 'none';
+      });
+    }
+    const _pcCb = document.getElementById('printProductCode');
+    if (_pcCb) {
+      _pcCb.addEventListener('change', () => {
+        const grp = document.getElementById('productCodePositionGroup');
+        if (grp) grp.style.display = _pcCb.checked ? '' : 'none';
+      });
+    }
+
     // 未保存警告: 入力・変更・ページ離脱を監視
     document.addEventListener('input',  markDirty);
     document.addEventListener('change', markDirty);
@@ -1358,6 +1402,15 @@ const app = (() => {
         e.preventDefault();
         e.returnValue = '';
       }
+    });
+
+    // ヘッダー閉じるボタン: 未保存なら確認ダイアログを表示
+    document.getElementById('btnCloseWidget')?.addEventListener('click', () => {
+      if (isDirty || _needsAdjustUpdate()) {
+        const ok = confirm('未保存の変更があります。\nCRMに保存せずに閉じてよいですか？');
+        if (!ok) return;
+      }
+      window.close();
     });
 
     // フォント初期化
@@ -6300,8 +6353,10 @@ const app = (() => {
     if (!sec) return;
 
     sec.items.forEach(item => {
-      item.dairiRate    = rate;
-      item._dairiManual = false;
+      item.dairiRate = rate;
+      if (!item._dairiManual) {
+        item.dairiUnitPrice = null;
+      }
     });
 
     renderSection(sec, block);
@@ -6338,11 +6393,13 @@ const app = (() => {
     state.partsRate   = !isNaN(partsRateVal)   ? partsRateVal   : state.partsRate;
     state.purchaseRate= !isNaN(purchaseRateVal) ? purchaseRateVal: state.purchaseRate;
 
-    // 全明細行の dairiRate を更新
+    // 全明細行の dairiRate を更新（手動単価が設定されている行はそのまま維持）
     state.sections.forEach(sec => {
       sec.items.forEach(item => {
-        item.dairiRate    = mainRateVal;
-        item._dairiManual = false;
+        item.dairiRate = mainRateVal;
+        if (!item._dairiManual) {
+          item.dairiUnitPrice = null;
+        }
       });
     });
 
@@ -6495,9 +6552,16 @@ const app = (() => {
     if (houdanInputEl) {
       const v = parseFloat(houdanInputEl.value);
       item.houdan = isNaN(v) ? 0 : v;
+      if (e.target === houdanInputEl) {
+        item._genkaManual = false;      // houdan変更時はgenka自動計算に戻す
+        item._unitPriceManual = false;  // houdan変更時はunitPrice自動計算に戻す
+      }
     }
 
     item.unitPrice = priceEl?.value ? Number(priceEl.value.replace(/,/g, '')) : null;
+    if (e.target === priceEl) {
+      item._unitPriceManual = priceEl?.value ? priceEl.value.replace(/,/g, '').trim() !== '' : false;
+    }
 
     // qty が変わった houdan > 0 の行がある場合、セクション内の④工事費・⑤その他を再計算
     if (e.target === qtyEl && (Number(item.houdan) || 0) > 0) {
@@ -6579,10 +6643,9 @@ const app = (() => {
       item.dairiRate = rateVal !== '' ? Number(rateVal) : null;
     }
 
-    // 掛率変更時: 手動上書きをクリアして代理店単価を再計算
-    if (e.target === dairiRateEl) {
+    // 掛率変更時: 手動上書きがない場合のみ代理店単価を再計算
+    if (e.target === dairiRateEl && !item._dairiManual) {
       item.dairiUnitPrice = null;
-      item._dairiManual   = false;
       const dairiUnitElR = row.querySelector('.item-dairi-unit');
       if (dairiUnitElR) {
         dairiUnitElR.classList.remove('is-manual');
@@ -6654,7 +6717,13 @@ const app = (() => {
 
     // 原価（手動入力可）→ state に反映
     const genkaInputEl = row.querySelector('.item-genka');
-    if (genkaInputEl) item.genka = Number((genkaInputEl.value || '').replace(/,/g, '')) || 0;
+    if (genkaInputEl) {
+      item.genka = Number((genkaInputEl.value || '').replace(/,/g, '')) || 0;
+      if (e.target === genkaInputEl) {
+        // ユーザーが直接編集 → 手動フラグをセット（空欄にしたらリセット）
+        item._genkaManual = genkaInputEl.value.replace(/,/g, '').trim() !== '';
+      }
+    }
 
     // 減衰A・減衰B（手動入力可）→ state に反映
     const gensuiAInputEl = row.querySelector('.item-gensui-a');
@@ -6688,7 +6757,9 @@ const app = (() => {
         if (item.calcCategory === '④工事費') item.houdan = goukei;
         // ④工事費・⑤その他行を直接編集：歩工合計 → 単価・金額を再計算
         if (goukei > 0) {
+          item._unitPriceManual = false; // 歩工合計直接編集時はunitPrice自動計算に戻す
           item.unitPrice = Math.round(RODO_TANKA * goukei / 1000) * 1000;
+          item._genkaManual = false; // 歩工合計直接編集時はgenka自動計算に戻す
           item.genka     = Math.round(RODO_GENKA  * goukei / 1000) * 1000;
         }
         item.amount = (item.unitPrice || 0) * (Number(item.qty) || 1);
@@ -7063,7 +7134,9 @@ const app = (() => {
       const dairiUnitEl   = row.querySelector('.item-dairi-unit');
       const dairiUnitLock = row.querySelector('.btn-dairi-unit-lock');
       if (dairiUnitEl && dairiUnitEl !== document.activeElement) {
-        const isManual    = item._dairiManual === true;
+        // dairiUnitPriceが設定されていれば手動扱い（_dairiManualが古いデータでfalseの場合も対応）
+        const isManual    = item.dairiUnitPrice != null || item._dairiManual === true;
+        if (isManual && !item._dairiManual) item._dairiManual = true; // 状態を同期
         const displayUnit = effectiveDairiUnit(item);
         dairiUnitEl.value = displayUnit != null ? Number(displayUnit).toLocaleString('ja-JP') : '';
         const isAutoRounded = state.roundingEnabled && !isManual;
@@ -8287,7 +8360,9 @@ const app = (() => {
             name: item.name, spec: item.spec, qty: item.qty, unit: item.unit,
             unitPrice: item.unitPrice, amount: item.amount, genka: item.genka,
             includeInLabor: item.includeInLabor,
-            dairiRate: item.dairiRate, calcCategory: item.calcCategory,
+            dairiRate: item.dairiRate, dairiUnitPrice: item.dairiUnitPrice,
+            _dairiManual: item._dairiManual || false,
+            calcCategory: item.calcCategory,
             houdan: item.houdan, houkouDirect: item.houkouDirect,
             houkouKubun: item.houkouKubun,
             gensuiKubun: item.gensuiKubun, gensuiA: item.gensuiA, gensuiB: item.gensuiB,
@@ -8642,6 +8717,7 @@ const app = (() => {
         item.includeInLabor = tplItem.includeInLabor ?? false;
         item.dairiRate      = tplItem.dairiRate      ?? null;
         item.dairiUnitPrice = tplItem.dairiUnitPrice ?? null;
+        item._dairiManual   = tplItem._dairiManual || (tplItem.dairiUnitPrice != null);
         item.calcCategory  = tplItem.calcCategory  || '';
         item.houdan        = tplItem.houdan        ?? 0;
         item.houkouDirect  = tplItem.houkouDirect  ?? 0;
@@ -9596,9 +9672,17 @@ const app = (() => {
         const cb = document.getElementById('printProductCode');
         return cb ? cb.checked : false;
       })(),
+      productCodePosition: (() => {
+        const r = document.querySelector('input[name="productCodePosition"]:checked');
+        return r ? r.value : 'right';
+      })(),
       showProductCodeCover: (() => {
         const cb = document.getElementById('printProductCodeCover');
         return cb ? cb.checked : false;
+      })(),
+      productCodePositionCover: (() => {
+        const r = document.querySelector('input[name="productCodeCoverPosition"]:checked');
+        return r ? r.value : 'right';
       })(),
       shochoName: state.shochoName || '',
       showShocho: (() => {
@@ -9714,6 +9798,60 @@ const app = (() => {
       }
 
       console.log('保存開始 quoteId:', state.quoteId, 'sections:', state.sections.length);
+
+      // 保存直前DOM同期: onItemInput で未反映の代理店単価を救済する
+      // (dairiUnitPrice=null かつ DOM値が自動計算値と異なる場合のみ適用)
+      const _syncCont = document.getElementById('sectionsContainer');
+      if (_syncCont) {
+        state.sections.forEach(sec => {
+          const _sb = _syncCont.querySelector(`[data-section-id="${sec.id}"]`);
+          if (!_sb) return;
+          sec.items.forEach(item => {
+            const _sr = _sb.querySelector(`[data-item-id="${item.id}"]`);
+            if (!_sr) return;
+            // 代理店単価: is-manualクラスまたは_dairiManualフラグがあれば常にDOM値をstateに反映
+            {
+              const _duEl = _sr.querySelector('.item-dairi-unit');
+              if (_duEl) {
+                const _isManualDOM = _duEl.classList.contains('is-manual') || item._dairiManual;
+                if (_isManualDOM) {
+                  const _raw = _duEl.value.replace(/,/g, '').trim();
+                  const _num = _raw !== '' ? (Number(_raw) || null) : null;
+                  if (_num !== null) {
+                    item.dairiUnitPrice = _num;
+                    item._dairiManual   = true;
+                  }
+                } else if (item.dairiUnitPrice == null) {
+                  const _raw = _duEl.value.replace(/,/g, '').trim();
+                  const _num = _raw !== '' ? (Number(_raw) || null) : null;
+                  if (_num !== null) {
+                    const _auto = effectiveDairiUnit(item);
+                    if (_num !== _auto) {
+                      item.dairiUnitPrice = _num;
+                      item._dairiManual   = true;
+                    }
+                  }
+                }
+              }
+            }
+            // 最終代理店単価
+            if (item.finalDairiUnit == null) {
+              const _fdEl = _sr.querySelector('.item-final-dairi');
+              if (_fdEl) {
+                const _raw2 = _fdEl.value.replace(/,/g, '').trim();
+                const _num2 = _raw2 !== '' ? (Number(_raw2) || null) : null;
+                if (_num2 !== null) {
+                  const _auto2 = effectiveFinalDairiUnit(item);
+                  if (_num2 !== _auto2) {
+                    console.warn('[preSaveSync] 最終代理店単価 DOM→state補正 itemId:', item.id, 'DOM:', _num2, 'auto:', _auto2);
+                    item.finalDairiUnit = _num2;
+                  }
+                }
+              }
+            }
+          });
+        });
+      }
 
       collectExclusions();
       const jsonStr = JSON.stringify({
@@ -10235,10 +10373,10 @@ const app = (() => {
     return                      Math.ceil(price / 1000) * 1000;
   }
 
-  // 代理店単価の有効値（ユーザー手動設定 > 掛率計算 > マスタ仕切り価格）
+  // 代理店単価の有効値（ユーザー手動設定 > 掛率計算）
   function effectiveDairiUnit(item) {
-    // ユーザーが明示的に手動入力した場合のみ手動値を優先
-    if (item._dairiManual === true && item.dairiUnitPrice != null) return item.dairiUnitPrice;
+    // dairiUnitPriceが設定されていれば手動値を常に優先（_dairiManualフラグに依存しない）
+    if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
     const rate = item.dairiRate ?? state.mainRate;
     if (rate != null) {
       // unitPriceがnullのとき amount/qty から単価を逆算
@@ -10249,8 +10387,6 @@ const app = (() => {
         return state.roundingEnabled ? roundUpNormal(auto) : auto;
       }
     }
-    // 掛率なし → マスタ仕切り価格をフォールバック
-    if (item.dairiUnitPrice != null) return item.dairiUnitPrice;
     return null;
   }
 

@@ -21,6 +21,7 @@
         <span class="header-label">御見積書 PDF生成</span>
       </div>
       <div class="quote-no-badge" id="quoteNoBadge">採番待ち</div>
+      <button id="btnCloseWidget" title="閉じる" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:18px;color:#fff;padding:4px 10px;line-height:1;opacity:0.85;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.85'">✕</button>
     </header>
 
     <!-- 未保存警告バナー -->
@@ -851,12 +852,22 @@
               <input type="checkbox" id="printProductCodeCover">
               鏡に品目コードを印刷する
             </label>
+            <div id="productCodeCoverPositionGroup" style="display:none; margin-left:1.5em; margin-top:3px; font-size:0.85em;">
+              表示位置：
+              <label style="margin-right:8px;"><input type="radio" name="productCodeCoverPosition" value="right" checked> 右</label>
+              <label><input type="radio" name="productCodeCoverPosition" value="left"> 左</label>
+            </div>
           </div>
           <div class="print-detail-option">
             <label class="print-detail-label">
               <input type="checkbox" id="printProductCode">
               明細に品目コードを印刷する
             </label>
+            <div id="productCodePositionGroup" style="display:none; margin-left:1.5em; margin-top:3px; font-size:0.85em;">
+              表示位置：
+              <label style="margin-right:8px;"><input type="radio" name="productCodePosition" value="right" checked> 右</label>
+              <label><input type="radio" name="productCodePosition" value="left"> 左</label>
+            </div>
           </div>
 
           <div class="print-detail-option">
