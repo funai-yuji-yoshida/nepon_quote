@@ -1566,7 +1566,7 @@ const app = (() => {
     try { state._frpSettingsRaw = quote.FRP_JSON ? JSON.parse(quote.FRP_JSON) : null; }
     catch (e) { state._frpSettingsRaw = null; }
 
-    const savedJson = quote.JSON || '';
+    const savedJson = (quote.JSON || '') + (quote.JSON2 || '');
     if (savedJson) {
       try {
         const parsed = JSON.parse(savedJson);
@@ -10020,7 +10020,8 @@ const app = (() => {
 
       const apiData = {
         id:      state.quoteId,
-        JSON:    jsonStr,
+        JSON:    jsonStr.slice(0, 32000),
+        JSON2:   jsonStr.length > 32000 ? jsonStr.slice(32000) : '',
         field55: state.seqNo      ? String(state.seqNo)      : '',
         field56: state.revision   ? Number(state.revision)   : undefined,
         field6:  state.deliveryTerm,
@@ -10169,7 +10170,11 @@ const app = (() => {
       });
       await ZOHO.CRM.API.updateRecord({
         Entity:  'Quotes',
-        APIData: { id: state.quoteId, JSON: updatedJson },
+        APIData: {
+          id:    state.quoteId,
+          JSON:  updatedJson.slice(0, 32000),
+          JSON2: updatedJson.length > 32000 ? updatedJson.slice(32000) : '',
+        },
         Trigger: [],
       });
       statusEl.textContent = '✅ 保存しました（' + new Date().toLocaleTimeString('ja-JP') + '）';
