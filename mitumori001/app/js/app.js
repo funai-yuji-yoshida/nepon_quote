@@ -7888,6 +7888,7 @@ const app = (() => {
           deptName:    r.field21?.name || '',
           description: parsed?.description || r.Description || '',
           data:        parsed,
+          pdfJson:     r.PDFJSON || null,
         };
         if (parsed?.isSetProduct) {
           state.setProductList.push(entry);
@@ -8326,7 +8327,7 @@ const app = (() => {
       ? (state.templateDepts.find(d => d.id === deptId)?.name || '')
       : '';
 
-    let type, payload;
+    let type, payload, includePdf = false;
 
     if (state.frpMode) {
       type = 'FRP';
@@ -8350,6 +8351,7 @@ const app = (() => {
       const includeConditions  = document.getElementById('tplSaveIncludeConditions')?.checked;
       const includeRemarks     = document.getElementById('tplSaveIncludeRemarks')?.checked;
       const includeExclusions  = document.getElementById('tplSaveIncludeExclusions')?.checked;
+      includePdf               = document.getElementById('tplSaveIncludePdf')?.checked ?? false;
       payload = {
         description,
         sections: state.sections.map(sec => ({
@@ -8397,6 +8399,7 @@ const app = (() => {
       if (type) apiData.field17 = type;
       if (deptId) apiData.field21 = { id: deptId, name: deptName };
       apiData.Description = description;
+      if (includePdf) apiData.PDFJSON = JSON.stringify(collectPdfSettings());
 
       // 上書き先が指定されている場合はIDで直接更新、なければ同名チェック
       const existing = overwriteId
@@ -8653,6 +8656,12 @@ const app = (() => {
       cbExcl.disabled = !hasExclusions;
       cbExcl.checked  = hasExclusions;
     }
+    const cbPdf = document.getElementById('tplRestorePdf');
+    if (cbPdf) {
+      const hasPdf = !!(tpl?.pdfJson);
+      cbPdf.disabled = !hasPdf;
+      cbPdf.checked  = hasPdf;
+    }
   }
 
   async function execTemplateLoad() {
@@ -8660,7 +8669,7 @@ const app = (() => {
     const mode = document.querySelector('input[name="tplLoadMode"]:checked')?.value || 'add';
 
     // CRM からテンプレートJSON取得
-    let tplData;
+    let tplData, pdfJsonStr;
     try {
       const res = await ZOHO.CRM.API.getRecord({
         Entity: 'CustomModule8', RecordID: state.selectedTemplateId,
@@ -8668,6 +8677,7 @@ const app = (() => {
       const record = res?.data?.[0];
       if (!record?.JSON) { showToast('テンプレートデータが空です', 'warn'); return; }
       tplData = JSON.parse(record.JSON);
+      pdfJsonStr = record.PDFJSON || null;
     } catch (e) {
       console.error('テンプレート読み込みエラー:', e);
       showToast('読み込みに失敗しました', 'err');
@@ -8751,6 +8761,7 @@ const app = (() => {
     const restoreConditions = document.getElementById('tplRestoreConditions')?.checked;
     const restoreRemarks    = document.getElementById('tplRestoreRemarks')?.checked;
     const restoreExclusions = document.getElementById('tplRestoreExclusions')?.checked;
+    const restorePdf        = document.getElementById('tplRestorePdf')?.checked;
     if (restoreConditions && tplData.deliveryTerm !== undefined) {
       setValue('deliveryTerm',   tplData.deliveryTerm   || '');
       setValue('deliveryMethod', tplData.deliveryMethod || '');
@@ -8764,6 +8775,9 @@ const app = (() => {
     if (restoreExclusions && Array.isArray(tplData.exclusions)) {
       state.exclusions = tplData.exclusions.slice();
       applyExclusionsToForm();
+    }
+    if (restorePdf && pdfJsonStr) {
+      try { applyPdfSettings(JSON.parse(pdfJsonStr)); } catch(e) {}
     }
 
     markDirty();
@@ -9546,6 +9560,60 @@ const app = (() => {
     if (frame)   { frame.src = ''; frame.style.display = 'none'; }
     if (loading) { loading.style.display = 'flex'; loading.textContent = '⏳ PDF生成中...'; }
     if (_pdfPreviewObjectUrl) { URL.revokeObjectURL(_pdfPreviewObjectUrl); _pdfPreviewObjectUrl = null; }
+  }
+
+  function collectPdfSettings() {
+    const getChk   = id => { const el = document.getElementById(id); return el ? el.checked : undefined; };
+    const getRadio = name => document.querySelector(`input[name="${name}"]:checked`)?.value;
+    return {
+      printPageMode:            getRadio('printPageMode')            || 'detail',
+      printNaiyaku:             getChk('printNaiyaku'),
+      printShocho:              getChk('printShocho'),
+      printTaxIncluded:         getChk('printTaxIncluded'),
+      printProductCodeCover:    getChk('printProductCodeCover'),
+      productCodeCoverPosition: getRadio('productCodeCoverPosition') || 'right',
+      printProductCode:         getChk('printProductCode'),
+      productCodePosition:      getRadio('productCodePosition')      || 'right',
+      printBikou:               getChk('printBikou'),
+      printTeikaTotal:          getChk('printTeikaTotal'),
+      printSubtotalBoth:        getChk('printSubtotalBoth'),
+      useBuppanDeliveryLabel:   getChk('useBuppanDeliveryLabel'),
+      pdfPriceMode:             getRadio('pdfPriceMode')             || 'teika',
+      pdfPriceModeKouji:        getRadio('pdfPriceModeKouji')        || 'teika',
+      dateFormat:               document.getElementById('dateFormat')?.value || 'seireki',
+    };
+  }
+
+  function applyPdfSettings(s) {
+    const setChk = (id, val) => { if (val === undefined) return; const el = document.getElementById(id); if (el) el.checked = val; };
+    const setRadio = (name, val) => {
+      if (!val) return;
+      document.querySelectorAll(`input[name="${name}"]`).forEach(r => { r.checked = r.value === val; });
+    };
+    setRadio('printPageMode', s.printPageMode);
+    setChk('printNaiyaku', s.printNaiyaku);
+    setChk('printShocho', s.printShocho);
+    setChk('printTaxIncluded', s.printTaxIncluded);
+    if (s.printProductCodeCover !== undefined) {
+      setChk('printProductCodeCover', s.printProductCodeCover);
+      const grp = document.getElementById('productCodeCoverPositionGroup');
+      if (grp) grp.style.display = s.printProductCodeCover ? '' : 'none';
+    }
+    setRadio('productCodeCoverPosition', s.productCodeCoverPosition);
+    if (s.printProductCode !== undefined) {
+      setChk('printProductCode', s.printProductCode);
+      const grp = document.getElementById('productCodePositionGroup');
+      if (grp) grp.style.display = s.printProductCode ? '' : 'none';
+    }
+    setRadio('productCodePosition', s.productCodePosition);
+    setChk('printBikou', s.printBikou);
+    setChk('printTeikaTotal', s.printTeikaTotal);
+    setChk('printSubtotalBoth', s.printSubtotalBoth);
+    setChk('useBuppanDeliveryLabel', s.useBuppanDeliveryLabel);
+    setRadio('pdfPriceMode', s.pdfPriceMode);
+    setRadio('pdfPriceModeKouji', s.pdfPriceModeKouji);
+    const dfEl = document.getElementById('dateFormat');
+    if (dfEl && s.dateFormat) dfEl.value = s.dateFormat;
   }
 
   /** PDF 生成用データオブジェクトを組み立てる */
