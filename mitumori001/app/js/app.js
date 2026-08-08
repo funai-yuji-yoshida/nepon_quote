@@ -9462,6 +9462,30 @@ const app = (() => {
 
   // ── PDF 生成 ─────────────────────────────────────────────────
 
+  function showPdfAddressDialog() {
+    return new Promise(resolve => {
+      const modal = document.getElementById('pdfAddressModal');
+      if (!modal) { resolve({ override: false }); return; }
+      document.getElementById('pdfAddressCompany').value   = state.customerName    || '';
+      document.getElementById('pdfAddressContact').value   = state.contactName     || '';
+      document.getElementById('pdfAddressHonorific').value = state.contactHonorific || '様';
+      const rate96El = document.getElementById('pdfAddressRate96');
+      if (rate96El) rate96El.checked = (state.customerName || '').includes('佐藤商事');
+      modal.style.display = '';
+      const cleanup = result => { modal.style.display = 'none'; resolve(result); };
+      const getRate96 = () => !!(document.getElementById('pdfAddressRate96')?.checked);
+      document.getElementById('pdfAddressCancel').onclick   = () => cleanup(null);
+      document.getElementById('pdfAddressDefault').onclick  = () => cleanup({ override: false, applyRate96: getRate96() });
+      document.getElementById('pdfAddressOverride').onclick = () => cleanup({
+        override:         true,
+        applyRate96:      getRate96(),
+        customerName:     document.getElementById('pdfAddressCompany').value.trim(),
+        contactName:      document.getElementById('pdfAddressContact').value.trim() || undefined,
+        contactHonorific: document.getElementById('pdfAddressHonorific').value || '様',
+      });
+    });
+  }
+
   async function generatePDF(mode = 'detail') {
     readFormToState();
 
@@ -9484,6 +9508,9 @@ const app = (() => {
     //   if (!confirm(`原価が未入力の項目が ${missingGenkaItems.length} 件あります。\n\n${list}\n\nこのまま印刷しますか？`)) return;
     // }
 
+    const addrResult = await showPdfAddressDialog();
+    if (!addrResult) return;
+
     const btnSimple = document.getElementById('btnSimplePDF');
     const btnDetail = document.getElementById('btnDetailPDF');
     const btn = mode === 'simple' ? btnSimple : btnDetail;
@@ -9496,6 +9523,43 @@ const app = (() => {
     try {
       updateOutput();
       const data = buildPdfData(mode);
+      if (addrResult.override) {
+        data.customerName     = addrResult.customerName;
+        data.contactName      = addrResult.contactName;
+        data.contactHonorific = addrResult.contactHonorific;
+        data.showContactName  = !!addrResult.contactName;
+      }
+      if (addrResult.applyRate96) {
+        const r96 = 0.96;
+        data.mainRate = r96;
+        data.sections = (state.sections || []).map(sec => ({
+          ...sec,
+          items: (sec.items || []).map(item => ({
+            ...item,
+            dairiRate:      r96,
+            dairiUnitPrice: null,
+            _dairiManual:   false,
+            finalDairiUnit: null,
+          })),
+        }));
+        const dairiTotal96 = data.sections.reduce((sum, sec) => {
+          const secQty = Math.max(1, Number(sec.secQty) || 1);
+          const sub = (sec.items || []).reduce((ss, item) => {
+            const qty  = Number(item.qty) || 1;
+            const base = item.unitPrice != null ? item.unitPrice
+              : (item.amount != null ? Math.round(Number(item.amount) / qty) : null);
+            return ss + (base != null ? Math.round(base * r96) * qty : 0);
+          }, 0);
+          return sum + sub * secQty;
+        }, 0);
+        const grandTotal96     = state.grandTotal || dairiTotal96;
+        const adjustAmount96   = state.adjustAmount || 0;
+        const waribikiAmount96 = Math.max(0, grandTotal96 - dairiTotal96);
+        data.dairiTotal     = dairiTotal96;
+        data.waribikiAmount = waribikiAmount96;
+        data.discount       = waribikiAmount96 + adjustAmount96;
+        data.deliveryPrice  = Math.max(0, dairiTotal96 - adjustAmount96);
+      }
       const blob = await QuotationPDF.getBlob(data);
       const quoteNo  = data.quoteNoStr || data.seqNo || '未採番';
       const suffix   = mode === 'simple' ? '簡略' : '詳細';

@@ -1184,6 +1184,44 @@
     </div>
   </div>
 
+  <!-- 宛先変更ダイアログ -->
+  <div id="pdfAddressModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog" style="max-width:420px">
+      <div class="modal-header">
+        <span>PDF出力 - 宛先を確認・変更</span>
+      </div>
+      <div class="modal-body">
+        <div class="modal-form-row">
+          <label>会社名</label>
+          <input type="text" id="pdfAddressCompany" class="input-standard" style="flex:1" placeholder="株式会社〇〇">
+        </div>
+        <div class="modal-form-row">
+          <label>担当者名</label>
+          <div style="display:flex;gap:6px;flex:1">
+            <input type="text" id="pdfAddressContact" class="input-standard" style="flex:1" placeholder="（省略可）">
+            <select id="pdfAddressHonorific" class="input-standard" style="width:70px">
+              <option value="様">様</option>
+              <option value="御中">御中</option>
+              <option value="">なし</option>
+            </select>
+          </div>
+        </div>
+        <p class="hint-small" style="margin-top:8px">「そのまま出力」を押すと宛先を変更せずにPDFを生成します。</p>
+        <div style="margin-top:10px;padding:8px 10px;background:rgba(255,180,0,0.12);border:1px solid rgba(200,140,0,0.3);border-radius:4px">
+          <label style="font-weight:normal;display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="pdfAddressRate96">
+            <span>96%掛率を適用（エンド向け価格）</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="pdfAddressCancel">キャンセル</button>
+        <button class="btn-secondary" id="pdfAddressDefault">そのまま出力</button>
+        <button class="btn-primary" id="pdfAddressOverride">宛先を変更して出力</button>
+      </div>
+    </div>
+  </div>
+
   <!-- テンプレート保存モーダル -->
   <div id="tplSaveModal" class="modal-overlay" style="display:none">
     <div class="modal-dialog">
