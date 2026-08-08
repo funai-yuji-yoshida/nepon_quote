@@ -1,9 +1,1599 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-  </head>
-  <body>
-    <h2>This is a sample Widget built using Zoho Extension toolkit.</h2>
-  </body>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>御見積書 PDF生成</title>
+  <!-- Zoho Embedded App SDK -->
+  <script src="https://live.zwidgets.com/js-sdk/1.5/ZohoEmbededAppSDK.min.js"></script>
+  <!-- PDFMake 0.1.x（Zohoウィジェット環境ではWeb Workerが使えないため0.1系を使用） -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.72/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.72/vfs_fonts.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- ヘッダー -->
+    <header class="widget-header">
+      <div class="header-title">
+        <span class="company-name">ネポン</span>
+        <span class="header-label">御見積書 PDF生成</span>
+      </div>
+      <div class="quote-no-badge" id="quoteNoBadge">採番待ち</div>
+      <button id="btnCloseWidget" title="閉じる" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:18px;color:#fff;padding:4px 10px;line-height:1;opacity:0.85;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.85'">✕</button>
+    </header>
+
+    <!-- 未保存警告バナー -->
+    <div id="unsavedBanner" style="display:none;background:#fff3cd;border-bottom:1px solid #ffc107;padding:6px 16px;font-size:12px;color:#856404;">
+      ⚠️ 未保存の変更があります。閉じる前に「CRMに保存」を押してください。
+    </div>
+
+    <!-- タブナビゲーション -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="basic">① 基本情報</button>
+      <button class="tab-btn" data-tab="items">② 見積明細</button>
+      <button class="tab-btn" data-tab="output">③ PDF出力</button>
+      <button class="tab-btn" data-tab="summary">④ 見積まとめ</button>
+    </nav>
+
+    <!-- ローディング -->
+    <div id="loadingOverlay" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <p>CRMデータ読み込み中...</p>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- タブ①: 基本情報                                               -->
+    <!-- ============================================================ -->
+    <div id="tab-basic" class="tab-content active">
+      <div class="form-section">
+        <h3 class="section-title">見積番号</h3>
+        <div class="form-row" id="rowKoujiCategory">
+          <label>工事カテゴリ</label>
+          <select id="koujiCategory">
+            <option value="">― 選択 ―</option>
+            <option value="CQ">CQ：農用施設</option>
+            <option value="CQX">CQX：農用施設（大規模等）</option>
+            <option value="CD">CD：熱機器</option>
+            <option value="CE">CE：缶体交換</option>
+            <option value="CP">CP：衛生</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>作成所課</label>
+          <select id="createDept"><option value="">― 読込中 ―</option></select>
+        </div>
+        <div class="form-row" id="rowSiteDept">
+          <label>現場所課</label>
+          <select id="siteDept"><option value="">― 読込中 ―</option></select>
+        </div>
+        <div class="form-row">
+          <label>期下二桁</label>
+          <input type="number" id="kikaShita" value="80" min="0" max="99" class="input-small">
+        </div>
+        <div class="form-row">
+          <label>見積番号</label>
+          <span id="quoteNoDisplay" class="quote-no-generated">（未採番）</span>
+          <button class="btn-auto" id="btnAutoNumber">🔢 採番する</button>
+          <button class="btn-reset-seq" id="btnIncrSeqNo" style="display:none" onclick="app.incrementSeqNo()">連番＋１</button>
+          <button class="btn-reset-seq" id="btnResetSeqNo" style="display:none" onclick="app.incrementEdaban()">枝番＋１</button>
+          <button class="btn-reset-seq btn-clear-seq" id="btnClearSeqNo" style="display:none" onclick="app.resetSeqNo()">採番クリア</button>
+          <button class="btn-reset-seq" id="btnUndoSeqNo" style="display:none" onclick="app.undoSeqNo()">← 戻る</button>
+        </div>
+        <div class="form-row">
+          <label>枝番</label>
+          <input type="text" id="edaban" value="1" class="input-small" maxlength="4" placeholder="1">
+        </div>
+        <div class="form-row">
+          <label>見積提出日</label>
+          <input type="date" id="quoteDate" class="input-date">
+          <button type="button" onclick="document.getElementById('quoteDate').value=''; app.updateOutput();" style="margin-left:4px;font-size:11px;padding:2px 6px;cursor:pointer;" title="日付をクリア">× クリア</button>
+        </div>
+      </div>
+
+      <div class="form-section frp-mode-section">
+        <h3 class="section-title">見積モード</h3>
+        <div class="form-row">
+          <button id="btnFrpMode" class="btn-frp-toggle" onclick="app.switchFrpMode()">FRP見積モードに切り替え</button>
+          <span id="frpModeLabel" class="frp-mode-label" style="display:none">● FRPモード有効</span>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">顧客・工事情報 <span class="crm-badge">CRMより取得</span></h3>
+        <div class="customer-rate-layout">
+          <div class="customer-fields">
+            <div class="form-row">
+              <label>見積提出先</label>
+              <input type="text" id="customerName" placeholder="株式会社〇〇" class="input-wide">
+              <select id="customerHonorific">
+                <option value="御中">御中</option>
+                <option value="様">様</option>
+                <option value="ー">ー</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>顧客担当者</label>
+              <input type="text" id="contactName" placeholder="担当者名" class="input-wide">
+              <select id="contactHonorific">
+                <option value="様">様</option>
+                <option value="殿">殿</option>
+                <option value="社長">社長</option>
+                <option value="御中">御中</option>
+                <option value="様分">様分</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>工事名</label>
+              <input type="text" id="projectName" placeholder="〇〇設備工事" class="input-wide">
+            </div>
+            <div class="form-row" id="projectName2Row" style="display:none">
+              <label>件名2行目</label>
+              <input type="text" id="projectName2" class="input-wide">
+            </div>
+            <div class="form-row" id="projectName3Row" style="display:none">
+              <label>件名3行目</label>
+              <input type="text" id="projectName3" class="input-wide">
+            </div>
+            <div class="form-row">
+              <label>担当者（営業）</label>
+              <input type="text" id="ownerName" placeholder="担当者名" class="input-medium">
+            </div>
+            <div class="form-row">
+              <label>更新者（事務）</label>
+              <input type="text" id="updaterName" class="input-medium">
+            </div>
+            <div class="form-row">
+              <label>所長</label>
+              <input type="text" id="shochoName" placeholder="所長名" class="input-medium">
+            </div>
+            <div class="form-row">
+              <label>見積区分</label>
+              <select id="quoteCategoryDisplay" class="quote-category-badge" onchange="app.onCategorySelectChange(this.value)">
+                <option value="">―</option>
+                <option value="物販">物販</option>
+                <option value="作業（100万以下）">作業（100万以下）</option>
+                <option value="工事（100万超）">工事（100万超）</option>
+              </select>
+            </div>
+          </div>
+          <div class="rate-panel">
+            <div class="rate-panel-title">掛率情報</div>
+            <div class="rate-row">
+              <span class="rate-label">代理店掛率</span>
+              <input type="number" id="rateMain" class="rate-input" step="0.001" min="0.001" max="9.999" placeholder="―" oninput="app.onMainRateInput(this.value)">
+            </div>
+            <div class="rate-row">
+              <span class="rate-label">製品掛率</span>
+              <input type="number" id="rateItem" class="rate-input" step="0.001" min="0.001" max="9.999" placeholder="―">
+            </div>
+            <div class="rate-row">
+              <span class="rate-label">部品掛率</span>
+              <input type="number" id="rateParts" class="rate-input" step="0.001" min="0.001" max="9.999" placeholder="―">
+            </div>
+            <div class="rate-row">
+              <span class="rate-label">仕入れ品掛率</span>
+              <input type="number" id="ratePurchase" class="rate-input" step="0.001" min="0.001" max="9.999" placeholder="―">
+            </div>
+            <button class="btn-apply-rate" onclick="app.applyGlobalRate()">全明細に反映</button>
+            <div id="ratePanelFrpNote" style="display:none;font-size:11px;color:#c00;margin-top:6px;">※この項目はFRPには反映されません</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">金額情報</h3>
+        <div class="price-layout">
+          <div class="price-left">
+            <div class="form-row">
+              <label style="white-space: nowrap; width: auto;">①明細合計（希望小売価格）</label>
+              <div class="price-group">
+                <span class="currency-sign">¥</span>
+                <span id="basicGrandTotal" class="display-price">0</span>
+              </div>
+            </div>
+            <div class="form-row" id="rowDairiTotal" style="display:none">
+              <label style="white-space: nowrap; width: auto;">②代理店価格合計</label>
+              <div class="price-group">
+                <span class="currency-sign">¥</span>
+                <span id="basicDairiTotal" class="display-price" style="color:#1a4d8f">0</span>
+              </div>
+            </div>
+            <div class="form-row" id="rowWaribiki" style="display:none">
+              <label style="white-space: nowrap; width: auto;">③割引額<span style="font-size:11px; color:#888; margin-left:4px;">※①ー②</span></label>
+              <div class="price-group">
+                <span class="currency-sign" style="color:#c0392b">▲</span>
+                <span id="basicWaribikiAmount" class="display-price" style="color:#c0392b">0</span>
+              </div>
+            </div>
+            <div class="form-row" id="rowBuhanDiscount" style="display:none">
+              <label>　値引き（明細計）</label>
+              <div class="price-group">
+                <span class="currency-sign" style="color:#c0392b">▲</span>
+                <span id="basicBuhanDiscount" class="display-price" style="color:#c0392b">0</span>
+              </div>
+            </div>
+            <div class="form-row" id="rowDiscount">
+              <label id="discountLabel">調整額</label>
+              <input type="checkbox" id="chkDiscountEnabled" title="値引き額を印刷する" style="display:none" checked>
+              <div class="price-group">
+                <span class="currency-sign">¥</span>
+                <input type="number" id="discountAmount" placeholder="0" class="input-price">
+              </div>
+              <span id="adjNegWarn" style="display:none; color:#c0392b; font-size:11px; margin-left:8px; font-weight:bold;">⚠ マイナス調整（金額増加）</span>
+            </div>
+            <div class="form-row" id="rowSesseiWabiki" style="display:none">
+              <label>出精値引き</label>
+              <div class="price-group">
+                <span class="currency-sign" style="color:#c0392b">▲</span>
+                <span id="basicSesseiWabiki" class="display-price" style="color:#c0392b">0</span>
+              </div>
+            </div>
+            <div class="form-row row-delivery-calc">
+              <label>貴社お渡し価格</label>
+              <div class="price-group">
+                <span class="currency-sign">¥</span>
+                <span id="basicDeliveryPrice" class="display-price delivery-price-val">0</span>
+              </div>
+              <input type="hidden" id="deliveryPrice" value="0">
+            </div>
+          </div>
+          <div class="price-right">
+            <div class="form-row">
+              <label>原価合計</label>
+              <div class="price-group">
+                <span class="currency-sign">¥</span>
+                <span id="basicGenkaTotal" class="display-price">0</span>
+              </div>
+            </div>
+            <div class="form-row">
+              <label>粗利</label>
+              <div class="price-group">
+                <span class="currency-sign">¥</span>
+                <span id="basicAraRi" class="display-price">0</span>
+              </div>
+            </div>
+            <div class="form-row">
+              <label>粗利率</label>
+              <div class="price-group">
+                <span id="basicAraRiRate" class="display-price">―</span>
+                <span class="suffix">%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">取引条件</h3>
+        <div class="form-row">
+          <label>納期</label>
+          <div class="combo-group">
+            <input type="text" id="deliveryTerm" class="input-wide" placeholder="選択または入力">
+            <select class="combo-select" onchange="if(this.value){document.getElementById('deliveryTerm').value=this.value;this.selectedIndex=0;}">
+              <option value="">▼ 選択</option>
+              <option>お打ち合わせ願います</option>
+              <option>ご注文後1週間でお渡しできます</option>
+              <option>ご注文後2週間でお渡しできます</option>
+              <option>ご注文後3週間でお渡しできます</option>
+              <option>ご注文後1ヶ月でお渡しできます</option>
+              <option>ご注文後2ヶ月でお渡しできます</option>
+              <option>ご注文後3ヶ月でお渡しできます</option>
+              <option>ご注文後半年でお渡しできます</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>受渡し方法</label>
+          <div class="combo-group">
+            <input type="text" id="deliveryMethod" class="input-wide" placeholder="選択または入力">
+            <select class="combo-select" onchange="if(this.value){document.getElementById('deliveryMethod').value=this.value;this.selectedIndex=0;}">
+              <option value="">▼ 選択</option>
+              <option>搬入・設置・試運転渡し</option>
+              <option>お打ち合わせ願います</option>
+              <option>現場館側渡し</option>
+              <option>ご指定地車上渡し</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>支払い条件</label>
+          <div class="combo-group">
+            <input type="text" id="paymentTerm" class="input-wide" placeholder="選択または入力">
+            <select class="combo-select" onchange="if(this.value){document.getElementById('paymentTerm').value=this.value;this.selectedIndex=0;}">
+              <option value="">▼ 選択</option>
+              <option>お打ち合わせ願います</option>
+              <option>月末〆翌月現金支払い</option>
+              <option>月末〆の出来高払い（現金支払い）</option>
+              <option>契約時1/3、中間1/3、完成時1/3（現金払い）</option>
+              <option>月末〆翌月支払い（90日手形）</option>
+              <option>月末〆翌月支払い（120日手形）</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>見積有効期限</label>
+          <div class="combo-group">
+            <input type="text" id="validDays" class="input-wide" placeholder="選択または入力">
+            <select class="combo-select" onchange="if(this.value){document.getElementById('validDays').value=this.value;this.selectedIndex=0;}">
+              <option value="">▼ 選択</option>
+              <option>見積期限は60日限りです。期限後のご用命の節は一応ご照会願います。</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-row" style="align-items:flex-start;">
+          <label style="padding-top:4px;">備考</label>
+          <div style="display:flex;gap:0;flex:1;min-width:0;">
+            <!-- 左：備考textarea＋チェックボックス -->
+            <div style="display:flex;flex-direction:column;gap:4px;flex:0 0 60%;min-width:0;">
+              <textarea id="remarks" class="input-remarks" rows="4" style="max-width:none;width:100%;" placeholder="備考を入力（PDF に反映されます）"></textarea>
+              <label style="font-weight:normal;display:flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap;">
+                <input type="checkbox" id="remarkTableEnabled">
+                備考欄の下に缶体温度設定テーブルを追加する（PDF反映）
+              </label>
+            </div>
+            <!-- 右：定型文パネル -->
+            <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:0;border-left:1px solid #ddd;padding-left:8px;margin-left:8px;">
+              <div style="font-size:12px;color:#555;">定型文</div>
+              <div style="display:flex;flex-wrap:wrap;gap:3px;">
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(1)">1</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(2)">2</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(3)">3</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(4)">4</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(5)">5</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(6)">6</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(7)">7</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(8)">8</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(9)">9</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(10)">10</button>
+                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(11)">11</button>
+              </div>
+              <div id="remarkPreviewBox" style="flex:1;min-height:48px;max-height:80px;overflow-y:auto;border:1px solid #ccc;border-radius:4px;padding:3px 6px;font-size:11px;color:#333;background:#fafafa;white-space:pre-wrap;line-height:1.5;"></div>
+              <button class="btn-remark-insert" onclick="app.insertSelectedRemark()" style="width:100%;">挿入</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">
+          見積外工事
+          <span id="exclusionCount" class="exclusion-count">0/15</span>
+          <button class="btn-excl-clear" onclick="document.querySelectorAll('.excl-check:checked').forEach(c=>{c.checked=false;app.onExclusionChange(c);});app.updateExclusionCount();">全解除</button>
+        </h3>
+        <p class="hint-small">チェックした項目が印刷レイアウトに掲載されます（最大15項目）。テキストは直接編集可能です。</p>
+        <div class="exclusion-preset-bar">
+          <span class="exclusion-preset-label">プリセット:</span>
+          <button class="btn-excl-preset" onclick="app.applyExclusionPreset('mizukei')">水系1軍</button>
+          <button class="btn-excl-preset" onclick="app.applyExclusionPreset('fuukei')">風系1軍</button>
+          <button class="btn-excl-preset" onclick="app.applyExclusionPreset('general')">一般（全項目）</button>
+        </div>
+        <div class="exclusion-list" id="exclusionList"></div>
+        <div class="exclusion-custom-list" id="exclusionCustomList"></div>
+        <button class="btn-excl-add" id="btnAddCustomExcl" onclick="app.addCustomExclusion()">＋手入力追加</button>
+      </div>
+
+      <div class="form-section">
+        <h3 class="section-title">発行元（営業所）</h3>
+        <div class="form-row">
+          <label>営業所名</label>
+          <select id="branchSelect" class="input-medium" onchange="app.onBranchChange()">
+            <option value="honbu">営業サービス本部（厚木）</option>
+            <option value="other">その他（手入力）</option>
+          </select>
+        </div>
+        <div id="branchCustomInput" style="display:none">
+          <div class="form-row"><label>営業所名</label><input type="text" id="branchName" class="input-wide"></div>
+          <div class="form-row"><label>郵便番号</label><input type="text" id="branchPostal" placeholder="〒000-0000" class="input-medium"></div>
+          <div class="form-row"><label>住所</label><input type="text" id="branchAddress" class="input-wide"></div>
+          <div class="form-row"><label>TEL</label><input type="text" id="branchTel" class="input-medium"></div>
+          <div class="form-row"><label>FAX</label><input type="text" id="branchFax" class="input-medium"></div>
+          <div class="form-row"><label>自由記述</label><input type="text" id="branchNote" class="input-wide" placeholder="PDFのFAX下に表示されます"></div>
+          <div class="form-row"><label></label><span class="hint-text">※この順番で印刷されます</span></div>
+          <div class="form-row"><label></label><span class="hint-text">※見積発行元表示の最下段に印刷されます。</span></div>
+        </div>
+      </div>
+
+      <div class="tab-footer">
+        <button class="btn-next" onclick="app.goToTab('items')">次へ: 見積明細 →</button>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- タブ②: 見積明細                                               -->
+    <!-- ============================================================ -->
+    <div id="tab-items" class="tab-content">
+
+      <div class="items-toolbar">
+        <div class="toolbar-main">
+          <!-- グループ1: 大項目追加 -->
+          <div class="toolbar-group">
+            <button class="btn-primary btn-add-section" id="btnAddSection" onclick="app.addSection()">＋ 大項目を追加</button>
+          </div>
+
+          <!-- グループ2: 品目検索・追加 -->
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;">
+            <div class="cat-search-wrap" style="flex:1;min-width:0;">
+              <div class="cat-tabs">
+                <button class="cat-tab active" data-cat="product" onclick="app.switchCatTab('product')">商品</button>
+                <button class="cat-tab" data-cat="kiki" onclick="app.switchCatTab('kiki')">機器</button>
+                <button class="cat-tab" data-cat="netsuki" onclick="app.switchCatTab('netsuki')" style="display:none">熱機</button>
+                <button class="cat-tab" data-cat="kanzai" onclick="app.switchCatTab('kanzai')">管材</button>
+                <button class="cat-tab" data-cat="denzai" onclick="app.switchCatTab('denzai')">電材</button>
+                <button class="cat-tab" data-cat="kouji" onclick="app.switchCatTab('kouji')">工事</button>
+                <button class="cat-tab" data-cat="standard" onclick="app.switchCatTab('standard')">標準項</button>
+              </div>
+              <div class="cat-panel-wrap">
+                <div class="cat-panel" id="catPanel-product">
+                  <div class="product-search-group">
+                    <input type="text" id="productSearch" placeholder="商品名・型式で検索..." class="input-search" oninput="app.searchProducts(this.value)">
+                    <div id="productDropdown" class="product-dropdown" style="display:none"></div>
+                  </div>
+                </div>
+                <div class="cat-panel" id="catPanel-kiki" style="display:none"></div>
+                <div class="cat-panel" id="catPanel-netsuki" style="display:none"></div>
+                <div class="cat-panel" id="catPanel-kanzai" style="display:none"></div>
+                <div class="cat-panel" id="catPanel-denzai" style="display:none"></div>
+                <div class="cat-panel" id="catPanel-kouji" style="display:none"></div>
+                <div class="cat-panel" id="catPanel-standard" style="display:none"></div>
+              </div>
+              <select id="commonTargetSection" class="input-standard cat-target-sel"></select>
+              <button class="btn-cat-add" id="btnCommonAdd" onclick="app.execCatAdd()">追加</button>
+            </div>
+          </div>
+
+          <!-- グループ3: 切り上げ -->
+          <div class="toolbar-group toolbar-group-sep">
+            <button class="btn-rounding" id="btnToggleRounding" onclick="app.toggleRounding()" title="単価を桁数に応じて切り上げ表示">切り上げ</button>
+          </div>
+
+          <!-- グループ4: 所課マスタ・列表示 -->
+          <div class="toolbar-group toolbar-group-sep toolbar-right">
+            <span class="template-label">所課マスター</span>
+            <button class="btn-tpl-load" onclick="app.showTemplateLoadDialog()">📂 読み込み</button>
+            <button class="btn-tpl-save" onclick="app.showTemplateSaveDialog()">💾 登録</button>
+            <div class="col-dropdown-wrap">
+              <button class="btn-col-toggle" onclick="app.toggleColDropdown()">⚙️ 列表示</button>
+              <div id="colDropdown" class="col-dropdown" style="display:none"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 行2: 農用機器選択行（農用タブ選択時に表示） -->
+        <div class="toolbar-main" id="kikiRow" style="display:none;margin-top:3px;">
+          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
+            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
+          </div>
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;">機器</button></div>
+            <select id="kikiCatSel" class="input-search" style="height:30px;width:160px;flex-shrink:0;" onchange="app.onKikiCatChange(this.value)">
+              <option value="">― カテゴリ ―</option>
+            </select>
+            <select id="kikiItemSel" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onKikiItemChange(this.value)" disabled>
+              <option value="">― 品名・型式を選択 ―</option>
+            </select>
+            <select id="kikiRowTargetSection" class="input-standard cat-target-sel"></select>
+            <button class="btn-cat-add" onclick="app.execKikiRowAdd()">追加</button>
+          </div>
+        </div>
+
+        <!-- 行3: 管材選択行（管材タブ選択時に表示） -->
+        <div class="toolbar-main" id="kanzaiRow" style="display:none;margin-top:3px;">
+          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
+            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
+          </div>
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;">管材</button></div>
+            <select id="kanzaiCatSel" class="input-search" style="height:30px;width:130px;flex-shrink:0;" onchange="app.onKanzaiCatChange(this.value)">
+              <option value="">― カテゴリ ―</option>
+            </select>
+            <select id="kanzaiItemSel" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onKanzaiItemChange(this.value)" disabled>
+              <option value="">― 品名・型式を選択 ―</option>
+            </select>
+            <select id="kanzaiRowTargetSection" class="input-standard cat-target-sel"></select>
+            <button class="btn-cat-add" onclick="app.execKanzaiRowAdd()">追加</button>
+          </div>
+        </div>
+
+        <!-- 行3: 電材選択行（電材タブ選択時に表示） -->
+        <div class="toolbar-main" id="denzaiRow" style="display:none;margin-top:3px;">
+          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
+            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
+          </div>
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;">電材</button></div>
+            <select id="denzaiCatSel" class="input-search" style="height:30px;width:160px;flex-shrink:0;" onchange="app.onDenzaiCatChange(this.value)">
+              <option value="">― カテゴリ ―</option>
+            </select>
+            <select id="denzaiItemSel" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onDenzaiItemChange(this.value)" disabled>
+              <option value="">― 品名・型式を選択 ―</option>
+            </select>
+            <select id="denzaiRowTargetSection" class="input-standard cat-target-sel"></select>
+            <button class="btn-cat-add" onclick="app.execDenzaiRowAdd()">追加</button>
+          </div>
+        </div>
+
+        <!-- 行5: 工事選択行（工事タブ選択時に表示） -->
+        <div class="toolbar-main" id="koujiRow" style="display:none;margin-top:3px;">
+          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
+            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
+          </div>
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;">工事</button></div>
+            <select id="koujiKubunSelect" class="input-search" style="height:30px;width:100px;flex-shrink:0;" onchange="app.onKoujiKubunChange(this.value)">
+              <option value="">― 工事区分 ―</option>
+              <option value="機械工事">機械工事</option>
+              <option value="配管工事">配管工事</option>
+              <option value="雑工">雑工</option>
+            </select>
+            <select id="koujiNameSelect" class="input-search" style="height:30px;flex:1;min-width:0;">
+              <option value="">― 工事名称を選択 ―</option>
+            </select>
+            <select id="koujiRowTargetSection" class="input-standard cat-target-sel"></select>
+            <button class="btn-cat-add" onclick="app.execKoujiAdd()">追加</button>
+          </div>
+        </div>
+
+        <!-- 行6: 標準項選択行（標準項タブ選択時に表示） -->
+        <!-- 標準項サブタブ行（標準項タブ選択時に表示） -->
+        <div class="toolbar-main" id="standardSubRow" style="display:none;margin-top:3px;">
+          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
+            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
+          </div>
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+            <div class="cat-tabs">
+              <button class="cat-tab" id="standardSubStandard" onclick="app.switchStandardSub('standard')">農用工事</button>
+              <button class="cat-tab" id="standardSubNetsuki" onclick="app.switchStandardSub('netsuki')">熱機</button>
+              <button class="cat-tab" id="standardSubEisei" onclick="app.switchStandardSub('eisei')">衛生</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="toolbar-main" id="standardRow" style="display:none;margin-top:3px;">
+          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
+            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
+          </div>
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;background:#1a56db;color:#fff;border-color:#1a56db;">農用工事</button></div>
+            <select id="standardModelSelect" class="input-search" style="height:30px;width:200px;flex-shrink:0;">
+              <option value="">型式を選択...</option>
+            </select>
+            <span class="standard-hint" id="standardHint" style="font-size:11px;color:#888;flex-shrink:0;"></span>
+            <select id="standardRowTargetSection" class="input-standard cat-target-sel"></select>
+            <button class="btn-cat-add" onclick="app.execStandardAdd()">追加</button>
+          </div>
+        </div>
+
+        <!-- 行7: 熱機標準項（熱機タブ選択時に表示） -->
+        <div class="toolbar-main" id="netsukiRow" style="display:none;margin-top:3px;">
+          <!-- 行1のグループ1と同幅を確保するファントム（非表示） -->
+          <div class="toolbar-group" style="visibility:hidden;pointer-events:none;" aria-hidden="true">
+            <button class="btn-primary btn-add-section" tabindex="-1">＋ 大項目を追加</button>
+          </div>
+          <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+            <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;background:#1a56db;color:#fff;border-color:#1a56db;">熱機</button></div>
+            <select id="buppanStdCategorySelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onBuppanCatChange(this.value)">
+              <option value="">― カテゴリを選択 ―</option>
+            </select>
+            <select id="buppanStdModelSelect" class="input-search" style="height:30px;flex:1;min-width:0;">
+              <option value="">― 型式を選択 ―</option>
+            </select>
+            <select id="netsukiTargetSection" class="input-standard cat-target-sel"></select>
+            <button class="btn-cat-add" onclick="app.execBuppanStandardAdd()">追加</button>
+          </div>
+        </div>
+
+        <!-- 既存関数との互換用（非表示） -->
+        <select id="productTargetSection" style="display:none"></select>
+        <select id="kikiTargetSection" style="display:none"></select>
+        <select id="kanzaiTargetSection" style="display:none"></select>
+        <select id="denzaiTargetSection" style="display:none"></select>
+        <select id="standardTargetSection" style="display:none"></select>
+        <button id="btnProductAdd" style="display:none"></button>
+        <button id="btnKanzaiAdd" style="display:none"></button>
+        <button id="btnDenzaiAdd" style="display:none"></button>
+        <button id="btnStandardAdd" style="display:none"></button>
+      </div>
+
+      <!-- 衛生標準項選択行（FRPモード時のみ表示）＋ 代理店/エリア -->
+      <div class="toolbar-main" id="eiseiRow" style="display:none;margin-top:3px;">
+        <div class="frp-area-section" style="flex-shrink:0">
+          <span class="frp-area-label">代理店：</span>
+          <select id="frpDealerSelect" class="frp-dealer-select" onchange="app.onFrpDealerSelect(this.value)">
+            <option value="">— 選択 —</option>
+          </select>
+          <span class="frp-area-label">エリア：</span>
+          <select id="frpAreaSelect" class="frp-area-select" onchange="app.onFrpAreaChange(this.value)">
+            <option value="">— 選択 —</option>
+          </select>
+        </div>
+        <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
+          <div class="cat-tabs"><button class="cat-tab active" style="cursor:default;background:#1a56db;color:#fff;border-color:#1a56db;">衛生</button></div>
+          <select id="eiseiChuSelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onEiseiChuChange(this.value)">
+            <option value="">― 中項目を選択 ―</option>
+          </select>
+          <select id="eiseiShoSelect" class="input-search" style="height:30px;flex:1;min-width:0;" onchange="app.onEiseiShoChange(this.value)">
+            <option value="">― 小項目を選択 ―</option>
+          </select>
+          <select id="eiseiModelSelect" class="input-search" style="height:30px;flex:1;min-width:0;">
+            <option value="">― 型式を選択 ―</option>
+          </select>
+          <button class="btn-cat-add" onclick="app.execEiseiAdd()">追加</button>
+        </div>
+      </div>
+
+      <!-- FRP見積コンテナー（frpMode時のみ表示） -->
+      <div id="frpContainer" style="display:none">
+        <div class="frp-header">
+          <div class="frp-add-buttons">
+            <button class="btn-frp-add" onclick="app.openFrpWizard('product')">＋ 製品を追加</button>
+            <button class="btn-frp-add" onclick="app.openFrpWizard('option')">＋ オプション部品</button>
+            <button class="btn-frp-add" onclick="app.addFrpManualItem()">＋ 行を追加</button>
+            <button class="btn-frp-add" onclick="app.openSoryoModal()">＋ 送料</button>
+            <button class="btn-rounding" id="btnToggleRoundingFrp" onclick="app.toggleRounding()" title="単価を桁数に応じて切り上げ表示">切り上げ</button>
+            <button class="btn-frp-settings" onclick="app.openFrpSettings()">⚙ 設定</button>
+            <button class="btn-tpl-load" onclick="app.showTemplateLoadDialog()">📂 読み込み</button>
+            <button class="btn-tpl-save" onclick="app.showTemplateSaveDialog()">💾 登録</button>
+          </div>
+        </div>
+
+        <table class="frp-table">
+          <thead>
+            <tr>
+              <th class="frp-col-no">番号</th>
+              <th class="frp-col-name">品名</th>
+              <th class="frp-col-hinshu">品種</th>
+              <th class="frp-col-qty">数量</th>
+              <th class="frp-col-unit">単位</th>
+              <th class="frp-col-price">小売価格単価</th>
+              <th class="frp-col-total">小売価格合計</th>
+              <th class="frp-col-rate">掛率</th>
+              <th class="frp-col-shikiri">仕切単価</th>
+              <th class="frp-col-shikiri-total">仕切合計</th>
+              <th class="frp-col-genka">原価</th>
+              <th class="frp-col-genka-total">原価合計</th>
+              <th class="frp-col-del"></th>
+            </tr>
+          </thead>
+          <tbody id="frpItemsTbody"></tbody>
+        </table>
+
+        <div class="frp-footer">
+          <div class="frp-totals-row">
+            <span class="frp-footer-label">①小売価格合計：</span>
+            <strong id="frpPriceTotal">¥0</strong>
+            <span class="frp-footer-label frp-footer-label-right">②仕切合計：</span>
+            <strong id="frpShikiriTotal">¥0</strong>
+          </div>
+          <div class="frp-discount-row">
+            <span class="frp-footer-label">出精値引き：</span>
+            <input type="number" id="frpDiscountInput" class="frp-discount-input" value="0" min="0">
+            <span class="frp-footer-label">円</span>
+          </div>
+          <div class="frp-grand-row">
+            <span class="frp-footer-label">御見積金額（税別）：</span>
+            <strong id="frpGrandTotal">¥0</strong>
+          </div>
+        </div>
+      </div>
+
+      <div id="sectionsContainer" class="sections-container">
+        <!-- 動的セクション -->
+      </div>
+
+      <div id="noSectionsMsg" class="empty-state">
+        <p>「＋ 大項目を追加」からセクションを追加してください</p>
+        <button class="btn-primary" onclick="app.addSection()">＋ 大項目を追加</button>
+      </div>
+
+      <!-- 減衰計算サマリー -->
+      <div id="gensuiSummary" class="gensui-summary" style="display:none">
+        <div class="gensui-summary-header" onclick="app.toggleGensuiSummary()" style="cursor:pointer">
+          <span class="gensui-toggle-btn">▼</span> 減衰計算サマリー
+        </div>
+        <table class="gensui-table">
+          <thead>
+            <tr>
+              <th>カテゴリ</th>
+              <th>累計歩工 (d)</th>
+              <th>減衰率</th>
+              <th>歩工合計（減衰前）</th>
+              <th>歩工合計（減衰後）</th>
+            </tr>
+          </thead>
+          <tbody id="gensuiSummaryBody"></tbody>
+        </table>
+      </div>
+
+      <div id="multiRateWarn" class="multi-rate-warn" style="display:none"></div>
+
+      <!-- 残調整額ヒントバー（調整額 > 0 のときのみ表示） -->
+      <div id="adjustHintBar" class="adjust-hint-bar" style="display:none">
+        <div class="adjust-hint-row">
+          <span class="adjust-hint-item">調整額 ¥<input type="number" id="adjustHintAmountInput" class="adjust-hint-input" placeholder="0" oninput="app.syncAdjustAmountFromHint(this.value)"></span>
+          <span class="adjust-hint-sep">→</span>
+          <span class="adjust-hint-item">調整済み <strong id="adjustHintDone">¥0</strong></span>
+          <span class="adjust-hint-sep">／</span>
+          <span class="adjust-hint-item adjust-hint-rest-wrap">残 <strong id="adjustHintRest" class="adjust-hint-rest">¥0</strong></span>
+        </div>
+        <div class="adjust-hint-track">
+          <div id="adjustHintProgress" class="adjust-hint-progress" style="width:0%"></div>
+        </div>
+        <div class="adjust-hint-note">🔒 行の代理店単価を手動値引きすると「調整済み」が増えます。</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:5px;">
+          <div id="adjustHintSyncWrap" style="display:none;">
+            <button class="btn-adjust-sync" onclick="app.updateAdjustAmountToRest()">↩ 調整額を残額 <span id="adjustHintSyncLabel">¥0</span> に更新</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="itemsFooterBar" class="items-footer-bar">
+        <span class="footer-item footer-total"><span class="footer-label">合計</span> <strong id="footerTotal">¥0</strong></span>
+        <span id="footerDairiWrap" style="display:none">
+          <span class="footer-sep">／</span>
+          <span class="footer-item"><span id="footerDairiLabel" class="footer-label">代理店</span> <strong id="footerDairi">¥0</strong></span>
+        </span>
+        <span id="footerGenkaWrap" style="display:none">
+          <span class="footer-sep">／</span>
+          <span class="footer-item"><span class="footer-label">原価合計</span> <strong id="footerGenka">¥0</strong></span>
+        </span>
+        <span class="footer-sep">｜</span>
+        <span class="footer-item"><span class="footer-label">粗利</span> <strong id="footerAraRi">¥0</strong></span>
+        <span class="footer-sep">｜</span>
+        <span class="footer-item"><span class="footer-label">粗利率</span> <strong id="footerAraRiRate">―</strong></span>
+      </div>
+
+      <div class="tab-footer">
+        <button class="btn-back" onclick="app.goToTab('basic')">← 基本情報</button>
+        <button class="btn-next" onclick="app.goToTab('output')">次へ: PDF出力 →</button>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- タブ③: PDF出力                                                -->
+    <!-- ============================================================ -->
+    <div id="tab-output" class="tab-content">
+      <div class="output-layout">
+
+        <!-- サマリー -->
+        <div class="summary-card">
+          <h3>見積サマリー</h3>
+          <table class="summary-tbl">
+            <tr><td class="lbl">見積番号</td><td class="val" id="sum-quoteNo">-</td></tr>
+            <tr><td class="lbl">見積日</td><td class="val" id="sum-date">-</td></tr>
+            <tr><td class="lbl">見積提出先</td><td class="val" id="sum-customer">-</td></tr>
+            <tr><td class="lbl">工事名</td><td class="val" id="sum-project">-</td></tr>
+            <tr><td class="lbl">セクション数</td><td class="val" id="sum-sections">0</td></tr>
+          </table>
+
+          <h4 class="breakdown-title">金額内訳</h4>
+          <table class="summary-tbl">
+            <tr><td class="lbl">明細合計（希望小売価格）</td><td class="val amount" id="sum-total">¥0</td></tr>
+            <tr id="sum-dairi-row" style="display:none"><td class="lbl">　代理店価格合計</td><td class="val amount" id="sum-dairi" style="color:#1a4d8f">¥0</td></tr>
+            <tr><td class="lbl">　値引き額</td><td class="val amount" id="sum-discount" style="color:#c0392b">¥0</td></tr>
+            <tr class="row-delivery"><td class="lbl">貴社お渡し価格</td><td class="val amount" id="sum-delivery">¥0</td></tr>
+            <tr><td class="lbl">　1) 資材費他</td><td class="val amount" id="sum-material">¥0</td></tr>
+            <tr>
+              <td class="lbl">　2) 労務費<br><span class="labor-hint">手入力: <input type="number" id="laborCost" placeholder="自動" min="0" class="input-labor-inline"></span></td>
+              <td class="val amount" id="sum-labor">¥0</td>
+            </tr>
+            <tr>
+              <td class="lbl"><span id="sum-welfare-label">　3) 法定福利費</span><br><span class="labor-hint">率: <input type="number" id="legalWelfareRate" value="14.6" step="0.1" min="0" max="100" class="input-rate-inline">%</span></td>
+              <td class="val amount" id="sum-welfare">¥0</td>
+            </tr>
+            <tr>
+              <td class="lbl">　4) 安全衛生経費<br><span class="labor-hint">手入力: <input type="number" id="anzenCost" placeholder="0" min="0" class="input-labor-inline"></span></td>
+              <td class="val amount" id="sum-anzen">¥0</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- アクション -->
+        <div class="action-card">
+          <div class="font-status" id="fontStatus">
+            <span class="status-icon">⏳</span> フォント読み込み中...
+          </div>
+
+          <div id="printCoverGroup" class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="radio" name="printPageMode" id="printCoverPage" value="cover">
+              鏡のみ印刷する
+            </label>
+          </div>
+
+          <div id="printDetailOption" class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="radio" name="printPageMode" id="printDetailPages" value="detail" checked>
+              鏡＋明細ページを印刷する
+            </label>
+          </div>
+
+          <div id="naiyakuPrintGroup" class="print-detail-option" style="display:none">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printNaiyaku" checked>
+              鏡に内訳（資材費・労務費・法定）を印刷する
+            </label>
+          </div>
+
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printContactName" checked>
+              顧客担当者を印刷する
+            </label>
+          </div>
+
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printOwnerName">
+              担当者（営業/事務）を印刷する
+            </label>
+          </div>
+
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printShocho">
+              所長を印刷する
+            </label>
+          </div>
+
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printTaxIncluded">
+              税込み金額を印刷する
+            </label>
+          </div>
+
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printProductCodeCover">
+              鏡に品目コードを印刷する
+            </label>
+            <div id="productCodeCoverPositionGroup" style="display:none; margin-left:1.5em; margin-top:3px; font-size:0.85em;">
+              表示位置：
+              <label style="margin-right:8px;"><input type="radio" name="productCodeCoverPosition" value="right" checked> 右</label>
+              <label><input type="radio" name="productCodeCoverPosition" value="left"> 左</label>
+            </div>
+          </div>
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printProductCode">
+              明細に品目コードを印刷する
+            </label>
+            <div id="productCodePositionGroup" style="display:none; margin-left:1.5em; margin-top:3px; font-size:0.85em;">
+              表示位置：
+              <label style="margin-right:8px;"><input type="radio" name="productCodePosition" value="right" checked> 右</label>
+              <label><input type="radio" name="productCodePosition" value="left"> 左</label>
+            </div>
+          </div>
+
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printBikou">
+              備考列を印刷する
+            </label>
+          </div>
+
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printTeikaTotal" checked>
+              希望小売合計を印刷する
+            </label>
+          </div>
+
+          <div class="print-detail-option" style="display:none">
+            <span class="print-detail-label">型式の印刷：</span>
+            <button id="btnModelPrintOn" class="spm-btn" onclick="app.setAllModelPrint(true)">全行ON</button>
+            <button id="btnModelPrintOff" class="spm-btn spm-hidden-on" onclick="app.setAllModelPrint(false)">全行OFF</button>
+          </div>
+
+          <div class="print-detail-option">
+            <label class="print-detail-label">
+              日付形式：
+              <select id="dateFormat" onchange="app.updateOutput()" style="margin-left:4px">
+                <option value="seireki">西暦</option>
+                <option value="wareki">和暦（令和）</option>
+              </select>
+            </label>
+          </div>
+
+          <div id="pdfPriceModeGroupKouji" class="pdf-price-mode-group" style="display:none">
+            <div class="pdf-price-mode-label">印刷価格モード:</div>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="teika" checked onchange="app.updateOutput()"> 1. 小売価格のみ</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-bulk" onchange="app.updateOutput()"> 2. 一括仕切</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-discount" onchange="app.updateOutput()"> 3. 出精値引き</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi" onchange="app.updateOutput()"> 4. 仕切表示（小売価格も表示）</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceModeKouji" value="dairi-only" onchange="app.updateOutput()"> 5. 仕切表示のみ</label>
+            <div class="pdf-price-mode-desc" id="pdfPriceModeDescKouji"></div>
+          </div>
+
+          <div id="pdfPriceModeGroup" class="pdf-price-mode-group" style="display:none">
+            <div class="pdf-price-mode-label">印刷価格モード:</div>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="teika" checked onchange="app.updateOutput()"> 1. 小売価格のみ</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-bulk" onchange="app.updateOutput()"> 2. 一括仕切</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-discount" onchange="app.updateOutput()"> 3. 出精値引き</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi" onchange="app.updateOutput()"> 4. 仕切表示（小売価格も表示）</label>
+            <label class="pdf-price-mode-opt"><input type="radio" name="pdfPriceMode" value="dairi-only" onchange="app.updateOutput()"> 5. 仕切表示のみ</label>
+            <div class="pdf-price-mode-desc" id="pdfPriceModeDesc"></div>
+          </div>
+
+          <div class="pdf-btn-group">
+            <button class="btn-generate" id="btnSimplePDF" onclick="app.generatePDF('simple')" disabled>
+              📄 簡略印刷
+            </button>
+            <button class="btn-generate btn-generate-detail" id="btnDetailPDF" onclick="app.generatePDF('detail')" disabled>
+              📋 詳細印刷
+            </button>
+          </div>
+          <p class="hint-small" style="margin-top:4px">
+            📄 簡略：品目を集約してセクション小計のみ表示　／　📋 詳細：全品目の明細行を展開して表示
+          </p>
+          <div class="pdf-btn-group" style="margin-top:6px">
+            <button class="btn-secondary" id="btnPreviewSimplePDF" onclick="app.previewPDF('simple')" disabled>
+              🔍 簡略プレビュー
+            </button>
+            <button class="btn-secondary" id="btnPreviewDetailPDF" onclick="app.previewPDF('detail')" disabled>
+              🔍 詳細プレビュー
+            </button>
+          </div>
+          <p class="pdf-btn-hint">簡略：①～④集計のみ　詳細：全明細行</p>
+
+          <div id="subtotalBothGroup" class="print-detail-option" style="display:none">
+            <label class="print-detail-label">
+              <input type="checkbox" id="printSubtotalBoth">
+              明細小計行に合計（希望小売価格）も表示する
+            </label>
+          </div>
+
+          <div id="buppanDeliveryLabelGroup" class="print-detail-option" style="display:none">
+            <label class="print-detail-label">
+              <input type="checkbox" id="useBuppanDeliveryLabel" onchange="app.updateOutput()">
+              お渡し価格を「販売価格合計」で表示する
+            </label>
+          </div>
+
+          <div id="pdfStatus" class="pdf-status-msg"></div>
+
+          <div class="font-guide" style="display:none">
+            <details>
+              <summary>日本語フォントについて</summary>
+              <p>PDFの日本語表示には <code>NotoSansJP-Regular.ttf</code> が必要です。</p>
+              <p>自動ダウンロードを試みます。失敗した場合は手動で<br>
+              <code>widget/fonts/NotoSansJP-Regular.ttf</code> に配置してください。</p>
+              <p>フォント入手先: <a href="https://fonts.google.com/noto/specimen/Noto+Sans+JP" target="_blank">Google Fonts - Noto Sans JP</a></p>
+            </details>
+          </div>
+
+          <div class="save-section">
+            <hr>
+            <p class="hint-small">見積データをCRMに保存:</p>
+            <button class="btn-secondary" id="btnSaveToCRM" onclick="app.saveToCRM()">
+              💾 CRMに保存（見積明細JSON）
+            </button>
+            <div id="saveStatus" class="pdf-status-msg"></div>
+            <button class="btn-secondary" id="btnExportCsv" onclick="app.exportCsv()" disabled style="margin-top:6px">
+              📊 CSV出力
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-footer">
+        <button class="btn-back" onclick="app.goToTab('items')">← 見積明細</button>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- タブ④: 見積まとめ                                             -->
+    <!-- ============================================================ -->
+    <div id="tab-summary" class="tab-content">
+      <div class="summary-tab-toolbar">
+        <button class="btn-primary" onclick="app.generateSummaryPDF()">📄 集計表PDF出力</button>
+        <label class="print-detail-label" style="margin-left:12px;">
+          <input type="checkbox" id="summaryShowDairi">
+          集計表PDFに代理店価格を含める
+        </label>
+        <span class="summary-tab-hint">算出カテゴリ（①〜④）ごとに金額を集計して表示します</span>
+      </div>
+
+      <div id="summaryTableContainer" class="summary-tab-container">
+        <!-- JS で描画 -->
+      </div>
+
+      <div class="tab-footer">
+        <button class="btn-back" onclick="app.goToTab('output')">← PDF出力</button>
+      </div>
+    </div>
+
+  </div><!-- /#app -->
+
+  <!-- セクションテンプレート（非表示） -->
+  <template id="sectionTemplate">
+    <div class="section-block" data-section-id="">
+      <div class="section-header">
+        <button class="btn-icon section-toggle" title="折りたたむ/展開">▼</button>
+        <div class="section-no-badge">No.<span class="section-no">1</span></div>
+        <select class="section-cat-select"><option value="">― カテゴリ ―</option></select>
+        <div class="section-name-wrap">
+          <input type="text" class="section-name-input" placeholder="大項目名を入力..." autocomplete="off">
+        </div>
+        <label class="section-qty-label" title="式数"><input type="text" class="section-qty-input" value="1">式</label>
+        <div class="section-bikou-wrap"><span class="section-bikou-label">備考</span><input type="text" class="section-bikou-input" placeholder=""></div>
+        <span class="section-collapsed-info"></span>
+        <div class="section-actions">
+          <button class="btn-icon" onclick="app.moveSectionUp(this)" title="上へ">▲</button>
+          <button class="btn-icon" onclick="app.moveSectionDown(this)" title="下へ">▼</button>
+          <button class="btn-icon" onclick="app.duplicateSection(this)" title="複製">⧉</button>
+          <button class="btn-icon btn-danger" onclick="app.removeSection(this)" title="削除">✕</button>
+        </div>
+      </div>
+
+      <div class="items-table-wrapper">
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th class="col-drag"></th>
+            <th class="col-row-num">No.</th>
+            <th class="col-name">品名</th>
+            <th class="col-calc-cat">カテゴリ</th>
+            <th class="col-spec">型番・規格</th>
+            <th class="col-product-code">商品コード</th>
+            <th class="col-qty">数量</th>
+            <th class="col-unit">単位</th>
+            <th class="col-price">単価</th>
+            <th class="col-amount">金額</th>
+            <th class="col-labor-check" title="労務費に含める">労務</th>
+            <th class="col-dairi-rate">掛率</th>
+            <th class="col-price-rank">SABC価格</th>
+            <th class="col-dairi-unit">代理店単価</th>
+            <th class="col-final-dairi">最終代理店単価</th>
+            <th class="col-dairi">代理店価格</th>
+            <th class="col-buhan-discount">値引き</th>
+            <th class="col-hanbaika">販売価格</th>
+            <th class="col-genka">原価</th>
+            <th class="col-genka-amount">原価合計</th>
+            <th class="col-gensui-kubun">減衰区分</th>
+            <th class="col-koji-category">工事カテゴリ</th>
+            <th class="col-gensui-a">減衰A</th>
+            <th class="col-gensui-b">減衰B</th>
+            <th class="col-houdan">歩単</th>
+            <th class="col-houkou-kubun">歩工区分</th>
+            <th class="col-houkou-goukei">歩工合計</th>
+            <th class="col-houkou">歩工</th>
+            <th class="col-bikou">備考</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody class="items-tbody">
+        </tbody>
+      </table>
+      </div><!-- /.items-table-wrapper -->
+
+      <div class="section-footer">
+        <button class="btn-add-item" onclick="app.addItem(this)">＋ 行を追加</button>
+        <div class="section-rate-wrap">
+          <label class="section-rate-label">一括掛率</label>
+          <input type="text" inputmode="decimal" class="section-rate-input" placeholder="例: 0.8">
+          <button class="btn-section-rate" onclick="app.applyBulkRate(this)">適用</button>
+          <span class="section-rate-warn" style="display:none"></span>
+        </div>
+        <div class="section-subtotal">
+          小計: <strong class="subtotal-val">¥0</strong>
+          <span class="dairi-subtotal-wrap" style="display:none">　／　<span class="dairi-subtotal-label">代理店</span>: <strong class="dairi-subtotal-val" style="color:#1a4d8f">¥0</strong></span>
+          <span class="sec-qty-total-wrap" style="display:none">　＝ 合計 <span class="sec-qty-num">1</span>式: <strong class="sec-qty-total-val">¥0</strong></span>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- 明細行テンプレート（非表示） -->
+  <template id="itemRowTemplate">
+    <tr class="item-row" draggable="true" data-item-id="" data-calc-category="">
+      <td class="col-drag"><span class="drag-handle" title="ドラッグして移動">⠿</span></td>
+      <td class="col-row-num"><span class="item-row-num"></span></td>
+      <td class="col-name">
+        <input type="text" class="item-name" lang="ja" inputmode="text" placeholder="品名">
+      </td>
+      <td class="col-calc-cat">
+        <select class="item-calc-cat">
+          <option value="">―</option>
+          <option value="①配管部材">①配管部材</option>
+          <option value="②支持具雑材">②支持具雑材</option>
+          <option value="③配線部材">③配線部材</option>
+          <option value="④工事費">④工事費</option>
+          <option value="⑤その他">⑤その他</option>
+          <option value="⑥配管材料">⑥配管材料</option>
+          <option value="⑦支持具・雑材費">⑦支持具・雑材費</option>
+        </select>
+      </td>
+      <td class="col-spec"><input type="text" class="item-spec" placeholder="型番・規格"></td>
+      <td class="col-product-code"><span class="item-product-code"></span></td>
+      <td class="col-qty"><input type="text" class="item-qty" value="1"></td>
+      <td class="col-unit">
+        <div class="unit-combo">
+          <input type="text" class="item-unit" placeholder="式">
+          <button type="button" class="btn-unit-pick" tabindex="-1" onclick="app.toggleUnitDropdown(this)">▼</button>
+        </div>
+      </td>
+      <td class="col-price"><input type="text" inputmode="numeric" class="item-price"></td>
+      <td class="col-amount"><input type="text" inputmode="numeric" class="item-amount" placeholder="0"></td>
+      <td class="col-labor-check"><input type="checkbox" class="item-labor-check" title="労務費に含める"></td>
+      <td class="col-dairi-rate"><input type="text" inputmode="decimal" class="item-dairi-rate" placeholder=""></td>
+      <td class="col-price-rank">
+        <select class="item-price-rank" onchange="app.onPriceRankChange(this)" title="SABC価格ランク">
+          <option value="">―</option>
+          <option value="S">S</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+        </select>
+      </td>
+      <td class="col-dairi-unit">
+        <div class="dairi-unit-wrap">
+          <input type="text" inputmode="numeric" class="item-dairi-unit" placeholder="">
+          <button class="btn-dairi-unit-lock" onclick="app.clearDairiUnitPrice(this)" title="手動入力をクリアして自動計算に戻す" style="display:none">🔒</button>
+        </div>
+      </td>
+      <td class="col-final-dairi">
+        <div class="final-dairi-wrap">
+          <input type="text" inputmode="numeric" class="item-final-dairi" placeholder="">
+          <button class="btn-final-dairi-lock" onclick="app.clearFinalDairiUnit(this)" title="手動入力をクリアして自動計算に戻す" style="display:none">🔒</button>
+        </div>
+      </td>
+      <td class="col-dairi"><span class="item-dairi"></span></td>
+      <td class="col-buhan-discount"><input type="text" inputmode="numeric" class="item-buhan-discount" placeholder=""></td>
+      <td class="col-hanbaika"><span class="item-hanbaika"></span></td>
+      <td class="col-genka"><input type="text" inputmode="numeric" class="item-genka" placeholder=""></td>
+      <td class="col-genka-amount"><span class="item-genka-amount"></span></td>
+      <td class="col-gensui-kubun"><input type="checkbox" class="item-gensui-enabled" title="減衰計算" style="display:none"><select class="item-gensui-kubun"><option value="">―</option><option value="1">1．機器</option><option value="2">2．屋外</option><option value="3">3．室内</option><option value="4">4．機械室</option><option value="5">5．エロフィン</option></select></td>
+      <td class="col-koji-category"><span class="item-koji-category"></span></td>
+      <td class="col-gensui-a"><input type="text" inputmode="decimal" class="item-gensui-a" placeholder=""></td>
+      <td class="col-gensui-b"><input type="text" inputmode="decimal" class="item-gensui-b" placeholder=""></td>
+      <td class="col-houdan"><input type="text" inputmode="decimal" class="item-houdan" placeholder=""></td>
+      <td class="col-houkou-kubun"><span class="item-houkou-kubun"></span></td>
+      <td class="col-houkou-goukei"><input type="text" inputmode="decimal" class="item-houkou-goukei" placeholder="-" title="手動入力で自動計算を上書き"></td>
+      <td class="col-houkou"><span class="item-houkou"></span></td>
+      <td class="col-bikou"><input type="text" class="item-bikou" placeholder=""></td>
+      <td class="col-item-actions">
+        <div class="item-action-btns">
+          <button class="btn-icon btn-danger" onclick="app.removeItem(this)" title="削除">✕</button>
+          <button class="btn-spec-add" onclick="app.addSpecLine(this)">＋説明文</button>
+          <button class="btn-spec-template" onclick="app.showSpecTemplateMenu(this)" title="説明テンプレート">📋</button>
+        </div>
+      </td>
+    </tr>
+  </template>
+
+  <!-- 見積区分変更確認モーダル -->
+  <div id="categoryChangeModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog" style="max-width:420px">
+      <div class="modal-header">
+        <span>見積区分の変更確認</span>
+      </div>
+      <div class="modal-body">
+        <p id="categoryChangeModalMsg" style="line-height:1.7"></p>
+        <p id="categoryChangeSeqNote" style="color:#c00;font-size:12px;margin-top:8px"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary" onclick="app.confirmCategoryChange()">変更する</button>
+        <button class="btn-secondary" onclick="app.declineCategoryChange()">このまま続ける</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 宛先変更ダイアログ -->
+  <div id="pdfAddressModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog" style="max-width:420px">
+      <div class="modal-header">
+        <span>PDF出力 - 宛先を確認・変更</span>
+      </div>
+      <div class="modal-body">
+        <div class="modal-form-row">
+          <label>会社名</label>
+          <input type="text" id="pdfAddressCompany" class="input-standard" style="flex:1" placeholder="株式会社〇〇">
+        </div>
+        <div class="modal-form-row">
+          <label>担当者名</label>
+          <div style="display:flex;gap:6px;flex:1">
+            <input type="text" id="pdfAddressContact" class="input-standard" style="flex:1" placeholder="（省略可）">
+            <select id="pdfAddressHonorific" class="input-standard" style="width:70px">
+              <option value="様">様</option>
+              <option value="御中">御中</option>
+              <option value="">なし</option>
+            </select>
+          </div>
+        </div>
+        <p class="hint-small" style="margin-top:8px">「そのまま出力」を押すと宛先を変更せずにPDFを生成します。</p>
+        <div style="margin-top:10px;padding:8px 10px;background:rgba(255,180,0,0.12);border:1px solid rgba(200,140,0,0.3);border-radius:4px">
+          <label style="font-weight:normal;display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="pdfAddressRate96">
+            <span>96%掛率を適用（エンド向け価格）</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="pdfAddressCancel">キャンセル</button>
+        <button class="btn-secondary" id="pdfAddressDefault">そのまま出力</button>
+        <button class="btn-primary" id="pdfAddressOverride">宛先を変更して出力</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- テンプレート保存モーダル -->
+  <div id="tplSaveModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <span id="tplSaveModalTitle">テンプレートを保存</span>
+        <button class="modal-close" onclick="document.getElementById('tplSaveModal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-form-row">
+          <label>上書き先</label>
+          <select id="tplSaveOverwriteTarget" class="input-standard" style="flex:1" onchange="app.onTplOverwriteTargetChange(this.value)">
+            <option value="">― 新規保存 ―</option>
+          </select>
+        </div>
+        <div style="border-top:1px solid #eee;margin:4px 0 12px"></div>
+        <div class="modal-form-row">
+          <label>テンプレート名</label>
+          <input type="text" id="tplSaveName" class="input-wide" placeholder="例: 温室暖房標準">
+        </div>
+        <div class="modal-form-row">
+          <label>説明</label>
+          <textarea id="tplSaveDescription" class="input-wide" rows="2" placeholder="用途・適用条件など（省略可）" style="resize:vertical;font-size:13px"></textarea>
+        </div>
+        <div id="tplSaveCatRow" class="modal-form-row">
+          <label>種別</label>
+          <select id="tplSaveCat" class="input-standard" onchange="app.onTplCatChange('save')">
+            <option value="">― 選択 ―</option>
+            <option value="農用">農用</option>
+            <option value="熱機">熱機</option>
+            <option value="衛生">衛生</option>
+            <option value="送料">送料</option>
+            <option value="部分セット品">部分セット品</option>
+          </select>
+          <select id="tplSaveSubcat" class="input-standard" style="display:none">
+            <option value="">― 選択 ―</option>
+            <option value="物販">物販</option>
+            <option value="作業">作業</option>
+            <option value="工事">工事</option>
+          </select>
+        </div>
+        <div class="modal-form-row">
+          <label>所課</label>
+          <select id="tplSaveDept" class="input-standard">
+            <option value="">― 選択 ―</option>
+          </select>
+        </div>
+        <div id="tplSaveIncludeRow" class="modal-form-row">
+          <label>含める項目</label>
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1">
+            <label style="font-weight:normal;display:flex;align-items:center;gap:6px;white-space:nowrap">
+              <input type="checkbox" id="tplSaveIncludeConditions" checked>
+              見積条件（納期・納入条件・支払条件・有効日数）
+            </label>
+            <label style="font-weight:normal;display:flex;align-items:center;gap:6px;white-space:nowrap">
+              <input type="checkbox" id="tplSaveIncludeRemarks" checked>
+              鏡の備考欄
+            </label>
+            <label style="font-weight:normal;display:flex;align-items:center;gap:6px;white-space:nowrap">
+              <input type="checkbox" id="tplSaveIncludeExclusions" checked>
+              見積外工事
+            </label>
+            <label style="font-weight:normal;display:flex;align-items:center;gap:6px;white-space:nowrap">
+              <input type="checkbox" id="tplSaveIncludePdf">
+              PDF出力設定
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('tplSaveModal').style.display='none'">キャンセル</button>
+        <button class="btn-primary" onclick="app.execTemplateSave()">💾 保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- テンプレート読み込みモーダル -->
+  <div id="tplLoadModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog tpl-load-dialog">
+      <div class="modal-header">
+        <span id="tplLoadModalTitle">テンプレートを読み込み</span>
+        <button class="modal-close" onclick="document.getElementById('tplLoadModal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="tpl-filter-row">
+          <select id="tplFilterDept" class="input-standard" onchange="app.filterTemplates()">
+            <option value="">― 所課で絞り込み ―</option>
+          </select>
+          <select id="tplFilterCat" class="input-standard" onchange="app.onTplCatChange('filter')">
+            <option value="">― 大分類 ―</option>
+            <option value="農用">農用</option>
+            <option value="熱機">熱機</option>
+            <option value="衛生">衛生</option>
+            <option value="送料">送料</option>
+            <option value="部分セット品">部分セット品</option>
+            <option value="__other__">その他（旧）</option>
+          </select>
+          <select id="tplFilterSubcat" class="input-standard" style="display:none" onchange="app.filterTemplates()">
+            <option value="">― 小分類 ―</option>
+            <option value="物販">物販</option>
+            <option value="作業">作業</option>
+            <option value="工事">工事</option>
+          </select>
+          <input type="text" id="tplFilterName" class="input-medium" placeholder="名前..." oninput="app.filterTemplates()">
+          <select id="tplSortOrder" class="input-standard" style="min-width:90px" onchange="app.filterTemplates()">
+            <option value="name_asc">名前 ↑</option>
+            <option value="name_desc">名前 ↓</option>
+            <option value="type_asc">種別 ↑</option>
+            <option value="type_desc">種別 ↓</option>
+          </select>
+        </div>
+        <div id="tplList" class="tpl-list">
+          <div class="tpl-loading">読み込み中...</div>
+        </div>
+        <div id="tplLoadModeRow" class="tpl-load-mode">
+          <label><input type="radio" name="tplLoadMode" value="add" checked> 現在の明細に追加</label>
+          <label><input type="radio" name="tplLoadMode" value="replace"> 現在の明細を置き換え</label>
+        </div>
+        <div id="tplRestoreOptRow" class="tpl-restore-options" style="margin-top:8px;display:flex;gap:16px">
+          <label style="font-weight:normal;display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="tplRestoreConditions" checked disabled>
+            見積条件を復元
+          </label>
+          <label style="font-weight:normal;display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="tplRestoreRemarks" checked disabled>
+            備考欄を復元
+          </label>
+          <label style="font-weight:normal;display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="tplRestoreExclusions" checked disabled>
+            見積外工事を復元
+          </label>
+          <label style="font-weight:normal;display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="tplRestorePdf" checked disabled>
+            PDF出力設定を復元
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('tplLoadModal').style.display='none'">キャンセル</button>
+        <!-- <button class="btn-secondary" onclick="app.showSetProductDialog()">📦 セット商品を追加</button> -->
+        <button class="btn-primary" id="btnTplLoad" onclick="app.execTemplateLoad()" disabled>📂 読み込み</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- セット商品選択モーダル -->
+  <div id="setProductModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <span>セット商品を追加</span>
+        <button class="modal-close" onclick="document.getElementById('setProductModal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="setProductList" class="tpl-list"></div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;font-size:13px">
+          <label style="white-space:nowrap">追加先大項目</label>
+          <select id="setProductTargetSection" class="input-standard" style="flex:1"></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('setProductModal').style.display='none'">キャンセル</button>
+        <button class="btn-secondary" onclick="app.showSetProductSaveDialog(null)">➕ 新規登録</button>
+        <button class="btn-primary" id="btnAddSetProduct" onclick="app.execAddSetProduct()" disabled>📦 追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- セット商品登録モーダル -->
+  <div id="setProductSaveModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog" style="min-width:480px;max-width:600px">
+      <div class="modal-header">
+        <span id="setProductSaveTitle">セット商品を登録</span>
+        <button class="modal-close" onclick="document.getElementById('setProductSaveModal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-form-row">
+          <label>商品名</label>
+          <input type="text" id="spSaveName" class="input-wide" placeholder="例: 暖房セットAB">
+        </div>
+        <div class="modal-form-row">
+          <label>所課</label>
+          <select id="spSaveDept" class="input-standard">
+            <option value="">― 選択 ―</option>
+          </select>
+        </div>
+        <div style="margin-top:12px">
+          <div style="font-size:13px;font-weight:bold;margin-bottom:6px">構成品（見積明細から選択）</div>
+          <div id="spSaveItemChecklist" style="max-height:220px;overflow-y:auto;border:1px solid #ddd;border-radius:4px"></div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:16px;align-items:center;justify-content:flex-end;font-size:13px">
+          <span>希望小売価格合計：<strong id="spSaveNormalTotal">0</strong> 円</span>
+          <label style="font-weight:normal;display:flex;align-items:center;gap:6px">
+            セット価格：<input type="number" id="spSaveSetPrice" style="width:100px;padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-size:13px;text-align:right" placeholder="90000" oninput="app.calcSetProductNormal()"> 円
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('setProductSaveModal').style.display='none'">キャンセル</button>
+        <button class="btn-primary" onclick="app.execSetProductSave()">💾 保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 機器仕様マスタ 編集モーダル -->
+  <div id="specMasterModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)app.closeSpecMasterModal()">
+    <div class="modal-dialog" style="width:520px">
+      <div class="modal-header">
+        <span class="modal-title">機器仕様マスタ 編集</span>
+        <button class="modal-close" onclick="app.closeSpecMasterModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding:16px">
+        <div style="margin-bottom:10px;font-size:13px">
+          <span style="color:#666">商品：</span><strong id="spmProductName"></strong>
+          　<span style="color:#666">型式：</span><strong id="spmModel"></strong>
+        </div>
+        <label style="font-size:12px;color:#555;display:block;margin-bottom:4px">仕様内容</label>
+        <textarea id="spmContent" rows="10" style="width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:4px;padding:8px;font-size:13px;resize:vertical"></textarea>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid #eee">
+        <button onclick="app.closeSpecMasterModal()" style="padding:6px 18px;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer">キャンセル</button>
+        <button id="spmSaveBtn" onclick="app.saveSpecMaster()" style="padding:6px 18px;border:none;border-radius:4px;background:#1a73e8;color:#fff;cursor:pointer;font-weight:bold">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FRP型式選択ウィザードモーダル -->
+  <div id="frpWizardModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog frp-wizard-dialog">
+      <div class="modal-header">
+        <span id="frpWizardTitle">製品を選択</span>
+        <button class="modal-close"
+                onclick="document.getElementById('frpWizardModal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body" id="frpWizardBody" style="min-height:200px"></div>
+      <div class="modal-footer" id="frpWizardFooter"></div>
+    </div>
+  </div>
+
+  <!-- FRP設定モーダル -->
+  <div id="frpSettingsModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog" style="max-width:540px">
+      <div class="modal-header">
+        <span>FRP設定</span>
+        <button class="modal-close"
+                onclick="document.getElementById('frpSettingsModal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-form-row">
+          <label style="min-width:100px">Hz初期値</label>
+          <label><input type="radio" name="frpSettingsHz" value="50Hz"> 50Hz</label>
+          <label style="margin-left:12px"><input type="radio" name="frpSettingsHz" value="60Hz"> 60Hz</label>
+          <label style="margin-left:12px"><input type="radio" name="frpSettingsHz" value="共通"> 共通</label>
+        </div>
+        <div class="modal-form-row">
+          <label style="min-width:100px">図番を印刷する</label>
+          <input type="checkbox" id="frpSettingsZuban" checked>
+        </div>
+        <div class="modal-form-row">
+          <label style="min-width:100px">仕様を印刷する</label>
+          <input type="checkbox" id="frpSettingsSpecs">
+        </div>
+        <div style="margin-top:8px">
+          <div style="font-size:12px;font-weight:bold;margin-bottom:6px;color:#555">枠外文言</div>
+          <div id="frpSection0" style="margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
+              <input type="checkbox" id="frpSection0Enabled" checked>
+              <span style="font-size:11px;font-weight:bold">----</span>
+              <input type="text" id="frpSection0Title" style="font-size:11px;font-weight:bold;border:1px solid #ccc;border-radius:3px;padding:1px 4px;flex:1">
+              <span style="font-size:11px;font-weight:bold">----</span>
+            </div>
+            <textarea id="frpSection0Text" class="frp-footer-textarea" rows="4" style="font-size:11px"></textarea>
+          </div>
+          <div id="frpSection1" style="margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
+              <input type="checkbox" id="frpSection1Enabled" checked>
+              <span style="font-size:11px;font-weight:bold">----</span>
+              <input type="text" id="frpSection1Title" style="font-size:11px;font-weight:bold;border:1px solid #ccc;border-radius:3px;padding:1px 4px;flex:1">
+              <span style="font-size:11px;font-weight:bold">----</span>
+            </div>
+            <textarea id="frpSection1Text" class="frp-footer-textarea" rows="4" style="font-size:11px"></textarea>
+          </div>
+          <div id="frpSection2" style="margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
+              <input type="checkbox" id="frpSection2Enabled" checked>
+              <span style="font-size:11px;font-weight:bold">----</span>
+              <input type="text" id="frpSection2Title" style="font-size:11px;font-weight:bold;border:1px solid #ccc;border-radius:3px;padding:1px 4px;flex:1">
+              <span style="font-size:11px;font-weight:bold">----</span>
+            </div>
+            <textarea id="frpSection2Text" class="frp-footer-textarea" rows="3" style="font-size:11px"></textarea>
+          </div>
+          <div id="frpSection3" style="margin-bottom:4px">
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">
+              <input type="checkbox" id="frpSection3Enabled" checked>
+              <span style="font-size:11px;font-weight:bold">----</span>
+              <input type="text" id="frpSection3Title" style="font-size:11px;font-weight:bold;border:1px solid #ccc;border-radius:3px;padding:1px 4px;flex:1">
+              <span style="font-size:11px;font-weight:bold">----</span>
+            </div>
+            <textarea id="frpSection3Text" class="frp-footer-textarea" rows="3" style="font-size:11px"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="app.resetFrpSettings()">↩ 初期値へ戻す</button>
+        <button class="btn-secondary"
+                onclick="document.getElementById('frpSettingsModal').style.display='none'">キャンセル</button>
+        <button class="btn-primary" onclick="app.saveFrpSettings()">💾 保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FRP 図番・品番編集モーダル -->
+  <div id="frpZubanModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog" style="width:360px">
+      <div class="modal-header">
+        <span>図番・品番を編集</span>
+        <button class="modal-close" onclick="document.getElementById('frpZubanModal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-form-row">
+          <label style="min-width:48px">図番</label>
+          <input type="text" id="frpZubanInput" class="input-wide" placeholder="例：CK01-No42A">
+        </div>
+        <div class="modal-form-row">
+          <label style="min-width:48px">品番</label>
+          <input type="text" id="frpHinbanInput" class="input-wide" placeholder="例：026135000">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('frpZubanModal').style.display='none'">キャンセル</button>
+        <button class="btn-primary" onclick="app.execFrpZubanSave()">✔ 確定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 調整額残額警告モーダル -->
+  <div id="adjustWarnModal" class="modal-overlay" style="display:none">
+    <div class="modal-dialog" style="width:340px">
+      <div style="padding:20px 20px 8px">
+        <div style="font-weight:700;font-size:15px;color:#c0392b;margin-bottom:10px">⚠ 調整額が未更新です</div>
+        <div id="adjustWarnMsg" style="font-size:13.5px;color:#445d77;line-height:1.6"></div>
+        <div style="margin-top:10px;font-size:12.5px;color:#888">②見積明細に戻り「↩ 調整額を残額に更新」ボタンを押してください。</div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;padding:14px 20px">
+        <button class="btn-secondary" onclick="app._adjustWarnIgnore()" style="color:#666">無視する</button>
+        <button class="btn-secondary" onclick="app._adjustWarnCancel()">②見積明細に戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/frp-pdf-data.js"></script>
+  <script src="js/pdf-generator.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- PDF プレビューモーダル -->
+  <div id="customConfirmModal" class="modal-overlay" style="display:none">
+    <div style="background:#fff;padding:24px 28px;border-radius:8px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+      <p id="customConfirmMessage" style="margin:0 0 20px;font-size:14px;white-space:pre-line;line-height:1.6"></p>
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button id="customConfirmCancel" style="padding:7px 18px;border:1px solid #ccc;border-radius:4px;background:#f5f5f5;cursor:pointer;font-size:13px">キャンセル</button>
+        <button id="customConfirmOk" style="padding:7px 18px;border:none;border-radius:4px;background:#c0392b;color:#fff;cursor:pointer;font-size:13px;font-weight:bold">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pdfPreviewModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)app.closePdfPreview()">
+    <div style="background:#fff;width:92vw;height:92vh;border-radius:8px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid #ddd;flex-shrink:0">
+        <span style="font-weight:bold;font-size:14px">📄 PDF プレビュー</span>
+        <button onclick="app.closePdfPreview()" style="padding:4px 14px;border:1px solid #ccc;border-radius:4px;background:#f5f5f5;cursor:pointer;font-size:13px">✕ 閉じる</button>
+      </div>
+      <div id="pdfPreviewLoading" style="flex:1;display:flex;align-items:center;justify-content:center;font-size:14px;color:#666">⏳ PDF生成中...</div>
+      <iframe id="pdfPreviewFrame" style="flex:1;border:none;display:none" src=""></iframe>
+    </div>
+  </div>
+</body>
 </html>
