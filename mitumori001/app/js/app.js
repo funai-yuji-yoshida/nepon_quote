@@ -1307,6 +1307,8 @@ const app = (() => {
     document.addEventListener('focusout', function(e) {
       const el = e.target;
       if (!el.classList.contains('item-dairi-unit')) return;
+      if (!el.dataset.dirty) return;
+      delete el.dataset.dirty;
       const row = el.closest('.item-row');
       if (!row) return;
       const block = el.closest('.section-block');
@@ -6655,6 +6657,7 @@ const app = (() => {
         if (dairiUnitLockR) dairiUnitLockR.style.display = 'none';
         const newUnit = effectiveDairiUnit(item);
         dairiUnitElR.value = newUnit != null ? Number(newUnit).toLocaleString('ja-JP') : '';
+        delete dairiUnitElR.dataset.dirty;
       }
     }
 
@@ -6662,6 +6665,7 @@ const app = (() => {
     const dairiUnitEl2  = row.querySelector('.item-dairi-unit');
     const dairiUnitLock2 = row.querySelector('.btn-dairi-unit-lock');
     if (dairiUnitEl2 && e.target === dairiUnitEl2) {
+      dairiUnitEl2.dataset.dirty = '1';
       const raw = dairiUnitEl2.value.replace(/,/g, '').trim();
       if (raw === '') {
         // 空欄 → 手動解除（自動計算に戻す）
