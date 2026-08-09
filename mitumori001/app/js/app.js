@@ -6336,7 +6336,12 @@ const app = (() => {
     const mainRate = state.mainRate;
     if (mainRate == null) { warnEl.style.display = 'none'; return; }
     const rateSet = new Set();
-    (sec.items || []).forEach(i => rateSet.add(i.dairiRate ?? mainRate));
+    // 手入力した行は掛率混在の判定から除外
+    (sec.items || []).forEach(i => {
+      if (i._dairiManual !== true) {
+        rateSet.add(i.dairiRate ?? mainRate);
+      }
+    });
     if (rateSet.size > 1) {
       const list = [...rateSet].sort((a, b) => a - b).map(r => (r * 100).toFixed(1) + '%').join(' / ');
       warnEl.textContent = `⚠ 掛率混在（${list}）`;
@@ -9034,7 +9039,10 @@ const app = (() => {
     const waribikiAmount = dairiTotal != null ? Math.max(0, grandTotal - dairiTotal) : 0;
     // 出精値引き = 割引額 + 調整額
     const discount       = waribikiAmount + adjustAmount;
-    const deliveryPrice  = Math.max(0, grandTotal - discount);
+    // 貴社お渡し価格 = 代理店価格がある場合は代理店ベース、なければ定価ベース
+    const deliveryPrice  = dairiTotal != null
+      ? Math.max(0, dairiTotal - adjustAmount)
+      : Math.max(0, grandTotal - discount);
 
     // state に反映（saveToCRM/buildPdfData で使用）
     state.discount       = discount;
@@ -9472,7 +9480,14 @@ const app = (() => {
       document.getElementById('pdfAddressContact').value   = state.contactName     || '';
       document.getElementById('pdfAddressHonorific').value = state.contactHonorific || '様';
       const rate96El = document.getElementById('pdfAddressRate96');
-      if (rate96El) rate96El.checked = false; // 初期値は常にOFF
+      if (rate96El) {
+        rate96El.checked = false; // 初期値は常にOFF
+        // FRP見積では96%チェックボックスを非表示
+        const rate96Row = rate96El.closest('label') || rate96El.parentElement;
+        if (rate96Row) {
+          rate96Row.style.display = state.frpMode ? 'none' : '';
+        }
+      }
       modal.style.display = '';
       const cleanup = result => { modal.style.display = 'none'; resolve(result); };
       const getRate96 = () => !!(document.getElementById('pdfAddressRate96')?.checked);
@@ -9536,13 +9551,25 @@ const app = (() => {
         data.mainRate = r96;
         data.sections = (state.sections || []).map(sec => ({
           ...sec,
-          items: (sec.items || []).map(item => ({
-            ...item,
-            dairiRate:      r96,
-            dairiUnitPrice: null,
-            _dairiManual:   false,
-            finalDairiUnit: null,
-          })),
+          items: (sec.items || []).map(item => {
+            // 手入力した代理店単価と送料は96%適用の対象外
+            const isManual = item._dairiManual === true;
+            const isSouryo = (item.name || '').includes('送料') || (item.name || '').includes('諸経費');
+
+            if (isManual || isSouryo) {
+              // 手入力値または送料はそのまま維持
+              return { ...item };
+            } else {
+              // 自動計算の行のみ96%を適用
+              return {
+                ...item,
+                dairiRate:      r96,
+                dairiUnitPrice: null,
+                _dairiManual:   false,
+                finalDairiUnit: null,
+              };
+            }
+          }),
         }));
         const dairiTotal96 = data.sections.reduce((sum, sec) => {
           const secQty = Math.max(1, Number(sec.secQty) || 1);
@@ -9598,6 +9625,10 @@ const app = (() => {
       if (!ok) return;
     }
 
+    // プレビューでも宛先変更ダイアログを表示（96%適用の選択を可能に）
+    const addrResult = await showPdfAddressDialog();
+    if (!addrResult) return;
+
     const modal   = document.getElementById('pdfPreviewModal');
     const frame   = document.getElementById('pdfPreviewFrame');
     const loading = document.getElementById('pdfPreviewLoading');
@@ -9613,6 +9644,56 @@ const app = (() => {
     try {
       updateOutput();
       const data = buildPdfData(mode);
+
+      // 宛先変更の適用
+      if (addrResult.override) {
+        data.customerName     = addrResult.customerName;
+        data.contactName      = addrResult.contactName;
+        data.contactHonorific = addrResult.contactHonorific;
+        data.showContactName  = !!addrResult.contactName;
+      }
+
+      // 96%適用の処理（generatePDF と同じロジック）
+      if (addrResult.applyRate96) {
+        const r96 = 0.96;
+        data.mainRate = r96;
+        data.sections = (state.sections || []).map(sec => ({
+          ...sec,
+          items: (sec.items || []).map(item => {
+            const isManual = item._dairiManual === true;
+            const isSouryo = (item.name || '').includes('送料') || (item.name || '').includes('諸経費');
+            if (isManual || isSouryo) {
+              return { ...item };
+            } else {
+              return {
+                ...item,
+                dairiRate:      r96,
+                dairiUnitPrice: null,
+                _dairiManual:   false,
+                finalDairiUnit: null,
+              };
+            }
+          }),
+        }));
+        const dairiTotal96 = data.sections.reduce((sum, sec) => {
+          const secQty = Math.max(1, Number(sec.secQty) || 1);
+          const sub = (sec.items || []).reduce((ss, item) => {
+            const qty  = Number(item.qty) || 1;
+            const base = item.unitPrice != null ? item.unitPrice
+              : (item.amount != null ? Math.round(Number(item.amount) / qty) : null);
+            return ss + (base != null ? Math.round(base * r96) * qty : 0);
+          }, 0);
+          return sum + sub * secQty;
+        }, 0);
+        const grandTotal96     = state.grandTotal || dairiTotal96;
+        const adjustAmount96   = state.adjustAmount || 0;
+        const waribikiAmount96 = Math.max(0, grandTotal96 - dairiTotal96);
+        data.dairiTotal     = dairiTotal96;
+        data.waribikiAmount = waribikiAmount96;
+        data.discount       = waribikiAmount96 + adjustAmount96;
+        data.deliveryPrice  = Math.max(0, dairiTotal96 - adjustAmount96);
+      }
+
       const blob = await QuotationPDF.getBlob(data);
       _pdfPreviewObjectUrl = URL.createObjectURL(blob);
       frame.src = _pdfPreviewObjectUrl;
@@ -10300,6 +10381,16 @@ const app = (() => {
             if (!i.includeInLabor) return ss;
             const r = i.dairiRate ?? state.mainRate;
             const amt = Number(i.amount) || 0;
+
+            // 定価がない場合、代理店単価を使う
+            if (amt === 0) {
+              const dairiUnit = i.dairiUnitPrice != null
+                ? i.dairiUnitPrice
+                : (i.unitPrice != null && r != null ? Math.round(i.unitPrice * r) : 0);
+              const qty = Number(i.qty) || 1;
+              return ss + (dairiUnit * qty);
+            }
+
             return ss + (!useTeikaForKouji && r != null ? Math.round(amt * r) : amt);
           }, 0), 0);
         const rate = (Number(state.legalWelfareRate) || 14.6) / 100;
