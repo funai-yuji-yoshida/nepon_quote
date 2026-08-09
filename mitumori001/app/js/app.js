@@ -1460,6 +1460,7 @@ const app = (() => {
       const ps = document.getElementById('btnPreviewSimplePDF'); if (ps) ps.disabled = false;
       const pd = document.getElementById('btnPreviewDetailPDF'); if (pd) pd.disabled = false;
       const ec = document.getElementById('btnExportCsv'); if (ec) ec.disabled = false;
+      const ee = document.getElementById('btnExportExcel'); if (ee) ee.disabled = false;
     } else {
       el.innerHTML = '⚠️ フォント読み込み失敗 - <a href="https://fonts.google.com/noto/specimen/Noto+Sans+JP" target="_blank">NotoSansJP-Regular.ttf</a> を widget/fonts/ に配置してください';
       el.className = 'font-status err';
@@ -1469,6 +1470,7 @@ const app = (() => {
       const ps = document.getElementById('btnPreviewSimplePDF'); if (ps) ps.disabled = false;
       const pd = document.getElementById('btnPreviewDetailPDF'); if (pd) pd.disabled = false;
       const ec = document.getElementById('btnExportCsv'); if (ec) ec.disabled = false;
+      const ee = document.getElementById('btnExportExcel'); if (ee) ee.disabled = false;
     }
   }
 
@@ -9749,6 +9751,320 @@ const app = (() => {
     URL.revokeObjectURL(a.href);
   }
 
+  /** Excel出力（ExcelJS使用） - 複数シート対応 */
+  async function exportExcel() {
+    if (!state.sections || state.sections.length === 0) {
+      showToast('明細がありません', 'warn');
+      return;
+    }
+
+    try {
+      // ヘルパー関数
+      const getRadio = name => document.querySelector(`input[name="${name}"]:checked`)?.value;
+
+      // ExcelJS Workbook作成
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'ネポン株式会社';
+      workbook.created = new Date();
+
+      const ws = workbook.addWorksheet('見積書', {
+        pageSetup: { paperSize: 9, orientation: 'portrait' }, // A4 縦
+        views: [{ showGridLines: false }]
+      });
+
+      let currentRow = 1;
+
+      // ===== ヘッダー部分 =====
+      ws.getCell(`A${currentRow}`).value = '御見積書';
+      ws.getCell(`A${currentRow}`).font = { size: 18, bold: true, name: 'メイリオ' };
+      ws.mergeCells(`A${currentRow}:F${currentRow}`);
+      ws.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
+      currentRow += 2;
+
+      // 顧客情報
+      const customer = state.customerName || '';
+      const customerHonorific = state.customerHonorific || '御中';
+      ws.getCell(`A${currentRow}`).value = `${customer} ${customerHonorific}`;
+      ws.getCell(`A${currentRow}`).font = { size: 12, bold: true };
+      currentRow++;
+
+      if (state.contactName) {
+        const contactHonorific = state.contactHonorific || '様';
+        ws.getCell(`A${currentRow}`).value = `${state.contactName} ${contactHonorific}`;
+        ws.getCell(`A${currentRow}`).font = { size: 11 };
+        currentRow++;
+      }
+
+      currentRow++;
+
+      // 工事名
+      if (state.projectName) {
+        ws.getCell(`A${currentRow}`).value = `工事名: ${state.projectName}`;
+        ws.getCell(`A${currentRow}`).font = { size: 11 };
+        currentRow++;
+      }
+
+      // 見積金額
+      const grandTotal = state.sections.reduce((sum, s) => {
+        const sQty = Number(s.secQty) || 1;
+        const subtotal = (s.items || []).reduce((itemSum, item) => itemSum + (Number(item.amount) || 0), 0);
+        return sum + (subtotal * sQty);
+      }, 0);
+
+      ws.getCell(`A${currentRow}`).value = `見積金額: ¥${grandTotal.toLocaleString()}`;
+      ws.getCell(`A${currentRow}`).font = { size: 14, bold: true };
+      currentRow++;
+
+      // 日付
+      if (state.date || state.submitDate) {
+        const dateStr = state.submitDate || state.date;
+        ws.getCell(`A${currentRow}`).value = `日付: ${dateStr}`;
+        ws.getCell(`A${currentRow}`).font = { size: 10 };
+        currentRow++;
+      }
+
+      currentRow += 2;
+
+      // ===== 明細テーブル =====
+      const tableStartRow = currentRow;
+
+      // 価格モード判定（PDF出力と同じ方法で取得）
+      const cat = state.quoteCategory || '';
+      const priceModeName = (!state.frpMode && cat.includes('工事')) ? 'pdfPriceModeKouji' : 'pdfPriceMode';
+      const pdfPriceMode = getRadio(priceModeName) || 'teika';
+      const mainRate = state.mainRate ?? 0;
+      const isDairiMode = pdfPriceMode !== 'teika' && mainRate > 0;
+
+      // 品目コード表示判定（PDF出力と同じ方法で取得）
+      const showProductCode = (() => {
+        const cb = document.getElementById('printProductCode');
+        return cb ? cb.checked : false;
+      })();
+
+      console.log('[Excel] カテゴリ:', cat);
+      console.log('[Excel] 価格モード名:', priceModeName);
+      console.log('[Excel] pdfPriceMode:', pdfPriceMode);
+      console.log('[Excel] mainRate:', mainRate);
+      console.log('[Excel] isDairiMode:', isDairiMode);
+      console.log('[Excel] showProductCode:', showProductCode);
+
+      // ヘッダー行（価格モードと品目コード表示に応じて変更）
+      let headers;
+      if (showProductCode) {
+        headers = isDairiMode
+          ? ['No.', '品目コード', '項目', '数量', '単位', '単価', '合計', '仕切単価', '仕切合計']
+          : ['No.', '品目コード', '項目', '数量', '単位', '単価', '金額'];
+      } else {
+        headers = isDairiMode
+          ? ['No.', '項目', '数量', '単位', '単価', '合計', '仕切単価', '仕切合計']
+          : ['No.', '項目', '数量', '単位', '単価', '金額'];
+      }
+
+      headers.forEach((h, i) => {
+        const cell = ws.getCell(tableStartRow, i + 1);
+        cell.value = h;
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF4472C4' }
+        };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+      currentRow++;
+
+      // 明細行
+      let itemNo = 1;
+      const maxCol = (showProductCode ? 1 : 0) + (isDairiMode ? 8 : 6);
+      const colOffset = showProductCode ? 1 : 0; // 品目コード列がある場合は1列ずらす
+
+      state.sections.forEach((sec, sIdx) => {
+        // セクションヘッダー
+        if (sec.name && sec.name.trim()) {
+          const cell = ws.getCell(`A${currentRow}`);
+          cell.value = `${sec.no || sIdx + 1}. ${sec.name}`;
+          cell.font = { bold: true, size: 11 };
+          const mergeEnd = String.fromCharCode(64 + maxCol); // F or H
+          ws.mergeCells(`A${currentRow}:${mergeEnd}${currentRow}`);
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE7E6E6' }
+          };
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+          currentRow++;
+        }
+
+        // アイテム行
+        (sec.items || []).forEach(item => {
+          if (!item.name && !item.unitPrice && !item.amount) return;
+
+          const row = ws.getRow(currentRow);
+          let col = 1;
+          row.getCell(col++).value = itemNo++;
+          if (showProductCode) row.getCell(col++).value = item.productCode || '';
+          row.getCell(col++).value = item.name || '';
+          row.getCell(col++).value = item.qty || '';
+          row.getCell(col++).value = item.unit || '';
+          row.getCell(col++).value = item.unitPrice || '';
+          row.getCell(col++).value = item.amount || '';
+
+          // 代理店価格モードの場合、仕切単価・仕切合計を追加
+          if (isDairiMode) {
+            const rate = item.dairiRate ?? mainRate;
+            const dairiUnit = item.dairiUnitPrice != null
+              ? item.dairiUnitPrice
+              : (item.unitPrice != null ? Math.round(item.unitPrice * rate) : '');
+            const dairiAmount = (dairiUnit !== '' && item.qty != null)
+              ? Math.round(Number(dairiUnit) * Number(item.qty))
+              : '';
+
+            row.getCell(col++).value = dairiUnit;
+            row.getCell(col++).value = dairiAmount;
+
+            if (dairiUnit) row.getCell(col - 2).numFmt = '#,##0';
+            if (dairiAmount) row.getCell(col - 1).numFmt = '#,##0';
+          }
+
+          // 数値セルの書式設定（品目コードのオフセットを考慮）
+          const priceCol = 2 + colOffset + 3; // 単価列
+          const amountCol = 2 + colOffset + 4; // 金額列
+          if (item.unitPrice) row.getCell(priceCol).numFmt = '#,##0';
+          if (item.amount) row.getCell(amountCol).numFmt = '#,##0';
+
+          // 罫線
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            if (colNumber <= maxCol) {
+              cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+              };
+            }
+          });
+
+          // 配置（品目コードのオフセットを考慮）
+          row.getCell(1).alignment = { horizontal: 'center' }; // No.
+          if (showProductCode) {
+            row.getCell(2).alignment = { horizontal: 'left' }; // 品目コード
+          }
+          row.getCell(2 + colOffset).alignment = { horizontal: 'left' }; // 項目
+          row.getCell(3 + colOffset).alignment = { horizontal: 'right' }; // 数量
+          row.getCell(4 + colOffset).alignment = { horizontal: 'center' }; // 単位
+          row.getCell(5 + colOffset).alignment = { horizontal: 'right' }; // 単価
+          row.getCell(6 + colOffset).alignment = { horizontal: 'right' }; // 金額
+
+          if (isDairiMode) {
+            row.getCell(7 + colOffset).alignment = { horizontal: 'right' }; // 仕切単価
+            row.getCell(8 + colOffset).alignment = { horizontal: 'right' }; // 仕切合計
+          }
+
+          currentRow++;
+        });
+      });
+
+      // 合計行
+      const totalRow = ws.getRow(currentRow);
+      const mergeToCol = (showProductCode ? 1 : 0) + (isDairiMode ? 7 : 5);
+      const mergeTo = String.fromCharCode(64 + mergeToCol);
+      ws.mergeCells(`A${currentRow}:${mergeTo}${currentRow}`);
+      totalRow.getCell(1).value = '合計';
+      totalRow.getCell(1).font = { bold: true, size: 12 };
+      totalRow.getCell(1).alignment = { horizontal: 'right' };
+      const totalCol = 6 + colOffset;
+      totalRow.getCell(totalCol).value = grandTotal;
+      totalRow.getCell(totalCol).numFmt = '#,##0';
+      totalRow.getCell(totalCol).font = { bold: true, size: 12 };
+      totalRow.getCell(totalCol).alignment = { horizontal: 'right' };
+
+      // 代理店価格モードの場合、仕切合計も表示
+      if (isDairiMode) {
+        const dairiGrandTotal = state.sections.reduce((sum, s) => {
+          const sQty = Number(s.secQty) || 1;
+          const dairiSubtotal = (s.items || []).reduce((itemSum, item) => {
+            const rate = item.dairiRate ?? mainRate;
+            const dairiUnit = item.dairiUnitPrice != null
+              ? item.dairiUnitPrice
+              : (item.unitPrice != null ? Math.round(item.unitPrice * rate) : 0);
+            const qty = Number(item.qty) || 1;
+            return itemSum + (dairiUnit * qty);
+          }, 0);
+          return sum + (dairiSubtotal * sQty);
+        }, 0);
+
+        const dairiTotalCol = 8 + colOffset;
+        totalRow.getCell(dairiTotalCol).value = dairiGrandTotal;
+        totalRow.getCell(dairiTotalCol).numFmt = '#,##0';
+        totalRow.getCell(dairiTotalCol).font = { bold: true, size: 12 };
+        totalRow.getCell(dairiTotalCol).alignment = { horizontal: 'right' };
+      }
+
+      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        if (colNumber <= maxCol) {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFD9D9D9' }
+          };
+          cell.border = {
+            top: { style: 'medium' },
+            left: { style: 'thin' },
+            bottom: { style: 'medium' },
+            right: { style: 'thin' }
+          };
+        }
+      });
+
+      // 列幅設定
+      let colIdx = 1;
+      ws.getColumn(colIdx++).width = 6;   // No.
+      if (showProductCode) ws.getColumn(colIdx++).width = 15;  // 品目コード
+      ws.getColumn(colIdx++).width = 40;  // 項目
+      ws.getColumn(colIdx++).width = 8;   // 数量
+      ws.getColumn(colIdx++).width = 8;   // 単位
+      ws.getColumn(colIdx++).width = 15;  // 単価
+      ws.getColumn(colIdx++).width = 15;  // 金額
+
+      if (isDairiMode) {
+        ws.getColumn(colIdx++).width = 15;  // 仕切単価
+        ws.getColumn(colIdx++).width = 15;  // 仕切合計
+      }
+
+      // ===== ファイル出力 =====
+      const buffer = await workbook.xlsx.writeBuffer();
+
+      const quoteNo = state.seqNo || '';
+      const filename = [quoteNo, customer, '見積書'].filter(Boolean).join('_') + '.xlsx';
+
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+
+      showToast('Excel出力が完了しました', 'success');
+
+    } catch (err) {
+      console.error('[Excel出力エラー]', err);
+      showToast('Excel出力に失敗しました: ' + err.message, 'error');
+    }
+  }
+
   /** PDF 生成用データオブジェクトを組み立てる */
   function buildPdfData(mode = 'detail') {
     collectExclusions();
@@ -9844,6 +10160,10 @@ const app = (() => {
       showSubtotalBoth: (() => {
         const cb = document.getElementById('printSubtotalBoth');
         return cb ? cb.checked : false;
+      })(),
+      pdfScaleToFit: (() => {
+        const cb = document.getElementById('pdfAutoShrink');
+        return cb ? cb.checked : true; // デフォルト: 縮小有効
       })(),
       useBuppanDeliveryLabel: (() => {
         const cb = document.getElementById('useBuppanDeliveryLabel');
@@ -10830,10 +11150,11 @@ const app = (() => {
     addCustomExclusion,
     removeCustomExclusion,
     applyExclusionPreset,
-    // PDF / CSV
+    // PDF / CSV / Excel
     generatePDF,
     previewPDF,
     exportCsv,
+    exportExcel,
     closePdfPreview,
     generateSummaryPDF,
     updatePdfModeDesc,

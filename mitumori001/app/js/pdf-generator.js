@@ -236,24 +236,66 @@ const QuotationPDF = (() => {
 
     const font = fontLoaded ? 'NotoSansJP' : 'Roboto';
 
+    // 明細ページの自動縮小率を計算
+    // ① 明細の総行数を計算
+    const totalRows = sectionTotals.reduce((sum, s) => {
+      const sectionHeaderRows = (s.name || '').trim() ? 1 : 0; // セクションヘッダー行
+      const itemRows = (s.items || []).length; // 明細行
+      const subtotalRows = 1; // 小計行
+      return sum + sectionHeaderRows + itemRows + subtotalRows;
+    }, 0);
+
+    // セクション数（大項目の数）
+    const sectionCount = sectionTotals.length;
+
+    // ② 推定高さを計算（pt単位）
+    // 実測値: 1ページに約15-20行入る → 1行あたり約40pt
+    const ROW_HEIGHT = 26;        // 1行あたりの高さ（パディング・行間込み）
+    const SECTION_HEADER_HEIGHT = 20; // セクションヘッダーの追加高さ
+    const FIXED_HEIGHT = 220;     // タイトル、テーブルヘッダー、合計行など
+    const estimatedHeight = FIXED_HEIGHT
+                          + (totalRows * ROW_HEIGHT)
+                          + (sectionCount * SECTION_HEADER_HEIGHT);
+
+    // ③ A4印刷可能領域を計算（pt単位）
+    // A4高さ: 297mm ≈ 842pt
+    // マージン（上38 + 下18 = 56） → 印刷可能: 約786pt
+    // 安全マージン: 実際は少し狭いので750ptを基準にする
+    const A4_PRINTABLE_HEIGHT = 750;
+
+    // ④ 縮小率を算出（pdfScaleToFit が有効で、1ページに収まらない場合のみ縮小）
+    let scaleRatio = 1.0;
+    const enableAutoShrink = data.pdfScaleToFit !== false; // デフォルト: 有効
+
+    if (enableAutoShrink && estimatedHeight > A4_PRINTABLE_HEIGHT) {
+      scaleRatio = A4_PRINTABLE_HEIGHT / estimatedHeight;
+      // 最小縮小率: 0.5（50%）まで
+      scaleRatio = Math.max(0.5, scaleRatio);
+    }
+
+    console.log('[PDF] 自動縮小:', enableAutoShrink ? '有効' : '無効',
+                '明細総行数:', totalRows, 'セクション数:', sectionCount,
+                '推定高さ:', estimatedHeight.toFixed(0) + 'pt',
+                'A4可能領域:', A4_PRINTABLE_HEIGHT + 'pt', '縮小率:', scaleRatio.toFixed(2));
+
     return {
       pageSize:    'A4',
-      pageMargins: [18, 38, 18, 18],
+      pageMargins: [18 * scaleRatio, 38 * scaleRatio, 18 * scaleRatio, 18 * scaleRatio],
 
       defaultStyle: {
         font:       font,
-        fontSize:   10,
+        fontSize:   10 * scaleRatio,
         lineHeight: 1.25,
       },
 
       styles: {
-        docTitle:    { fontSize: 22, bold: true, characterSpacing: 8 },
-        tableHeader: { bold: true, alignment: 'center', fontSize: 8, noWrap: true },
-        sectionHdr:  { bold: true, fontSize: 8.5 },
-        amountBig:   { fontSize: 18, bold: true },
+        docTitle:    { fontSize: 22 * scaleRatio, bold: true, characterSpacing: 8 * scaleRatio },
+        tableHeader: { bold: true, alignment: 'center', fontSize: 8 * scaleRatio, noWrap: true },
+        sectionHdr:  { bold: true, fontSize: 8.5 * scaleRatio },
+        amountBig:   { fontSize: 18 * scaleRatio, bold: true },
         subtotalRow: { bold: true, fillColor: '#f8f8f8' },
         totalRow:    { bold: true },
-        pageHdr:     { fontSize: 8, color: '#000' },
+        pageHdr:     { fontSize: 8 * scaleRatio, color: '#000' },
       },
 
       // ページヘッダー（2ページ目以降）
@@ -335,7 +377,8 @@ const QuotationPDF = (() => {
     frpMode, frpItems, frpPriceTotal, frpShikiriTotal,
     frpShowZuban = true, frpShowSpecs = true, frpDiscount = 0,
     roundingEnabled = false, sections = [],
-    adjustAmount = 0, waribikiAmount = 0, printDetail = false, showTaxIncluded = false, showBikou = true, showTeikaTotal = true }) {
+    adjustAmount = 0, waribikiAmount = 0, printDetail = false, showTaxIncluded = false, showBikou = true, showTeikaTotal = true, pdfScaleToFit = false }) {
+
     const isDairiAvailable = mainRate != null || dairiTotal != null;
     const isActiveDairi = pdfPriceMode !== 'teika' && isDairiAvailable;
     const isKoujiDairi = pdfPriceMode === 'dairi-kouji' && isDairiAvailable;
@@ -550,25 +593,39 @@ const QuotationPDF = (() => {
 
     // 行数に応じてフォントサイズ・パディング・マージンを動的調整（1ページ収容のため）
     // 行数が少ない場合は拡大・多い場合は縮小の双方向スケーリング
+    // 20行を超える場合は縮小率を適用して1ページに収める
     let itemFs;
+    let scaleRatio = 1.0; // 縮小率（デフォルトは100%）
+
+    // 鏡ページの自動縮小: 行数に応じてフォントサイズと縮小率を調整
+    const enableAutoShrink = pdfScaleToFit !== false; // デフォルト: 有効
+    console.log('[PDF] 鏡ページ 自動縮小:', enableAutoShrink ? '有効' : '無効', 'mirrorRowCount:', mirrorRowCount);
+
     if      (mirrorRowCount <= 5)  itemFs = 12.5;
     else if (mirrorRowCount <= 8)  itemFs = 11.0;
     else if (mirrorRowCount <= 11) itemFs = 10.0;
     else if (mirrorRowCount <= 14) itemFs =  9.0;
     else if (mirrorRowCount <= 18) itemFs =  8.5;
-    else if (mirrorRowCount <= 26) itemFs =  7.5;
-    else if (mirrorRowCount <= 34) itemFs =  7.0;
-    else if (mirrorRowCount <= 42) itemFs =  6.5;
-    else                           itemFs =  6.0;
+    else if (mirrorRowCount <= 20) itemFs =  7.5; // 20行まで（縮小なし）
+    else if (mirrorRowCount <= 24) { itemFs =  7.0; if (enableAutoShrink) scaleRatio = 0.92; } // 21-24行: 92%に縮小
+    else if (mirrorRowCount <= 28) { itemFs =  6.5; if (enableAutoShrink) scaleRatio = 0.88; } // 25-28行: 88%に縮小
+    else if (mirrorRowCount <= 32) { itemFs =  6.0; if (enableAutoShrink) scaleRatio = 0.85; } // 29-32行: 85%に縮小
+    else                           { itemFs =  5.5; if (enableAutoShrink) scaleRatio = 0.82; } // 33行超: 82%に縮小
 
-    const cellPad   = mirrorRowCount <= 5  ? 6   :
-                      mirrorRowCount <= 8  ? 5   :
-                      mirrorRowCount <= 11 ? 4   :
-                      mirrorRowCount <= 14 ? 3   :
-                      mirrorRowCount <= 20 ? 2   :
-                      mirrorRowCount <= 30 ? 1.5 : 1;
+    // 縮小率を適用
+    const itemFsBefore = itemFs;
+    itemFs = itemFs * scaleRatio;
+    console.log('[PDF] フォントサイズ: ' + itemFsBefore + ' → ' + itemFs + ' (縮小率: ' + scaleRatio + ')');
 
-    const topMargin = mirrorRowCount > 18 ? 20 : 14;
+    const cellPad   = (mirrorRowCount <= 5  ? 6   :
+                       mirrorRowCount <= 8  ? 5   :
+                       mirrorRowCount <= 11 ? 4   :
+                       mirrorRowCount <= 14 ? 3   :
+                       mirrorRowCount <= 20 ? 2   :
+                       mirrorRowCount <= 26 ? 1.5 :
+                       mirrorRowCount <= 30 ? 1.2 : 1) * scaleRatio;
+
+    const topMargin = (mirrorRowCount > 18 ? 20 : 14) * scaleRatio;
 
     // 第2パス: 決定したフォントサイズで行を生成
     let rowNo = 1;
@@ -776,17 +833,20 @@ const QuotationPDF = (() => {
 
     // 空白行（行数が少ない場合ほど多めに挿入してページを埋める）
     // 備考の行数が多いと1ページを超えるため、追加行数分を差し引く
+    // 合計行（約2-3行）も考慮して、1ページ（約24行）に収まるようにする
     const remarksExtraLines = data.remarks ? Math.max(0, data.remarks.split('\n').length - 1) : 0;
+    const totalRowsReserve = 3; // 合計行用に予約する行数
+    const maxRowsPerPage = 24; // 1ページに収まる最大行数（ヘッダー含む）
     const emptyTarget = mirrorRowCount <= 5  ? 10 :
                         mirrorRowCount <= 8  ? 13 :
                         mirrorRowCount <= 11 ? 16 :
-                        mirrorRowCount <= 18 ? 18 :
-                        mirrorRowCount <= 26 ? 26 : 10;
-    const emptyRows = Math.max(0, emptyTarget - mirrorRowCount - remarksExtraLines);
-    for (let i = 0; i < emptyRows; i++) {
-      const er = Array.from({ length: COLS }, () => ({ text: ' ', fontSize: itemFs }));
-      tableRows.push(er);
-    }
+                        mirrorRowCount <= 18 ? 18 : 0; // 18行超えたら空白行なし
+    const emptyRows = 0; // 空白行なし（1ページ収容のため）
+//     const emptyRows = Math.max(0, Math.min(emptyTarget - mirrorRowCount - remarksExtraLines, maxRowsPerPage - mirrorRowCount - totalRowsReserve - remarksExtraLines));
+//     for (let i = 0; i < emptyRows; i++) {
+//       const er = Array.from({ length: COLS }, () => ({ text: ' ', fontSize: itemFs }));
+//       tableRows.push(er);
+//     }
 
     const spanMid = COLS - 2 - bk;
     const dairiGrandTotal = data.dairiTotal || sectionTotals.reduce((sum, s) =>
@@ -1127,20 +1187,20 @@ const QuotationPDF = (() => {
       });
     }
 
-    // 行数に応じたヘッダー部フォントサイズ
+    // 行数に応じたヘッダー部フォントサイズ（縮小率適用）
     const compact = mirrorRowCount > 18;
-    const titleFs    = compact ? 17 : 22;
+    const titleFs    = (compact ? 17 : 22) * scaleRatio;
     // 顧客名の文字数に応じてフォントサイズを自動縮小（利用可能幅 ≒ 324pt）
     const _custFullLen = ((data.customerName || '') +
       (data.customerHonorific && data.customerHonorific !== 'ー' ? '　' + data.customerHonorific : '')).length;
-    const custFs = compact ? 12 :
+    const custFs = (compact ? 12 :
       _custFullLen <= 15 ? 16 :
       _custFullLen <= 19 ? 14 :
-      _custFullLen <= 24 ? 12 : 10;
-    const midFs      = compact ? 9  : 12;
-    const amountBigFs= compact ? 14 : 18;
+      _custFullLen <= 24 ? 12 : 10) * scaleRatio;
+    const midFs      = (compact ? 9  : 12) * scaleRatio;
+    const amountBigFs= (compact ? 14 : 18) * scaleRatio;
     const hdrLineH   = compact ? 1.3 : 1.6;
-    const amountMgn  = compact ? 3   : 6;
+    const amountMgn  = (compact ? 3   : 6) * scaleRatio;
 
     return [
       // ── タイトル（A4全幅センタリング） ──
@@ -1281,11 +1341,13 @@ const QuotationPDF = (() => {
 
       // ── サマリーテーブル ─────────────────────────────────
       {
-        margin: [0, 6, 0, 0],
+        margin: [0, 6 * scaleRatio, 0, 0],
         table: {
-          widths:     COL_WIDTHS,
-          headerRows: 1,
-          body:       tableRows,
+          widths:      COL_WIDTHS,
+          headerRows:  1,
+          body:        tableRows,
+          dontBreakRows: true,
+          keepWithHeaderRows: 2,
         },
         layout: {
           hLineWidth: (i, node) => {
@@ -2233,24 +2295,24 @@ const QuotationPDF = (() => {
         const adjAmt = discountEnabled ? adjustAmount : 0;
         const body = [mkTotalRow('合　　計', fmt(grandTotal), true)];
         body.push(mkTotalRow('貴社お渡し価格', fmt(Math.max(0, bulkBase - adjAmt)), false));
-        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+        result.push({ unbreakable: true, margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else if (useDairi) {
         // 仕切表示モード: 定価合計 → 合計（仕切合計）→ [出精値引き → 貴社お渡し価格]
         const body = [mkTotalRow('希望小売価格合計', fmt(grandTotal), true)];
         body.push(mkTotalRow('合　　計', fmt(totalDairi), false));
-        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+        result.push({ unbreakable: true, margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else if (isDiscountStyle) {
         const adjAmt = discountEnabled ? discount : 0;
         const body = [mkTotalRow('合　　計', fmt(grandTotal), true)];
         if (adjAmt > 0) body.push(mkTotalRow('出精値引き', '▲ ' + fmt(adjAmt), false));
         body.push(mkTotalRow('貴社お渡し価格', fmt(Math.max(0, grandTotal - adjAmt)), false));
-        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+        result.push({ unbreakable: true, margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else if (isShikiOnly) {
         const shikiBase = dairiTotal != null ? dairiTotal : totalDairi;
         const shikiAdj = discountEnabled ? adjustAmount : 0;
         const body = [mkTotalRow('合　　計', fmt(shikiBase), true)];
         body.push(mkTotalRow('貴社お渡し価格', fmt(Math.max(0, shikiBase - shikiAdj)), false));
-        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+        result.push({ unbreakable: true, margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else {
         result.push({
           margin: [0, 0, 0, 0],
@@ -2544,14 +2606,14 @@ const QuotationPDF = (() => {
         const body = [mkRow('合　　計', fmt(grandTotal), true)];
         if (autoDisc > 0) body.push(mkRow('出精値引き', '▲ ' + fmt(autoDisc), false));
         body.push(mkRow('貴社お渡し価格', fmt(deliveryVal), false));
-        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+        result.push({ unbreakable: true, margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else if (isBulk) {
         const bulkBase = Math.max(0, (dairiTotal != null ? dairiTotal : totalDairi) - adjustAmount);
         const isBuppanLocal = (quoteCategory || '').includes('物販');
         const buppanLabel = (isBuppanLocal && useBuppanDeliveryLabel) ? '販売価格合計' : '貴社お渡し価格';
         const body = [mkRow('合　　計', fmt(grandTotal), true)];
         body.push(mkRow(buppanLabel, fmt(bulkBase), false));
-        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+        result.push({ unbreakable: true, margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else if (useDairi) {
         const mkRow2 = (label, v1, v2, top) => [
           { text: '', border: [true, top, false, true], fillColor: '#e8f0f8' },
@@ -2575,7 +2637,7 @@ const QuotationPDF = (() => {
         const adjLabel = (quoteCategory || '').includes('工事') ? '出精値引き' : '値引き額';
         const body = [mkRow('合　　計', fmt(totalDairi), true)];
         body.push(mkRow(buppanLabel, fmt(isoDelivery), false));
-        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+        result.push({ unbreakable: true, margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else {
         result.push({
           margin: [0, 0, 0, 0],
@@ -2864,14 +2926,14 @@ const QuotationPDF = (() => {
         const body = [mkRow('合　　計', fmt(grandTotal), true)];
         if (autoDisc > 0) body.push(mkRow('出精値引き', '▲ ' + fmt(autoDisc), false));
         body.push(mkRow('貴社お渡し価格', fmt(deliveryVal), false));
-        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+        result.push({ unbreakable: true, margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else if (isBulk) {
         // 一括仕切モード: 合計(定価) → 貴社お渡し価格(仕切合計-調整額)
         const bulkBase = dairiTotal != null ? dairiTotal : grandDairi;
         const adjAmt = discountEnabled ? adjustAmount : 0;
         const body = [mkRow('合　　計', fmt(grandTotal), true)];
         body.push(mkRow('貴社お渡し価格', fmt(Math.max(0, bulkBase - adjAmt)), false));
-        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+        result.push({ unbreakable: true, margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else if (useDairi) {
         // 仕切表示モード: 合計（定価合計 + 仕切合計を1行に集約）
         const mkRow2 = (label, v1, v2, top) => [
@@ -2884,13 +2946,13 @@ const QuotationPDF = (() => {
           ...(showBikou ? [{ text: '', border: [false, top, true, true], fillColor: '#e8f0f8' }] : []),
         ];
         const body = [mkRow2('合　　計', fmt(grandTotal), fmt(grandDairi), true)];
-        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+        result.push({ unbreakable: true, margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else if (isShikiOnly) {
         const shikiBase = dairiTotal != null ? dairiTotal : grandDairi;
         const shikiAdj = discountEnabled ? adjustAmount : 0;
         const body = [mkRow('合　　計', fmt(shikiBase), true)];
         body.push(mkRow('貴社お渡し価格', fmt(Math.max(0, shikiBase - shikiAdj)), false));
-        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+        result.push({ unbreakable: true, margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else {
         result.push({
           margin: [0, 0, 0, 0],
@@ -3161,7 +3223,7 @@ const QuotationPDF = (() => {
         const body = [mkRow('合　　計', fmt(grandTotal), true)];
         if (autoDisc > 0) body.push(mkRow('出精値引き', '▲ ' + fmt(autoDisc), false));
         body.push(mkRow('貴社お渡し価格', fmt(deliveryVal), false));
-        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
+        result.push({ unbreakable: true, margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body }, layout: totalLayout });
       } else if (isBulk) {
         const bulkBase = Math.max(0, (dairiTotal != null ? dairiTotal : grandDairi) - adjustAmount);
         const isBuppanLocal = (quoteCategory || '').includes('物販');
@@ -3178,7 +3240,7 @@ const QuotationPDF = (() => {
         const adjLabel = (quoteCategory || '').includes('工事') ? '出精値引き' : '値引き額';
         const body2 = [mkRow('合　　計', fmt(grandDairi), true)];
         body2.push(mkRow(buppanLabel2, fmt(isoDelivery), false));
-        result.push({ margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body: body2 }, layout: totalLayout });
+        result.push({ unbreakable: true, margin: [0, 0, 0, 0], table: { widths: COL_WIDTHS, body: body2 }, layout: totalLayout });
       } else {
         result.push({
           margin: [0, 0, 0, 0],
