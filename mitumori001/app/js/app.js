@@ -9472,7 +9472,7 @@ const app = (() => {
       document.getElementById('pdfAddressContact').value   = state.contactName     || '';
       document.getElementById('pdfAddressHonorific').value = state.contactHonorific || '様';
       const rate96El = document.getElementById('pdfAddressRate96');
-      if (rate96El) rate96El.checked = (state.customerName || '').includes('佐藤商事');
+      if (rate96El) rate96El.checked = false; // 初期値は常にOFF
       modal.style.display = '';
       const cleanup = result => { modal.style.display = 'none'; resolve(result); };
       const getRate96 = () => !!(document.getElementById('pdfAddressRate96')?.checked);
