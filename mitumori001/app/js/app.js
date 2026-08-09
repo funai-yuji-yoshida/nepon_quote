@@ -9480,14 +9480,7 @@ const app = (() => {
       document.getElementById('pdfAddressContact').value   = state.contactName     || '';
       document.getElementById('pdfAddressHonorific').value = state.contactHonorific || '様';
       const rate96El = document.getElementById('pdfAddressRate96');
-      if (rate96El) {
-        rate96El.checked = false; // 初期値は常にOFF
-        // FRP見積では96%チェックボックスを非表示
-        const rate96Row = rate96El.closest('label') || rate96El.parentElement;
-        if (rate96Row) {
-          rate96Row.style.display = state.frpMode ? 'none' : '';
-        }
-      }
+      if (rate96El) rate96El.checked = false; // 初期値は常にOFF
       modal.style.display = '';
       const cleanup = result => { modal.style.display = 'none'; resolve(result); };
       const getRate96 = () => !!(document.getElementById('pdfAddressRate96')?.checked);
@@ -9547,30 +9540,63 @@ const app = (() => {
         data.showContactName  = !!addrResult.contactName;
       }
       if (addrResult.applyRate96) {
+        // 96%適用の警告メッセージ
+        const confirmApply = await showCustomConfirm(
+          '96%掛率を適用すると、印刷データと保存データの金額が異なります。\nよろしいですか？',
+          'このまま出力'
+        );
+        if (!confirmApply) {
+          if (btnSimple) { btnSimple.disabled = false; btnSimple.textContent = '📄 簡略印刷'; }
+          if (btnDetail) { btnDetail.disabled = false; btnDetail.textContent = '📋 詳細印刷'; }
+          return;
+        }
+
         const r96 = 0.96;
         data.mainRate = r96;
-        data.sections = (state.sections || []).map(sec => ({
-          ...sec,
-          items: (sec.items || []).map(item => {
-            // 手入力した代理店単価と送料は96%適用の対象外
-            const isManual = item._dairiManual === true;
-            const isSouryo = (item.name || '').includes('送料') || (item.name || '').includes('諸経費');
 
-            if (isManual || isSouryo) {
-              // 手入力値または送料はそのまま維持
+        // FRPモードの場合はfrpItemsに96%を適用
+        if (state.frpMode) {
+          data.frpItems = (state.frpItems || []).map(item => {
+            // 送料は96%適用の対象外
+            const isSouryo = item.type === 'soryo';
+            if (isSouryo) {
               return { ...item };
             } else {
-              // 自動計算の行のみ96%を適用
+              // それ以外の行は96%を適用
               return {
                 ...item,
-                dairiRate:      r96,
-                dairiUnitPrice: null,
-                _dairiManual:   false,
-                finalDairiUnit: null,
+                frpRate: r96,
+                priceA: Math.round((item.price || 0) * r96),
+                priceB: Math.round((item.price || 0) * r96),
               };
             }
-          }),
-        }));
+          });
+        } else {
+          // 通常モードの場合はsectionsに96%を適用
+          data.sections = (state.sections || []).map(sec => ({
+            ...sec,
+            items: (sec.items || []).map(item => {
+              // 手入力した代理店単価と送料は96%適用の対象外
+              const isManual = item._dairiManual === true;
+              const isSouryo = (item.name || '').includes('送料') || (item.name || '').includes('諸経費');
+
+              if (isManual || isSouryo) {
+                // 手入力値または送料はそのまま維持
+                return { ...item };
+              } else {
+                // 自動計算の行のみ96%を適用
+                return {
+                  ...item,
+                  dairiRate:      r96,
+                  dairiUnitPrice: null,
+                  _dairiManual:   false,
+                  finalDairiUnit: null,
+                };
+              }
+            }),
+          }));
+        }
+
         const dairiTotal96 = data.sections.reduce((sum, sec) => {
           const secQty = Math.max(1, Number(sec.secQty) || 1);
           const sub = (sec.items || []).reduce((ss, item) => {
@@ -9629,6 +9655,15 @@ const app = (() => {
     const addrResult = await showPdfAddressDialog();
     if (!addrResult) return;
 
+    // 96%適用の警告メッセージ（モーダル表示前に確認）
+    if (addrResult.applyRate96) {
+      const confirmApply = await showCustomConfirm(
+        '96%掛率を適用すると、印刷データと保存データの金額が異なります。\nよろしいですか？',
+        'このまま出力'
+      );
+      if (!confirmApply) return;
+    }
+
     const modal   = document.getElementById('pdfPreviewModal');
     const frame   = document.getElementById('pdfPreviewFrame');
     const loading = document.getElementById('pdfPreviewLoading');
@@ -9657,24 +9692,46 @@ const app = (() => {
       if (addrResult.applyRate96) {
         const r96 = 0.96;
         data.mainRate = r96;
-        data.sections = (state.sections || []).map(sec => ({
-          ...sec,
-          items: (sec.items || []).map(item => {
-            const isManual = item._dairiManual === true;
-            const isSouryo = (item.name || '').includes('送料') || (item.name || '').includes('諸経費');
-            if (isManual || isSouryo) {
+
+        // FRPモードの場合はfrpItemsに96%を適用
+        if (state.frpMode) {
+          data.frpItems = (state.frpItems || []).map(item => {
+            // 送料は96%適用の対象外
+            const isSouryo = item.type === 'soryo';
+            if (isSouryo) {
               return { ...item };
             } else {
+              // それ以外の行は96%を適用
               return {
                 ...item,
-                dairiRate:      r96,
-                dairiUnitPrice: null,
-                _dairiManual:   false,
-                finalDairiUnit: null,
+                frpRate: r96,
+                priceA: Math.round((item.price || 0) * r96),
+                priceB: Math.round((item.price || 0) * r96),
               };
             }
-          }),
-        }));
+          });
+        } else {
+          // 通常モードの場合はsectionsに96%を適用
+          data.sections = (state.sections || []).map(sec => ({
+            ...sec,
+            items: (sec.items || []).map(item => {
+              const isManual = item._dairiManual === true;
+              const isSouryo = (item.name || '').includes('送料') || (item.name || '').includes('諸経費');
+              if (isManual || isSouryo) {
+                return { ...item };
+              } else {
+                return {
+                  ...item,
+                  dairiRate:      r96,
+                  dairiUnitPrice: null,
+                  _dairiManual:   false,
+                  finalDairiUnit: null,
+                };
+              }
+            }),
+          }));
+        }
+
         const dairiTotal96 = data.sections.reduce((sum, sec) => {
           const secQty = Math.max(1, Number(sec.secQty) || 1);
           const sub = (sec.items || []).reduce((ss, item) => {
