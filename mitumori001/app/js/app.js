@@ -9767,103 +9767,141 @@ const app = (() => {
       workbook.creator = 'ネポン株式会社';
       workbook.created = new Date();
 
-      const ws = workbook.addWorksheet('見積書', {
-        pageSetup: { paperSize: 9, orientation: 'portrait' }, // A4 縦
+      // シート1: 鏡ページ（セクション小計 + 内訳）
+      const wsCover = workbook.addWorksheet('鏡ページ', {
+        pageSetup: { paperSize: 9, orientation: 'portrait' },
         views: [{ showGridLines: false }]
       });
 
-      let currentRow = 1;
+      // シート2: 明細ページ（全明細行）
+      const wsDetail = workbook.addWorksheet('明細ページ', {
+        pageSetup: { paperSize: 9, orientation: 'portrait' },
+        views: [{ showGridLines: false }]
+      });
 
-      // ===== ヘッダー部分 =====
-      ws.getCell(`A${currentRow}`).value = '御見積書';
-      ws.getCell(`A${currentRow}`).font = { size: 18, bold: true, name: 'メイリオ' };
-      ws.mergeCells(`A${currentRow}:F${currentRow}`);
-      ws.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
-      currentRow += 2;
-
-      // 顧客情報
+      // ===== 共通データ取得 =====
       const customer = state.customerName || '';
       const customerHonorific = state.customerHonorific || '御中';
-      ws.getCell(`A${currentRow}`).value = `${customer} ${customerHonorific}`;
-      ws.getCell(`A${currentRow}`).font = { size: 12, bold: true };
-      currentRow++;
+      const contactName = state.contactName || '';
+      const contactHonorific = state.contactHonorific || '様';
+      const projectName = state.projectName || '';
+      const dateStr = state.submitDate || state.date || '';
 
-      if (state.contactName) {
-        const contactHonorific = state.contactHonorific || '様';
-        ws.getCell(`A${currentRow}`).value = `${state.contactName} ${contactHonorific}`;
-        ws.getCell(`A${currentRow}`).font = { size: 11 };
-        currentRow++;
-      }
-
-      currentRow++;
-
-      // 工事名
-      if (state.projectName) {
-        ws.getCell(`A${currentRow}`).value = `工事名: ${state.projectName}`;
-        ws.getCell(`A${currentRow}`).font = { size: 11 };
-        currentRow++;
-      }
-
-      // 見積金額
-      const grandTotal = state.sections.reduce((sum, s) => {
-        const sQty = Number(s.secQty) || 1;
-        const subtotal = (s.items || []).reduce((itemSum, item) => itemSum + (Number(item.amount) || 0), 0);
-        return sum + (subtotal * sQty);
-      }, 0);
-
-      ws.getCell(`A${currentRow}`).value = `見積金額: ¥${grandTotal.toLocaleString()}`;
-      ws.getCell(`A${currentRow}`).font = { size: 14, bold: true };
-      currentRow++;
-
-      // 日付
-      if (state.date || state.submitDate) {
-        const dateStr = state.submitDate || state.date;
-        ws.getCell(`A${currentRow}`).value = `日付: ${dateStr}`;
-        ws.getCell(`A${currentRow}`).font = { size: 10 };
-        currentRow++;
-      }
-
-      currentRow += 2;
-
-      // ===== 明細テーブル =====
-      const tableStartRow = currentRow;
-
-      // 価格モード判定（PDF出力と同じ方法で取得）
+      // 価格モード判定
       const cat = state.quoteCategory || '';
       const priceModeName = (!state.frpMode && cat.includes('工事')) ? 'pdfPriceModeKouji' : 'pdfPriceMode';
       const pdfPriceMode = getRadio(priceModeName) || 'teika';
       const mainRate = state.mainRate ?? 0;
       const isDairiMode = pdfPriceMode !== 'teika' && mainRate > 0;
 
-      // 品目コード表示判定（PDF出力と同じ方法で取得）
+      // 品目コード表示判定
       const showProductCode = (() => {
         const cb = document.getElementById('printProductCode');
         return cb ? cb.checked : false;
       })();
 
-      console.log('[Excel] カテゴリ:', cat);
-      console.log('[Excel] 価格モード名:', priceModeName);
-      console.log('[Excel] pdfPriceMode:', pdfPriceMode);
-      console.log('[Excel] mainRate:', mainRate);
-      console.log('[Excel] isDairiMode:', isDairiMode);
-      console.log('[Excel] showProductCode:', showProductCode);
+      // 合計金額計算
+      const grandTotal = state.sections.reduce((sum, s) => {
+        const sQty = Number(s.secQty) || 1;
+        const subtotal = (s.items || []).reduce((itemSum, item) => itemSum + (Number(item.amount) || 0), 0);
+        return sum + (subtotal * sQty);
+      }, 0);
 
-      // ヘッダー行（価格モードと品目コード表示に応じて変更）
-      let headers;
-      if (showProductCode) {
-        headers = isDairiMode
-          ? ['No.', '品目コード', '項目', '数量', '単位', '単価', '合計', '仕切単価', '仕切合計']
-          : ['No.', '品目コード', '項目', '数量', '単位', '単価', '金額'];
-      } else {
-        headers = isDairiMode
-          ? ['No.', '項目', '数量', '単位', '単価', '合計', '仕切単価', '仕切合計']
-          : ['No.', '項目', '数量', '単位', '単価', '金額'];
+      // 代理店価格合計
+      const dairiGrandTotal = isDairiMode ? state.sections.reduce((sum, s) => {
+        const sQty = Number(s.secQty) || 1;
+        const dairiSubtotal = (s.items || []).reduce((itemSum, item) => {
+          const rate = item.dairiRate ?? mainRate;
+          const dairiUnit = item.dairiUnitPrice != null
+            ? item.dairiUnitPrice
+            : (item.unitPrice != null ? Math.round(item.unitPrice * rate) : 0);
+          const qty = Number(item.qty) || 1;
+          return itemSum + (dairiUnit * qty);
+        }, 0);
+        return sum + (dairiSubtotal * sQty);
+      }, 0) : 0;
+
+      // 内訳計算
+      const deliveryPrice = Number(state.deliveryPrice) || grandTotal;
+
+      // 労務費・法定福利費計算（画面表示と同じロジック）
+      const legalRate = (Number(state.legalWelfareRate) || 14.6) / 100;
+      const useTeikaForKouji = ['teika', 'dairi-discount'].includes(pdfPriceMode);
+      const koujihi = state.sections.reduce((sum, s) =>
+        sum + s.items.reduce((ss, i) => {
+          if (!i.includeInLabor) return ss;
+          const r = i.dairiRate ?? state.mainRate;
+          const amt = Number(i.amount) || 0;
+          return ss + (!useTeikaForKouji && r != null ? Math.round(amt * r) : amt);
+        }, 0), 0);
+
+      const manualLaborCost = state.laborCost != null ? state.laborCost : 0;
+      const laborCost = manualLaborCost > 0
+        ? manualLaborCost
+        : Math.round(koujihi / (1 + legalRate));
+      const legalWelfare = manualLaborCost > 0
+        ? Math.round(manualLaborCost * legalRate)
+        : koujihi - laborCost;
+      const anzenCost = Number(state.anzenCost) || 0;
+      const uchiwakeBase = isDairiMode ? dairiGrandTotal : deliveryPrice;
+      const materialCost = uchiwakeBase - laborCost - legalWelfare - anzenCost;
+
+      // ===== シート1: 鏡ページ =====
+      let currentRow = 1;
+
+      // ===== ヘッダー部分 =====
+      wsCover.getCell(`A${currentRow}`).value = '御見積書';
+      wsCover.getCell(`A${currentRow}`).font = { size: 18, bold: true, name: 'メイリオ' };
+      wsCover.mergeCells(`A${currentRow}:F${currentRow}`);
+      wsCover.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
+      currentRow += 2;
+
+      // 顧客情報
+      wsCover.getCell(`A${currentRow}`).value = `${customer} ${customerHonorific}`;
+      wsCover.getCell(`A${currentRow}`).font = { size: 12, bold: true };
+      currentRow++;
+
+      if (contactName) {
+        wsCover.getCell(`A${currentRow}`).value = `${contactName} ${contactHonorific}`;
+        wsCover.getCell(`A${currentRow}`).font = { size: 11 };
+        currentRow++;
       }
 
-      headers.forEach((h, i) => {
-        const cell = ws.getCell(tableStartRow, i + 1);
+      currentRow++;
+
+      // 工事名
+      if (projectName) {
+        wsCover.getCell(`A${currentRow}`).value = `工事名: ${projectName}`;
+        wsCover.getCell(`A${currentRow}`).font = { size: 11 };
+        currentRow++;
+      }
+
+      // 見積金額
+      const displayTotal = isDairiMode ? dairiGrandTotal : grandTotal;
+      wsCover.getCell(`A${currentRow}`).value = `見積金額: ¥${displayTotal.toLocaleString()}`;
+      wsCover.getCell(`A${currentRow}`).font = { size: 14, bold: true };
+      currentRow++;
+
+      // 日付
+      if (dateStr) {
+        wsCover.getCell(`A${currentRow}`).value = `日付: ${dateStr}`;
+        wsCover.getCell(`A${currentRow}`).font = { size: 10 };
+        currentRow++;
+      }
+
+      currentRow += 2;
+
+      // ===== シート1: セクション小計テーブル =====
+      // ヘッダー行
+      const coverHeaders = isDairiMode
+        ? ['No.', '項目', '数量', '単位', '単価', '合計', '仕切単価', '仕切合計']
+        : ['No.', '項目', '数量', '単位', '単価', '合計'];
+
+      coverHeaders.forEach((h, idx) => {
+        const col = String.fromCharCode(65 + idx);
+        const cell = wsCover.getCell(`${col}${currentRow}`);
         cell.value = h;
-        cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+        cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -9879,140 +9917,92 @@ const app = (() => {
       });
       currentRow++;
 
-      // 明細行
-      let itemNo = 1;
-      const maxCol = (showProductCode ? 1 : 0) + (isDairiMode ? 8 : 6);
-      const colOffset = showProductCode ? 1 : 0; // 品目コード列がある場合は1列ずらす
-
+      // セクション小計行
       state.sections.forEach((sec, sIdx) => {
-        // セクションヘッダー
-        if (sec.name && sec.name.trim()) {
-          const cell = ws.getCell(`A${currentRow}`);
-          cell.value = `${sec.no || sIdx + 1}. ${sec.name}`;
-          cell.font = { bold: true, size: 11 };
-          const mergeEnd = String.fromCharCode(64 + maxCol); // F or H
-          ws.mergeCells(`A${currentRow}:${mergeEnd}${currentRow}`);
-          cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFE7E6E6' }
-          };
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
-          };
-          currentRow++;
+        const sQty = Number(sec.secQty) || 1;
+        const subtotal = (sec.items || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+        const secTotal = subtotal * sQty;
+
+        const dairiSubtotal = isDairiMode ? (sec.items || []).reduce((sum, item) => {
+          const rate = item.dairiRate ?? mainRate;
+          const dairiUnit = item.dairiUnitPrice != null
+            ? item.dairiUnitPrice
+            : (item.unitPrice != null ? Math.round(item.unitPrice * rate) : 0);
+          const qty = Number(item.qty) || 1;
+          return sum + (dairiUnit * qty);
+        }, 0) : 0;
+        const secDairiTotal = dairiSubtotal * sQty;
+
+        const row = wsCover.getRow(currentRow);
+        row.getCell(1).value = sec.no || sIdx + 1;
+        row.getCell(2).value = sec.name || '';
+        row.getCell(3).value = sQty;
+        row.getCell(4).value = '式';
+        row.getCell(5).value = subtotal;
+        row.getCell(6).value = secTotal;
+
+        if (isDairiMode) {
+          row.getCell(7).value = dairiSubtotal;
+          row.getCell(8).value = secDairiTotal;
         }
 
-        // アイテム行
-        (sec.items || []).forEach(item => {
-          if (!item.name && !item.unitPrice && !item.amount) return;
+        // 数値書式
+        row.getCell(5).numFmt = '#,##0';
+        row.getCell(6).numFmt = '#,##0';
+        if (isDairiMode) {
+          row.getCell(7).numFmt = '#,##0';
+          row.getCell(8).numFmt = '#,##0';
+        }
 
-          const row = ws.getRow(currentRow);
-          let col = 1;
-          row.getCell(col++).value = itemNo++;
-          if (showProductCode) row.getCell(col++).value = item.productCode || '';
-          row.getCell(col++).value = item.name || '';
-          row.getCell(col++).value = item.qty || '';
-          row.getCell(col++).value = item.unit || '';
-          row.getCell(col++).value = item.unitPrice || '';
-          row.getCell(col++).value = item.amount || '';
-
-          // 代理店価格モードの場合、仕切単価・仕切合計を追加
-          if (isDairiMode) {
-            const rate = item.dairiRate ?? mainRate;
-            const dairiUnit = item.dairiUnitPrice != null
-              ? item.dairiUnitPrice
-              : (item.unitPrice != null ? Math.round(item.unitPrice * rate) : '');
-            const dairiAmount = (dairiUnit !== '' && item.qty != null)
-              ? Math.round(Number(dairiUnit) * Number(item.qty))
-              : '';
-
-            row.getCell(col++).value = dairiUnit;
-            row.getCell(col++).value = dairiAmount;
-
-            if (dairiUnit) row.getCell(col - 2).numFmt = '#,##0';
-            if (dairiAmount) row.getCell(col - 1).numFmt = '#,##0';
+        // 罫線
+        const maxColCover = isDairiMode ? 8 : 6;
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          if (colNumber <= maxColCover) {
+            cell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
           }
-
-          // 数値セルの書式設定（品目コードのオフセットを考慮）
-          const priceCol = 2 + colOffset + 3; // 単価列
-          const amountCol = 2 + colOffset + 4; // 金額列
-          if (item.unitPrice) row.getCell(priceCol).numFmt = '#,##0';
-          if (item.amount) row.getCell(amountCol).numFmt = '#,##0';
-
-          // 罫線
-          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-            if (colNumber <= maxCol) {
-              cell.border = {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
-              };
-            }
-          });
-
-          // 配置（品目コードのオフセットを考慮）
-          row.getCell(1).alignment = { horizontal: 'center' }; // No.
-          if (showProductCode) {
-            row.getCell(2).alignment = { horizontal: 'left' }; // 品目コード
-          }
-          row.getCell(2 + colOffset).alignment = { horizontal: 'left' }; // 項目
-          row.getCell(3 + colOffset).alignment = { horizontal: 'right' }; // 数量
-          row.getCell(4 + colOffset).alignment = { horizontal: 'center' }; // 単位
-          row.getCell(5 + colOffset).alignment = { horizontal: 'right' }; // 単価
-          row.getCell(6 + colOffset).alignment = { horizontal: 'right' }; // 金額
-
-          if (isDairiMode) {
-            row.getCell(7 + colOffset).alignment = { horizontal: 'right' }; // 仕切単価
-            row.getCell(8 + colOffset).alignment = { horizontal: 'right' }; // 仕切合計
-          }
-
-          currentRow++;
         });
+
+        // 配置
+        row.getCell(1).alignment = { horizontal: 'center' };
+        row.getCell(2).alignment = { horizontal: 'left' };
+        row.getCell(3).alignment = { horizontal: 'right' };
+        row.getCell(4).alignment = { horizontal: 'center' };
+        row.getCell(5).alignment = { horizontal: 'right' };
+        row.getCell(6).alignment = { horizontal: 'right' };
+        if (isDairiMode) {
+          row.getCell(7).alignment = { horizontal: 'right' };
+          row.getCell(8).alignment = { horizontal: 'right' };
+        }
+
+        currentRow++;
       });
 
-      // 合計行
-      const totalRow = ws.getRow(currentRow);
-      const mergeToCol = (showProductCode ? 1 : 0) + (isDairiMode ? 7 : 5);
-      const mergeTo = String.fromCharCode(64 + mergeToCol);
-      ws.mergeCells(`A${currentRow}:${mergeTo}${currentRow}`);
-      totalRow.getCell(1).value = '合計';
-      totalRow.getCell(1).font = { bold: true, size: 12 };
-      totalRow.getCell(1).alignment = { horizontal: 'right' };
-      const totalCol = 6 + colOffset;
-      totalRow.getCell(totalCol).value = grandTotal;
-      totalRow.getCell(totalCol).numFmt = '#,##0';
-      totalRow.getCell(totalCol).font = { bold: true, size: 12 };
-      totalRow.getCell(totalCol).alignment = { horizontal: 'right' };
+      // 合計行（シート1）
+      const coverTotalRow = wsCover.getRow(currentRow);
+      wsCover.mergeCells(`A${currentRow}:E${currentRow}`);
+      coverTotalRow.getCell(1).value = '合計';
+      coverTotalRow.getCell(1).font = { bold: true, size: 12 };
+      coverTotalRow.getCell(1).alignment = { horizontal: 'right' };
+      coverTotalRow.getCell(6).value = displayTotal;
+      coverTotalRow.getCell(6).numFmt = '#,##0';
+      coverTotalRow.getCell(6).font = { bold: true, size: 12 };
+      coverTotalRow.getCell(6).alignment = { horizontal: 'right' };
 
-      // 代理店価格モードの場合、仕切合計も表示
       if (isDairiMode) {
-        const dairiGrandTotal = state.sections.reduce((sum, s) => {
-          const sQty = Number(s.secQty) || 1;
-          const dairiSubtotal = (s.items || []).reduce((itemSum, item) => {
-            const rate = item.dairiRate ?? mainRate;
-            const dairiUnit = item.dairiUnitPrice != null
-              ? item.dairiUnitPrice
-              : (item.unitPrice != null ? Math.round(item.unitPrice * rate) : 0);
-            const qty = Number(item.qty) || 1;
-            return itemSum + (dairiUnit * qty);
-          }, 0);
-          return sum + (dairiSubtotal * sQty);
-        }, 0);
-
-        const dairiTotalCol = 8 + colOffset;
-        totalRow.getCell(dairiTotalCol).value = dairiGrandTotal;
-        totalRow.getCell(dairiTotalCol).numFmt = '#,##0';
-        totalRow.getCell(dairiTotalCol).font = { bold: true, size: 12 };
-        totalRow.getCell(dairiTotalCol).alignment = { horizontal: 'right' };
+        coverTotalRow.getCell(8).value = dairiGrandTotal;
+        coverTotalRow.getCell(8).numFmt = '#,##0';
+        coverTotalRow.getCell(8).font = { bold: true, size: 12 };
+        coverTotalRow.getCell(8).alignment = { horizontal: 'right' };
       }
 
-      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-        if (colNumber <= maxCol) {
+      const maxColCover = isDairiMode ? 8 : 6;
+      coverTotalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        if (colNumber <= maxColCover) {
           cell.fill = {
             type: 'pattern',
             pattern: 'solid',
@@ -10027,19 +10017,223 @@ const app = (() => {
         }
       });
 
-      // 列幅設定
-      let colIdx = 1;
-      ws.getColumn(colIdx++).width = 6;   // No.
-      if (showProductCode) ws.getColumn(colIdx++).width = 15;  // 品目コード
-      ws.getColumn(colIdx++).width = 40;  // 項目
-      ws.getColumn(colIdx++).width = 8;   // 数量
-      ws.getColumn(colIdx++).width = 8;   // 単位
-      ws.getColumn(colIdx++).width = 15;  // 単価
-      ws.getColumn(colIdx++).width = 15;  // 金額
+      currentRow += 2;
+
+      // ===== 内訳 =====
+      wsCover.getCell(`A${currentRow}`).value = '内訳';
+      wsCover.getCell(`A${currentRow}`).font = { bold: true, size: 12 };
+      currentRow++;
+
+      const uchiwakeRows = [
+        ['資材費', materialCost],
+        ['労務費', laborCost],
+        ['法定福利費', legalWelfare],
+        ['安全費', anzenCost]
+      ];
+
+      uchiwakeRows.forEach(([label, value]) => {
+        const row = wsCover.getRow(currentRow);
+        wsCover.mergeCells(`A${currentRow}:E${currentRow}`);
+        row.getCell(1).value = label;
+        row.getCell(1).alignment = { horizontal: 'right' };
+        row.getCell(6).value = value;
+        row.getCell(6).numFmt = '#,##0';
+        row.getCell(6).alignment = { horizontal: 'right' };
+        currentRow++;
+      });
+
+      // 列幅設定（シート1）
+      wsCover.getColumn(1).width = 6;
+      wsCover.getColumn(2).width = 40;
+      wsCover.getColumn(3).width = 8;
+      wsCover.getColumn(4).width = 8;
+      wsCover.getColumn(5).width = 15;
+      wsCover.getColumn(6).width = 15;
+      if (isDairiMode) {
+        wsCover.getColumn(7).width = 15;
+        wsCover.getColumn(8).width = 15;
+      }
+
+      // ===== シート2: 明細ページ =====
+      let detailRow = 1;
+
+      // ヘッダー
+      wsDetail.getCell(`A${detailRow}`).value = '見積明細';
+      wsDetail.getCell(`A${detailRow}`).font = { size: 16, bold: true, name: 'メイリオ' };
+      wsDetail.mergeCells(`A${detailRow}:F${detailRow}`);
+      wsDetail.getCell(`A${detailRow}`).alignment = { horizontal: 'center' };
+      detailRow += 2;
+
+      // テーブルヘッダー
+      const detailHeaders = showProductCode
+        ? (isDairiMode
+          ? ['No.', '品目コード', '項目', '数量', '単位', '単価', '合計', '仕切単価', '仕切合計']
+          : ['No.', '品目コード', '項目', '数量', '単位', '単価', '合計'])
+        : (isDairiMode
+          ? ['No.', '項目', '数量', '単位', '単価', '合計', '仕切単価', '仕切合計']
+          : ['No.', '項目', '数量', '単位', '単価', '合計']);
+
+      detailHeaders.forEach((h, idx) => {
+        const col = String.fromCharCode(65 + idx);
+        const cell = wsDetail.getCell(`${col}${detailRow}`);
+        cell.value = h;
+        cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF4472C4' }
+        };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+      detailRow++;
+
+      // 明細行
+      let itemNo = 1;
+      const maxColDetail = (showProductCode ? 1 : 0) + (isDairiMode ? 8 : 6);
+      const colOffset = showProductCode ? 1 : 0;
+
+      state.sections.forEach((sec, sIdx) => {
+        // セクションヘッダー
+        if (sec.name && sec.name.trim()) {
+          const cell = wsDetail.getCell(`A${detailRow}`);
+          cell.value = `${sec.no || sIdx + 1}. ${sec.name}`;
+          cell.font = { bold: true, size: 11 };
+          const mergeEnd = String.fromCharCode(64 + maxColDetail);
+          wsDetail.mergeCells(`A${detailRow}:${mergeEnd}${detailRow}`);
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE7E6E6' }
+          };
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+          detailRow++;
+        }
+
+        // アイテム行
+        (sec.items || []).forEach(item => {
+          if (!item.name && !item.unitPrice && !item.amount) return;
+
+          const row = wsDetail.getRow(detailRow);
+          let col = 1;
+          row.getCell(col++).value = itemNo++;
+          if (showProductCode) row.getCell(col++).value = item.productCode || '';
+          row.getCell(col++).value = item.name || '';
+          row.getCell(col++).value = item.qty || '';
+          row.getCell(col++).value = item.unit || '';
+          row.getCell(col++).value = item.unitPrice || '';
+          row.getCell(col++).value = item.amount || '';
+
+          if (isDairiMode) {
+            const rate = item.dairiRate ?? mainRate;
+            const dairiUnit = item.dairiUnitPrice != null
+              ? item.dairiUnitPrice
+              : (item.unitPrice != null ? Math.round(item.unitPrice * rate) : '');
+            const dairiAmount = (dairiUnit !== '' && item.qty != null)
+              ? Math.round(Number(dairiUnit) * Number(item.qty))
+              : '';
+            row.getCell(col++).value = dairiUnit;
+            row.getCell(col++).value = dairiAmount;
+
+            if (dairiUnit) row.getCell(col - 2).numFmt = '#,##0';
+            if (dairiAmount) row.getCell(col - 1).numFmt = '#,##0';
+          }
+
+          // 数値書式
+          const priceCol = 2 + colOffset + 3;
+          const amountCol = 2 + colOffset + 4;
+          if (item.unitPrice) row.getCell(priceCol).numFmt = '#,##0';
+          if (item.amount) row.getCell(amountCol).numFmt = '#,##0';
+
+          // 罫線
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            if (colNumber <= maxColDetail) {
+              cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+              };
+            }
+          });
+
+          // 配置
+          row.getCell(1).alignment = { horizontal: 'center' };
+          if (showProductCode) row.getCell(2).alignment = { horizontal: 'left' };
+          row.getCell(2 + colOffset).alignment = { horizontal: 'left' };
+          row.getCell(3 + colOffset).alignment = { horizontal: 'right' };
+          row.getCell(4 + colOffset).alignment = { horizontal: 'center' };
+          row.getCell(5 + colOffset).alignment = { horizontal: 'right' };
+          row.getCell(6 + colOffset).alignment = { horizontal: 'right' };
+          if (isDairiMode) {
+            row.getCell(7 + colOffset).alignment = { horizontal: 'right' };
+            row.getCell(8 + colOffset).alignment = { horizontal: 'right' };
+          }
+
+          detailRow++;
+        });
+      });
+
+      // 合計行（シート2）
+      const detailTotalRow = wsDetail.getRow(detailRow);
+      const detailMergeTo = (showProductCode ? 1 : 0) + (isDairiMode ? 7 : 5);
+      const detailMergeToCol = String.fromCharCode(64 + detailMergeTo);
+      wsDetail.mergeCells(`A${detailRow}:${detailMergeToCol}${detailRow}`);
+      detailTotalRow.getCell(1).value = '合計';
+      detailTotalRow.getCell(1).font = { bold: true, size: 12 };
+      detailTotalRow.getCell(1).alignment = { horizontal: 'right' };
+      const detailTotalCol = 6 + colOffset;
+      detailTotalRow.getCell(detailTotalCol).value = grandTotal;
+      detailTotalRow.getCell(detailTotalCol).numFmt = '#,##0';
+      detailTotalRow.getCell(detailTotalCol).font = { bold: true, size: 12 };
+      detailTotalRow.getCell(detailTotalCol).alignment = { horizontal: 'right' };
 
       if (isDairiMode) {
-        ws.getColumn(colIdx++).width = 15;  // 仕切単価
-        ws.getColumn(colIdx++).width = 15;  // 仕切合計
+        const detailDairiTotalCol = 8 + colOffset;
+        detailTotalRow.getCell(detailDairiTotalCol).value = dairiGrandTotal;
+        detailTotalRow.getCell(detailDairiTotalCol).numFmt = '#,##0';
+        detailTotalRow.getCell(detailDairiTotalCol).font = { bold: true, size: 12 };
+        detailTotalRow.getCell(detailDairiTotalCol).alignment = { horizontal: 'right' };
+      }
+
+      detailTotalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        if (colNumber <= maxColDetail) {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFD9D9D9' }
+          };
+          cell.border = {
+            top: { style: 'medium' },
+            left: { style: 'thin' },
+            bottom: { style: 'medium' },
+            right: { style: 'thin' }
+          };
+        }
+      });
+
+      // 列幅設定（シート2）
+      let detailColIdx = 1;
+      wsDetail.getColumn(detailColIdx++).width = 6;
+      if (showProductCode) wsDetail.getColumn(detailColIdx++).width = 15;
+      wsDetail.getColumn(detailColIdx++).width = 40;
+      wsDetail.getColumn(detailColIdx++).width = 8;
+      wsDetail.getColumn(detailColIdx++).width = 8;
+      wsDetail.getColumn(detailColIdx++).width = 15;
+      wsDetail.getColumn(detailColIdx++).width = 15;
+      if (isDairiMode) {
+        wsDetail.getColumn(detailColIdx++).width = 15;
+        wsDetail.getColumn(detailColIdx++).width = 15;
       }
 
       // ===== ファイル出力 =====
