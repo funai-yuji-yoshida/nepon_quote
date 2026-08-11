@@ -6683,8 +6683,15 @@ const app = (() => {
       } else {
         item.dairiUnitPrice = Number(raw) || 0;
         item._dairiManual   = true;
+        // 代理店単価を手動入力したら、最終代理店単価をクリア（代理店単価を優先）
+        item.finalDairiUnit = null;
         dairiUnitEl2.classList.add('is-manual');
         if (dairiUnitLock2) dairiUnitLock2.style.display = '';
+        // 最終代理店単価のロック表示も更新
+        const finalDairiInputEl = row.querySelector('.item-final-dairi');
+        const finalDairiLockEl = row.querySelector('.btn-final-dairi-lock');
+        if (finalDairiInputEl) finalDairiInputEl.classList.remove('is-manual');
+        if (finalDairiLockEl) finalDairiLockEl.style.display = 'none';
       }
     }
 
