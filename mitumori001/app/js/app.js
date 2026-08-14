@@ -10778,6 +10778,7 @@ const app = (() => {
         item_rate:     state.itemRate     != null ? state.itemRate     : undefined, // 製品掛率
         parts_rate:    state.partsRate    != null ? state.partsRate    : undefined, // 部品掛率
         purchase_rate: state.purchaseRate != null ? state.purchaseRate : undefined, // 仕入れ品掛率
+        FRPmode:       state.frpMode, // FRPモードフラグ（真偽値）
         // サブフォームは後続の処理で deleteRecord + updateRecord で個別処理
         // ここでは挿入データのみ準備する
         _subformCurrentItems: state.frpMode
