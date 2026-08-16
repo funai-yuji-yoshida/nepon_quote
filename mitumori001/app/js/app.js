@@ -11295,7 +11295,7 @@ const app = (() => {
           JSON:  updatedJson.slice(0, 32000),
           JSON2: updatedJson.length > 32000 ? updatedJson.slice(32000) : '',
         },
-        Trigger: [],
+        Trigger: ['workflow'],   // 2026/08/16 「CRMに保存」で見積書のワークフローを発火
       });
       statusEl.textContent = '✅ 保存しました（' + new Date().toLocaleTimeString('ja-JP') + '）';
       showToast('CRMに保存しました');
