@@ -853,9 +853,12 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
         // ＜仕様＞ヘッダー行は出力しない
       } else if (entry.type === 'specLine') {
         const specFs = Math.max(5.5, itemFs - 0.5);
+        const trimmed = (entry.text || '').trim();
+        const margin = trimmed.startsWith('〇') ? [0, 0, 0, 0] : [8, 0, 0, 0];
+        const text = trimmed.startsWith('〇') ? trimmed.substring(1).trim() : trimmed;
         const row = [
           { text: '', fontSize: specFs },
-          { text: entry.text, fontSize: specFs, color: '#000', margin: [8, 0, 0, 0] },
+          { text: text, fontSize: specFs, color: '#000', margin: margin },
           ...emptyPc(specFs),
           { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
           { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
@@ -879,9 +882,14 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
         // 標準仕様ヘッダー行は出力しない
       } else if (entry.type === 'machineSpecLine') {
         const specFs = Math.max(5.0, itemFs - 1.0);
+        const label = (entry.spec.label || '').trim();
+        const hasCircle = label.startsWith('〇');
+        const displayLabel = hasCircle ? label.substring(1).trim() : label;
+        const margin = hasCircle ? [0, 0, 0, 0] : [8, 0, 0, 0];
+        const text = entry.spec.value ? `${displayLabel}：${entry.spec.value}` : displayLabel;
         const row = [
           { text: '', fontSize: specFs },
-          { text: `${entry.spec.label}：${entry.spec.value}`, fontSize: specFs, color: '#000', margin: [8, 0, 0, 0] },
+          { text: text, fontSize: specFs, color: '#000', margin: margin },
           ...emptyPc(specFs),
           { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
           { text: '', fontSize: specFs }, { text: '', fontSize: specFs },
@@ -1302,7 +1310,7 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
       {
         svg: NEPON_LOGO_SVG,
         width: 80,
-        absolutePosition: { x: 460, y: 40 }
+        absolutePosition: { x: 460, y: 28 }
       },
       // ── タイトル（A4全幅センタリング） ──
       { text: '御　見　積　書', fontSize: titleFs, bold: true, characterSpacing: 8, alignment: 'center' },
@@ -1860,11 +1868,21 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
           ]);
         }
         (item.specLines || []).filter(l => (l || '').trim()).forEach(line => {
-          rows.push([
-            { text: '' },
-            { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] },
-            ...emp(COLS - 2),
-          ]);
+          const trimmed = line.trim();
+          if (trimmed.startsWith('〇')) {
+            const text = trimmed.substring(1).trim();
+            rows.push([
+              { text: '' },
+              { text: text, fontSize: 7.5, color: '#000', margin: [0, 0, 0, 0] },
+              ...emp(COLS - 2),
+            ]);
+          } else {
+            rows.push([
+              { text: '' },
+              { text: trimmed, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] },
+              ...emp(COLS - 2),
+            ]);
+          }
         });
       });
     });
@@ -2041,9 +2059,12 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
           ]);
           specLines.forEach((line, li) => {
             const isLast = li === specLines.length - 1;
+            const trimmed = line.trim();
+            const margin = trimmed.startsWith('〇') ? [0, 0, 0, 0] : [8, 0, 0, 0];
+            const text = trimmed.startsWith('〇') ? trimmed.substring(1).trim() : trimmed;
             rows.push([
               { text: '', border: [true, false, true, isLast] },
-              { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0], border: [true, false, true, isLast] },
+              { text: text, fontSize: 7.5, color: '#000', margin: margin, border: [true, false, true, isLast] },
               { text: '', border: [true, false, true, isLast] },
               { text: '', border: [true, false, true, isLast] },
               { text: '', border: [true, false, true, isLast] },
@@ -2267,7 +2288,13 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
           ]);
         }
         const _sl = (item.specLines || []).filter(l => (l || '').trim());
-        _sl.forEach(line => rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]));
+        _sl.forEach(line => {
+          const trimmed = line.trim();
+          const hasCircle = trimmed.startsWith('〇');
+          const displayText = hasCircle ? trimmed.substring(1).trim() : trimmed;
+          const margin = hasCircle ? [0, 0, 0, 0] : [8, 0, 0, 0];
+          rows.push([{ text: '' }, { text: displayText, fontSize: 7.5, color: '#000', margin: margin }, ...emp(COLS - 2)]);
+        });
       });
 
       // カテゴリあり → 集計行
@@ -2568,19 +2595,31 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
           ]);
         }
         if (!item.machineSpecHidden) {
-          const _koujiModel = (item.machineSpec && item.machineSpec.model)
+          // specMasterContentがある場合は型式行を表示しない（仕様内に含まれるため）
+          const _koujiModel = (!item.specMasterContent && item.machineSpec && item.machineSpec.model)
             || (item.specMasterContent ? '' : (item.printModel !== false ? (item.model || item.spec || '') : ''));
           if (_koujiModel) {
             rows.push([{ text: '' }, { text: `　型式　${_koujiModel}`, fontSize: 8 }, ...emp(COLS - 2)]);
           }
           if (item.machineSpec) {
             (item.machineSpec.specs || []).forEach(spec => {
-              rows.push([{ text: '' }, { text: `${spec.label}：${spec.value}`, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
+              const label = (spec.label || '').trim();
+              const hasCircle = label.startsWith('〇');
+              const displayLabel = hasCircle ? label.substring(1).trim() : label;
+              const margin = hasCircle ? [0, 0, 0, 0] : [8, 0, 0, 0];
+              const text = spec.value ? `${displayLabel}：${spec.value}` : displayLabel;
+              rows.push([{ text: '' }, { text: text, fontSize: 7.5, color: '#000', margin: margin }, ...emp(COLS - 2)]);
             });
           }
         }
         const _sl = (item.specLines || []).filter(l => (l || '').trim());
-        _sl.forEach(line => rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]));
+        _sl.forEach(line => {
+          const trimmed = line.trim();
+          const hasCircle = trimmed.startsWith('〇');
+          const displayText = hasCircle ? trimmed.substring(1).trim() : trimmed;
+          const margin = hasCircle ? [0, 0, 0, 0] : [8, 0, 0, 0];
+          rows.push([{ text: '' }, { text: displayText, fontSize: 7.5, color: '#000', margin: margin }, ...emp(COLS - 2)]);
+        });
       });
 
       // カテゴリあり → 集計行
@@ -2906,14 +2945,36 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
         if (!item.machineSpecHidden && item.specMasterContent) {
           // 熱機仕様：specMasterContentを行ごとに表示し、付属品リスト（specLines）を続けて表示
           item.specMasterContent.split('\n').filter(l => l.trim()).forEach(line => {
-            rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
+            const trimmed = line.trim();
+            if (trimmed.startsWith('〇')) {
+              // 行頭に〇がある → インデントなし、〇は削除
+              const text = trimmed.substring(1).trim();
+              rows.push([{ text: '' }, { text: text, fontSize: 7.5, color: '#000', margin: [0, 0, 0, 0] }, ...emp(COLS - 2)]);
+            } else {
+              // 通常の行 → インデント8pt
+              rows.push([{ text: '' }, { text: trimmed, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
+            }
           });
           (item.specLines || []).filter(l => (l || '').trim()).forEach(line => {
-            rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
+            const trimmed = line.trim();
+            if (trimmed.startsWith('〇')) {
+              const text = trimmed.substring(1).trim();
+              rows.push([{ text: '' }, { text: text, fontSize: 7.5, color: '#000', margin: [0, 0, 0, 0] }, ...emp(COLS - 2)]);
+            } else {
+              rows.push([{ text: '' }, { text: trimmed, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
+            }
           });
         } else {
           const _sl1 = (item.specLines || []).filter(l => (l || '').trim());
-          _sl1.forEach(line => rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]));
+          _sl1.forEach(line => {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('〇')) {
+              const text = trimmed.substring(1).trim();
+              rows.push([{ text: '' }, { text: text, fontSize: 7.5, color: '#000', margin: [0, 0, 0, 0] }, ...emp(COLS - 2)]);
+            } else {
+              rows.push([{ text: '' }, { text: trimmed, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
+            }
+          });
         }
       });
 
@@ -3215,7 +3276,12 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
           if (item.machineSpec) {
             // machineSpecアイテムは品名が型式名なので型式行は出さない
             (item.machineSpec.specs || []).forEach(spec => {
-              rows.push([{ text: '' }, { text: `${spec.label}：${spec.value}`, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
+              const label = (spec.label || '').trim();
+              const hasCircle = label.startsWith('〇');
+              const displayLabel = hasCircle ? label.substring(1).trim() : label;
+              const margin = hasCircle ? [0, 0, 0, 0] : [8, 0, 0, 0];
+              const text = spec.value ? `${displayLabel}：${spec.value}` : displayLabel;
+              rows.push([{ text: '' }, { text: text, fontSize: 7.5, color: '#000', margin: margin }, ...emp(COLS - 2)]);
             });
           }
         }

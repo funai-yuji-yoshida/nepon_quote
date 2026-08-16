@@ -2698,16 +2698,16 @@ const app = (() => {
   async function loadEisei() {
     if (!zohoReady) return;
     try {
-      const data = await fetchAllRecords('CustomModule30', 'field5');
+      const data = await fetchAllRecords('CustomModule30', 'field3');
       state.eiseiCache = data.map(r => ({
         id:     r.id,
         name:   r.Name    || '',  // 衛生名
         model:  r.field   || '',  // セット型式
         hinban: r.field1  || '',  // セット品番
         note:   r.field2  || '',  // 注意ポップ
-        chu:    r.field3  || '',  // 中項目
-        sho:    r.field4  || '',  // 小項目
-        order:  Number(r.field5) || 99,  // 順番
+        order:  Number(r.field3) || 99,  // 順番
+        chu:    r.field4  || '',  // 中項目
+        sho:    r.field5  || '',  // 小項目
       }));
       console.log(`衛生マスタ ${state.eiseiCache.length} 件読み込み`);
       buildEiseiChuSelect();
@@ -6613,6 +6613,20 @@ const app = (() => {
     if (item.unitPrice !== null && item.qty) {
       item.amount = item.unitPrice * item.qty;
       if (amountEl) amountEl.value = item.amount.toLocaleString('ja-JP');
+    } else if (e.target === priceEl && item.unitPrice === null) {
+      // 単価を削除した場合、金額を0（空欄）にする
+      item.amount = null;
+      if (amountEl) amountEl.value = '';
+
+      // 代理店単価のDOMの値をstateに保存（自動計算値を維持）
+      const dairiUnitEl = row.querySelector('.item-dairi-unit');
+      if (dairiUnitEl && !item._dairiManual) {
+        const raw = dairiUnitEl.value.replace(/,/g, '').trim();
+        if (raw !== '') {
+          item.dairiUnitPrice = Number(raw) || null;
+          item._dairiManual = true;
+        }
+      }
     } else if (e.target === amountEl) {
       item.amount = Number((amountEl?.value || '').replace(/,/g, '')) || 0;
       // 金額から単価を逆算（数量2以上で単価が入らない不具合対応）
@@ -10471,7 +10485,18 @@ const app = (() => {
       branchTel:       getValue('branchTel')     || undefined,
       branchFax:       getValue('branchFax')     || undefined,
       branchNote:      getValue('branchNote')    || undefined,
-      sections:        state.sections,
+      sections:        state.sections.map(sec => ({
+        ...sec,
+        items: sec.items.map(item => {
+          // item.specを改行で分割してspecLinesに追加（見積画面で編集した仕様を反映）
+          let specLines = [...(item.specLines || [])];
+          if (item.spec && item.spec.trim() && specLines.length === 0) {
+            const lines = item.spec.split('\n').filter(l => l.trim());
+            specLines = lines;
+          }
+          return { ...item, specLines };
+        })
+      })),
       exclusions:      state.exclusions.length > 0 ? state.exclusions : undefined,
       remarks:         state.remarks || undefined,
       discount:        state.discountEnabled !== false ? (state.discount || undefined) : undefined,
@@ -10679,19 +10704,22 @@ const app = (() => {
           sec.items.forEach(item => {
             const _sr = _sb.querySelector(`[data-item-id="${item.id}"]`);
             if (!_sr) return;
-            // 代理店単価: is-manualクラスまたは_dairiManualフラグがあれば常にDOM値をstateに反映
+            // 代理店単価: is-manualクラス、_dairiManualフラグ、またはdairiUnitPrice設定済みなら手動扱い
             {
               const _duEl = _sr.querySelector('.item-dairi-unit');
               if (_duEl) {
-                const _isManualDOM = _duEl.classList.contains('is-manual') || item._dairiManual;
+                const _isManualDOM = _duEl.classList.contains('is-manual') || item._dairiManual || item.dairiUnitPrice != null;
                 if (_isManualDOM) {
                   const _raw = _duEl.value.replace(/,/g, '').trim();
                   const _num = _raw !== '' ? (Number(_raw) || null) : null;
                   if (_num !== null) {
                     item.dairiUnitPrice = _num;
                     item._dairiManual   = true;
+                  } else if (item.dairiUnitPrice != null) {
+                    // DOMが空欄だが、stateに値がある場合は維持
+                    // （ユーザーが削除した場合はonItemInputで既にnullになっているはず）
                   }
-                } else if (item.dairiUnitPrice == null) {
+                } else {
                   const _raw = _duEl.value.replace(/,/g, '').trim();
                   const _num = _raw !== '' ? (Number(_raw) || null) : null;
                   if (_num !== null) {
@@ -10699,7 +10727,15 @@ const app = (() => {
                     if (_num !== _auto) {
                       item.dairiUnitPrice = _num;
                       item._dairiManual   = true;
+                    } else {
+                      // 自動計算値と同じ場合、手動フラグをクリア
+                      item.dairiUnitPrice = null;
+                      item._dairiManual   = false;
                     }
+                  } else {
+                    // 自動計算モードで値が空の場合、手動入力をクリア
+                    item.dairiUnitPrice = null;
+                    item._dairiManual   = false;
                   }
                 }
               }
@@ -11257,7 +11293,7 @@ const app = (() => {
     if (rate != null) {
       // unitPriceがnullのとき amount/qty から単価を逆算
       const baseUnit = item.unitPrice != null ? item.unitPrice
-        : (item.amount != null ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
+        : (item.amount != null && item.amount > 0 ? Math.round(Number(item.amount) / (Number(item.qty) || 1)) : null);
       if (baseUnit != null) {
         const auto = Math.round(baseUnit * rate);
         return state.roundingEnabled ? roundUpNormal(auto) : auto;
