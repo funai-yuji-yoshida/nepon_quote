@@ -9311,6 +9311,352 @@ const app = (() => {
     discEl.dispatchEvent(new Event('input'));
   }
 
+  // ── Excel インポート/エクスポート ──────────────────────────────────
+
+  function openExcelModal() {
+    const modal = document.getElementById('excelModal');
+    if (modal) modal.style.display = 'flex';
+  }
+
+  function closeExcelModal() {
+    const modal = document.getElementById('excelModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async function downloadExcelTemplate() {
+    try {
+      const ExcelJS = window.ExcelJS;
+      if (!ExcelJS) {
+        showToast('ExcelJSライブラリが読み込まれていません', 'error');
+        return;
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('見積明細');
+
+      // ヘッダー行
+      worksheet.columns = [
+        { header: '大項目', key: 'section', width: 20 },
+        { header: '商品コード', key: 'productCode', width: 15 },
+        { header: '品名', key: 'name', width: 30 },
+        { header: '型式', key: 'model', width: 20 },
+        { header: '仕様', key: 'spec', width: 30 },
+        { header: '数量', key: 'qty', width: 10 },
+        { header: '単位', key: 'unit', width: 10 },
+        { header: '単価', key: 'unitPrice', width: 15 },
+        { header: '金額', key: 'amount', width: 15 },
+        { header: '原価', key: 'genka', width: 15 },
+        { header: '算出カテゴリ', key: 'calcCategory', width: 20 },
+        { header: '代理店掛率', key: 'dairiRate', width: 12 },
+        { header: '備考', key: 'bikou', width: 30 }
+      ];
+
+      // ヘッダーのスタイル
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+      };
+
+      // サンプルデータ（記入例）
+      const sampleData = [
+        {
+          section: '衛生設備',
+          productCode: 'BOT-200',
+          name: 'オイルタンク BOT-200',
+          model: 'BOT-200',
+          spec: '容量：200L',
+          qty: 1,
+          unit: '台',
+          unitPrice: 10000,
+          amount: 10000,
+          genka: 6000,
+          calcCategory: '①機器',
+          dairiRate: 0.8,
+          bikou: ''
+        },
+        {
+          section: '衛生設備',
+          productCode: '',
+          name: '配管材料',
+          model: '',
+          spec: 'VP管 φ50',
+          qty: 10,
+          unit: 'm',
+          unitPrice: 500,
+          amount: 5000,
+          genka: 300,
+          calcCategory: '②部材',
+          dairiRate: '',
+          bikou: ''
+        },
+        {
+          section: '衛生設備',
+          productCode: '',
+          name: '配管工事',
+          model: '',
+          spec: '',
+          qty: 1,
+          unit: '式',
+          unitPrice: 50000,
+          amount: 50000,
+          genka: 30000,
+          calcCategory: '④工事費',
+          dairiRate: '',
+          bikou: '基礎工事含む'
+        }
+      ];
+
+      sampleData.forEach(data => {
+        const row = worksheet.addRow(data);
+        // サンプル行の背景色を薄い黄色に
+        row.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFF0' }
+        };
+      });
+
+      // 説明行を追加（最下部にコメント）
+      worksheet.addRow({});
+      const noteRow = worksheet.addRow({
+        section: '※ 上記はサンプルデータです。削除して実際のデータを入力してください。',
+        productCode: '',
+        name: '',
+        model: '',
+        spec: '',
+        qty: '',
+        unit: '',
+        unitPrice: '',
+        amount: '',
+        genka: '',
+        calcCategory: '',
+        dairiRate: '',
+        bikou: ''
+      });
+      noteRow.font = { italic: true, color: { argb: 'FF888888' } };
+
+      // ファイル名
+      const fileName = `見積明細テンプレート_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+      // ダウンロード
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      showToast('✅ テンプレートをダウンロードしました', 'success');
+    } catch (err) {
+      console.error('テンプレート生成エラー:', err);
+      showToast('テンプレート生成に失敗しました: ' + err.message, 'error');
+    }
+  }
+
+  async function exportItemsToExcel() {
+    try {
+      const ExcelJS = window.ExcelJS;
+      if (!ExcelJS) {
+        showToast('ExcelJSライブラリが読み込まれていません', 'error');
+        return;
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('見積明細');
+
+      // ヘッダー行
+      worksheet.columns = [
+        { header: '大項目', key: 'section', width: 20 },
+        { header: '商品コード', key: 'productCode', width: 15 },
+        { header: '品名', key: 'name', width: 30 },
+        { header: '型式', key: 'model', width: 20 },
+        { header: '仕様', key: 'spec', width: 30 },
+        { header: '数量', key: 'qty', width: 10 },
+        { header: '単位', key: 'unit', width: 10 },
+        { header: '単価', key: 'unitPrice', width: 15 },
+        { header: '金額', key: 'amount', width: 15 },
+        { header: '原価', key: 'genka', width: 15 },
+        { header: '算出カテゴリ', key: 'calcCategory', width: 20 },
+        { header: '代理店掛率', key: 'dairiRate', width: 12 },
+        { header: '備考', key: 'bikou', width: 30 }
+      ];
+
+      // ヘッダーのスタイル
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+      };
+
+      // データ行
+      state.sections.forEach(sec => {
+        sec.items.forEach(item => {
+          worksheet.addRow({
+            section: sec.name || '',
+            productCode: item.productCode || '',
+            name: item.name || '',
+            model: item.model || '',
+            spec: item.spec || '',
+            qty: item.qty || 0,
+            unit: item.unit || '',
+            unitPrice: item.unitPrice || '',
+            amount: item.amount || '',
+            genka: item.genka || '',
+            calcCategory: item.calcCategory || '',
+            dairiRate: item.dairiRate != null ? item.dairiRate : '',
+            bikou: item.bikou || ''
+          });
+        });
+      });
+
+      // ファイル名
+      const fileName = `見積明細_${state.dealName || 'テンプレート'}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+      // ダウンロード
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      showToast(`✅ Excelファイルをエクスポートしました（${worksheet.rowCount - 1}行）`, 'success');
+    } catch (err) {
+      console.error('Excel エクスポートエラー:', err);
+      showToast('Excelエクスポートに失敗しました: ' + err.message, 'error');
+    }
+  }
+
+  async function importItemsFromExcel(file) {
+    if (!file) return;
+
+    try {
+      const ExcelJS = window.ExcelJS;
+      if (!ExcelJS) {
+        showToast('ExcelJSライブラリが読み込まれていません', 'error');
+        return;
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(arrayBuffer);
+
+      const worksheet = workbook.getWorksheet(1);
+      if (!worksheet) {
+        showToast('Excelファイルにシートが見つかりません', 'error');
+        return;
+      }
+
+      const rows = [];
+      let headerRow = null;
+
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) {
+          headerRow = row.values;
+          return;
+        }
+        const rowData = {};
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          const header = headerRow[colNumber];
+          rowData[header] = cell.value;
+        });
+        rows.push(rowData);
+      });
+
+      // データ検証とインポート
+      let importedCount = 0;
+      let errorCount = 0;
+      const errors = [];
+
+      for (const rowData of rows) {
+        try {
+          // 必須項目チェック
+          if (!rowData['品名'] || !rowData['数量']) {
+            errorCount++;
+            errors.push(`品名または数量が空の行をスキップしました`);
+            continue;
+          }
+
+          // セクションを取得または作成
+          const sectionName = rowData['大項目'] || '（未分類）';
+          let section = state.sections.find(s => s.name === sectionName);
+          if (!section) {
+            section = {
+              id: state.nextSectionId++,
+              name: sectionName,
+              items: []
+            };
+            state.sections.push(section);
+          }
+
+          // アイテムを作成
+          const item = {
+            id: state.nextItemId++,
+            productCode: rowData['商品コード'] || '',
+            name: rowData['品名'] || '',
+            model: rowData['型式'] || '',
+            spec: rowData['仕様'] || '',
+            qty: Number(rowData['数量']) || 0,
+            unit: rowData['単位'] || '式',
+            unitPrice: rowData['単価'] ? Number(rowData['単価']) : null,
+            amount: rowData['金額'] ? Number(rowData['金額']) : null,
+            genka: rowData['原価'] ? Number(rowData['原価']) : null,
+            calcCategory: rowData['算出カテゴリ'] || '',
+            dairiRate: rowData['代理店掛率'] ? Number(rowData['代理店掛率']) : null,
+            bikou: rowData['備考'] || ''
+          };
+
+          // 商品コードがある場合、商品マスタと紐づけを試みる
+          if (item.productCode) {
+            // TODO: 商品検索APIで商品マスタを取得し、データを上書き
+            // 現在は手動入力として扱う
+          }
+
+          section.items.push(item);
+          importedCount++;
+        } catch (err) {
+          errorCount++;
+          errors.push(`行${importedCount + errorCount + 1}: ${err.message}`);
+        }
+      }
+
+      // 画面を更新
+      renderSections();
+      updateOutput();
+      markDirty();
+
+      // 結果を表示
+      if (importedCount > 0) {
+        let message = `✅ ${importedCount}行をインポートしました`;
+        if (errorCount > 0) {
+          message += `（エラー: ${errorCount}行）`;
+        }
+        showToast(message, errorCount > 0 ? 'warn' : 'success');
+
+        if (errors.length > 0 && errors.length <= 5) {
+          console.warn('インポートエラー:', errors);
+        }
+      } else {
+        showToast('インポートできる行がありませんでした', 'warn');
+      }
+
+      // ファイル入力をリセット
+      const fileInput = document.getElementById('excelImportInput');
+      if (fileInput) fileInput.value = '';
+
+    } catch (err) {
+      console.error('Excel インポートエラー:', err);
+      showToast('Excelインポートに失敗しました: ' + err.message, 'error');
+    }
+  }
+
   // ── 掛率複数検知 ───────────────────────────────────────────────────
   function checkMultipleRates() {
     const warnEl = document.getElementById('multiRateWarn');
@@ -11640,6 +11986,12 @@ const app = (() => {
     syncAdjustAmountFromHint,
     _adjustWarnCancel,
     _adjustWarnIgnore,
+    // Excel インポート/エクスポート
+    openExcelModal,
+    closeExcelModal,
+    downloadExcelTemplate,
+    exportItemsToExcel,
+    importItemsFromExcel,
     // デバッグ・テスト用
     _state: state,
     _renderFrpItems: renderFrpItems,
@@ -11663,5 +12015,50 @@ const app = (() => {
 document.addEventListener('DOMContentLoaded', () => {
   window.app = app;
   document.getElementById('btnAutoNumber').addEventListener('click', () => app.autoNumber());
+
+  // 金額系の入力欄にカンマ表示を追加（blur時）
+  document.body.addEventListener('blur', (e) => {
+    const target = e.target;
+    // 金額系の入力欄のみ対象
+    if (!target.value) return;
+
+    const isMoneyInput = (target.classList && (
+                          target.classList.contains('item-price') ||
+                          target.classList.contains('item-amount') ||
+                          target.classList.contains('item-dairi-unit') ||
+                          target.classList.contains('item-final-dairi') ||
+                          target.classList.contains('item-buhan-discount') ||
+                          target.classList.contains('item-genka'))) ||
+                          target.id === 'discountAmount' ||
+                          target.id === 'adjustHintAmountInput';
+
+    if (isMoneyInput) {
+      const rawValue = target.value.replace(/,/g, '').trim();
+      if (rawValue !== '' && !isNaN(rawValue)) {
+        target.value = Number(rawValue).toLocaleString('ja-JP');
+      }
+    }
+  }, true);
+
+  // 金額系の入力欄のカンマを削除（focus時・入力しやすくする）
+  document.body.addEventListener('focus', (e) => {
+    const target = e.target;
+    if (!target.value) return;
+
+    const isMoneyInput = (target.classList && (
+                          target.classList.contains('item-price') ||
+                          target.classList.contains('item-amount') ||
+                          target.classList.contains('item-dairi-unit') ||
+                          target.classList.contains('item-final-dairi') ||
+                          target.classList.contains('item-buhan-discount') ||
+                          target.classList.contains('item-genka'))) ||
+                          target.id === 'discountAmount' ||
+                          target.id === 'adjustHintAmountInput';
+
+    if (isMoneyInput) {
+      target.value = target.value.replace(/,/g, '');
+    }
+  }, true);
+
   app.init();
 });
