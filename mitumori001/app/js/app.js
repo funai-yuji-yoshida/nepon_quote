@@ -12025,15 +12025,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // 金額系の入力欄のみ対象
     if (!target.value) return;
 
-    const isMoneyInput = (target.classList && (
+    // type="number" の要素は除外（カンマを含む値を設定すると無効化されるため）
+    if (target.type === 'number') return;
+
+    const isMoneyInput = target.classList && (
                           target.classList.contains('item-price') ||
                           target.classList.contains('item-amount') ||
                           target.classList.contains('item-dairi-unit') ||
                           target.classList.contains('item-final-dairi') ||
                           target.classList.contains('item-buhan-discount') ||
-                          target.classList.contains('item-genka'))) ||
-                          target.id === 'discountAmount' ||
-                          target.id === 'adjustHintAmountInput';
+                          target.classList.contains('item-genka'));
 
     if (isMoneyInput) {
       const rawValue = target.value.replace(/,/g, '').trim();
@@ -12048,15 +12049,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const target = e.target;
     if (!target.value) return;
 
-    const isMoneyInput = (target.classList && (
+    // type="number" の要素は除外
+    if (target.type === 'number') return;
+
+    const isMoneyInput = target.classList && (
                           target.classList.contains('item-price') ||
                           target.classList.contains('item-amount') ||
                           target.classList.contains('item-dairi-unit') ||
                           target.classList.contains('item-final-dairi') ||
                           target.classList.contains('item-buhan-discount') ||
-                          target.classList.contains('item-genka'))) ||
-                          target.id === 'discountAmount' ||
-                          target.id === 'adjustHintAmountInput';
+                          target.classList.contains('item-genka'));
 
     if (isMoneyInput) {
       target.value = target.value.replace(/,/g, '');
