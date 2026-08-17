@@ -2487,8 +2487,11 @@ const app = (() => {
       return;
     }
 
-    // 熱機仕様(spec)がある行が存在すれば新構造（SBM系）: order=1=ヘッダー, order=2=本機
-    const isNetsukiStructure = matched.some(r => !!r.spec);
+    // 順番1に仕切価格（shikiri）があれば従来型、なければ新構造（SBM系）
+    // 従来型(AWH/AWS/GD/GN等93型式): order=1にshikiriあり → order=1が本機
+    // 新構造(SBM系): order=1にshikiriなし（0） → order=1がヘッダー, order=2が本機
+    const order1Row = matched.find(r => r.order === 1);
+    const isNetsukiStructure = !order1Row || !(order1Row.shikiri && order1Row.shikiri > 0);
 
     let mainItem = null;
     let headerHinban = '';  // order=1 の品番を order=2 に引き継ぐ
