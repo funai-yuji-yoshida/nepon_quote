@@ -10980,6 +10980,74 @@ const app = (() => {
     return null;
   }
 
+  // ── 保存前DOM→state同期 ────────────────────────────────────────
+  function preSaveSync() {
+    // 保存直前DOM同期: onItemInput で未反映の代理店単価を救済する
+    // (dairiUnitPrice=null かつ DOM値が自動計算値と異なる場合のみ適用)
+    const _syncCont = document.getElementById('sectionsContainer');
+    if (!_syncCont) return;
+
+    state.sections.forEach(sec => {
+      const _sb = _syncCont.querySelector(`[data-section-id="${sec.id}"]`);
+      if (!_sb) return;
+      sec.items.forEach(item => {
+        const _sr = _sb.querySelector(`[data-item-id="${item.id}"]`);
+        if (!_sr) return;
+        // 代理店単価: is-manualクラス、_dairiManualフラグ、またはdairiUnitPrice設定済みなら手動扱い
+        {
+          const _duEl = _sr.querySelector('.item-dairi-unit');
+          if (_duEl) {
+            const _isManualDOM = _duEl.classList.contains('is-manual') || item._dairiManual || item.dairiUnitPrice != null;
+            if (_isManualDOM) {
+              const _raw = _duEl.value.replace(/,/g, '').trim();
+              const _num = _raw !== '' ? (Number(_raw) || null) : null;
+              if (_num !== null) {
+                item.dairiUnitPrice = _num;
+                item._dairiManual   = true;
+              } else if (item.dairiUnitPrice != null) {
+                // DOMが空欄だが、stateに値がある場合は維持
+                // （ユーザーが削除した場合はonItemInputで既にnullになっているはず）
+              }
+            } else {
+              const _raw = _duEl.value.replace(/,/g, '').trim();
+              const _num = _raw !== '' ? (Number(_raw) || null) : null;
+              if (_num !== null) {
+                const _auto = effectiveDairiUnit(item);
+                if (_num !== _auto) {
+                  item.dairiUnitPrice = _num;
+                  item._dairiManual   = true;
+                } else {
+                  // 自動計算値と同じ場合、手動フラグをクリア
+                  item.dairiUnitPrice = null;
+                  item._dairiManual   = false;
+                }
+              } else {
+                // 自動計算モードで値が空の場合、手動入力をクリア
+                item.dairiUnitPrice = null;
+                item._dairiManual   = false;
+              }
+            }
+          }
+        }
+        // 最終代理店単価
+        if (item.finalDairiUnit == null) {
+          const _fdEl = _sr.querySelector('.item-final-dairi');
+          if (_fdEl) {
+            const _raw2 = _fdEl.value.replace(/,/g, '').trim();
+            const _num2 = _raw2 !== '' ? (Number(_raw2) || null) : null;
+            if (_num2 !== null) {
+              const _auto2 = effectiveFinalDairiUnit(item);
+              if (_num2 !== _auto2) {
+                console.warn('[preSaveSync] 最終代理店単価 DOM→state補正 itemId:', item.id, 'DOM:', _num2, 'auto:', _auto2);
+                item.finalDairiUnit = _num2;
+              }
+            }
+          }
+        }
+      });
+    });
+  }
+
   async function saveToCRM() {
     const statusEl = document.getElementById('saveStatus');
     if (!zohoReady || !state.quoteId) {
@@ -11053,70 +11121,8 @@ const app = (() => {
 
       console.log('保存開始 quoteId:', state.quoteId, 'sections:', state.sections.length);
 
-      // 保存直前DOM同期: onItemInput で未反映の代理店単価を救済する
-      // (dairiUnitPrice=null かつ DOM値が自動計算値と異なる場合のみ適用)
-      const _syncCont = document.getElementById('sectionsContainer');
-      if (_syncCont) {
-        state.sections.forEach(sec => {
-          const _sb = _syncCont.querySelector(`[data-section-id="${sec.id}"]`);
-          if (!_sb) return;
-          sec.items.forEach(item => {
-            const _sr = _sb.querySelector(`[data-item-id="${item.id}"]`);
-            if (!_sr) return;
-            // 代理店単価: is-manualクラス、_dairiManualフラグ、またはdairiUnitPrice設定済みなら手動扱い
-            {
-              const _duEl = _sr.querySelector('.item-dairi-unit');
-              if (_duEl) {
-                const _isManualDOM = _duEl.classList.contains('is-manual') || item._dairiManual || item.dairiUnitPrice != null;
-                if (_isManualDOM) {
-                  const _raw = _duEl.value.replace(/,/g, '').trim();
-                  const _num = _raw !== '' ? (Number(_raw) || null) : null;
-                  if (_num !== null) {
-                    item.dairiUnitPrice = _num;
-                    item._dairiManual   = true;
-                  } else if (item.dairiUnitPrice != null) {
-                    // DOMが空欄だが、stateに値がある場合は維持
-                    // （ユーザーが削除した場合はonItemInputで既にnullになっているはず）
-                  }
-                } else {
-                  const _raw = _duEl.value.replace(/,/g, '').trim();
-                  const _num = _raw !== '' ? (Number(_raw) || null) : null;
-                  if (_num !== null) {
-                    const _auto = effectiveDairiUnit(item);
-                    if (_num !== _auto) {
-                      item.dairiUnitPrice = _num;
-                      item._dairiManual   = true;
-                    } else {
-                      // 自動計算値と同じ場合、手動フラグをクリア
-                      item.dairiUnitPrice = null;
-                      item._dairiManual   = false;
-                    }
-                  } else {
-                    // 自動計算モードで値が空の場合、手動入力をクリア
-                    item.dairiUnitPrice = null;
-                    item._dairiManual   = false;
-                  }
-                }
-              }
-            }
-            // 最終代理店単価
-            if (item.finalDairiUnit == null) {
-              const _fdEl = _sr.querySelector('.item-final-dairi');
-              if (_fdEl) {
-                const _raw2 = _fdEl.value.replace(/,/g, '').trim();
-                const _num2 = _raw2 !== '' ? (Number(_raw2) || null) : null;
-                if (_num2 !== null) {
-                  const _auto2 = effectiveFinalDairiUnit(item);
-                  if (_num2 !== _auto2) {
-                    console.warn('[preSaveSync] 最終代理店単価 DOM→state補正 itemId:', item.id, 'DOM:', _num2, 'auto:', _auto2);
-                    item.finalDairiUnit = _num2;
-                  }
-                }
-              }
-            }
-          });
-        });
-      }
+      // 保存直前DOM→state同期
+      preSaveSync();
 
       collectExclusions();
 
