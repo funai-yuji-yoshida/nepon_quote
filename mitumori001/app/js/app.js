@@ -9354,6 +9354,8 @@ const app = (() => {
         { header: '単位', key: 'unit', width: 10 },
         { header: '単価', key: 'unitPrice', width: 15 },
         { header: '金額', key: 'amount', width: 15 },
+        { header: '代理店単価', key: 'dairiUnitPrice', width: 15 },
+        { header: '代理店金額', key: 'dairiAmount', width: 15 },
         { header: '原価', key: 'genka', width: 15 },
         { header: '算出カテゴリ', key: 'calcCategory', width: 20 },
         { header: '代理店掛率', key: 'dairiRate', width: 12 },
@@ -9488,6 +9490,8 @@ const app = (() => {
         { header: '単位', key: 'unit', width: 10 },
         { header: '単価', key: 'unitPrice', width: 15 },
         { header: '金額', key: 'amount', width: 15 },
+        { header: '代理店単価', key: 'dairiUnitPrice', width: 15 },
+        { header: '代理店金額', key: 'dairiAmount', width: 15 },
         { header: '原価', key: 'genka', width: 15 },
         { header: '算出カテゴリ', key: 'calcCategory', width: 20 },
         { header: '代理店掛率', key: 'dairiRate', width: 12 },
@@ -9505,6 +9509,9 @@ const app = (() => {
       // データ行
       state.sections.forEach(sec => {
         sec.items.forEach(item => {
+          const dairiUnit = effectiveDairiUnit(item);
+          const dairiAmount = (item.qty || 0) * dairiUnit;
+
           worksheet.addRow({
             section: sec.name || '',
             productCode: item.productCode || '',
@@ -9515,6 +9522,8 @@ const app = (() => {
             unit: item.unit || '',
             unitPrice: item.unitPrice || '',
             amount: item.amount || '',
+            dairiUnitPrice: dairiUnit || '',
+            dairiAmount: dairiAmount || '',
             genka: item.genka || '',
             calcCategory: item.calcCategory || '',
             dairiRate: item.dairiRate != null ? item.dairiRate : '',
@@ -9606,20 +9615,43 @@ const app = (() => {
           }
 
           // アイテムを作成
+          const qty = Number(rowData['数量']) || 0;
+          const unitPrice = rowData['単価'] ? Number(rowData['単価']) : null;
+          const dairiUnitPrice = rowData['代理店単価'] ? Number(rowData['代理店単価']) : null;
+
           const item = {
             id: state.nextItemId++,
             productCode: rowData['商品コード'] || '',
             name: rowData['品名'] || '',
             model: rowData['型式'] || '',
             spec: rowData['仕様'] || '',
-            qty: Number(rowData['数量']) || 0,
+            qty: qty,
             unit: rowData['単位'] || '式',
-            unitPrice: rowData['単価'] ? Number(rowData['単価']) : null,
-            amount: rowData['金額'] ? Number(rowData['金額']) : null,
+            unitPrice: unitPrice,
+            amount: unitPrice != null ? qty * unitPrice : null, // 計算式優先
+            dairiUnitPrice: dairiUnitPrice, // 手動設定を許可
             genka: rowData['原価'] ? Number(rowData['原価']) : null,
             calcCategory: rowData['算出カテゴリ'] || '',
             dairiRate: rowData['代理店掛率'] ? Number(rowData['代理店掛率']) : null,
-            bikou: rowData['備考'] || ''
+            bikou: rowData['備考'] || '',
+            // 必要な他のフィールドをデフォルト値で初期化
+            productId: null,
+            includeInLabor: false,
+            finalDairiUnit: null,
+            buhanDiscount: null,
+            kouTanka: 0,
+            houdan: 0,
+            houkouKubun: '',
+            houkouGoukei: 0,
+            houkouDirect: 0,
+            gensuiKubun: '',
+            gensuiA: 0,
+            gensuiB: 0,
+            gensuiEnabled: false,
+            kojiCategory: '',
+            specLines: [],
+            machineSpec: null,
+            printModel: false
           };
 
           // 商品コードがある場合、商品マスタと紐づけを試みる
