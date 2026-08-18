@@ -1412,7 +1412,13 @@ const app = (() => {
         const ok = confirm('未保存の変更があります。\nCRMに保存せずに閉じてよいですか？');
         if (!ok) return;
       }
-      window.close();
+      // Zoho CRMウィジェット環境ではZOHO.CRM.UI.Popup.close()を使用
+      ZOHO.CRM.UI.Popup.close()
+        .then(() => console.log('ウィジェットを閉じました'))
+        .catch(() => {
+          // フォールバック: 通常のwindow.close()
+          window.close();
+        });
     });
 
     // フォント初期化
@@ -9901,6 +9907,8 @@ const app = (() => {
     statusEl.textContent = '';
 
     try {
+      // PDF生成前にDOM→stateを同期（代理店単価の手動修正を反映）
+      await preSaveSync();
       updateOutput();
       const data = buildPdfData(mode);
       if (addrResult.override) {
@@ -10047,6 +10055,8 @@ const app = (() => {
     if (_pdfPreviewObjectUrl) { URL.revokeObjectURL(_pdfPreviewObjectUrl); _pdfPreviewObjectUrl = null; }
 
     try {
+      // PDF生成前にDOM→stateを同期（代理店単価の手動修正を反映）
+      await preSaveSync();
       updateOutput();
       const data = buildPdfData(mode);
 
@@ -11109,6 +11119,26 @@ const app = (() => {
       }
 
       collectExclusions();
+
+      // 生産管理用ID（lineId）を各itemに生成
+      if (state.seqNo) {
+        let generatedCount = 0;
+        state.sections.forEach(section => {
+          section.items.forEach(item => {
+            if (item.id) {
+              item.lineId = `${state.seqNo}-L${String(item.id).padStart(3, '0')}`;
+              generatedCount++;
+            }
+          });
+        });
+        console.log('[生産管理ID] JSON用lineId生成完了', {
+          seqNo: state.seqNo,
+          generatedCount,
+        });
+      } else {
+        console.warn('[生産管理ID] 見積番号が未採番のためlineIdを生成できません');
+      }
+
       const jsonStr = JSON.stringify({
         sections:      state.sections,
         deliveryPrice: state.deliveryPrice,
@@ -11240,16 +11270,41 @@ const app = (() => {
       // ②-b 現在の明細を新規挿入
       let newIds = [];
       if (currentItems.length > 0) {
-        const insertRows = currentItems.map(item => ({
-          quoteType:    item.name              || '',
-          Product_Code: item.productCode        || '',
-          quantity:     Number(item.qty)       || 1,
-          Usage_Unit:   item.unit              || '式',
-          Unit_Price:   Number(item.unitPrice) || 0,
-          field10:      Number(item.amount)    || 0,
-          field15:      Math.round((Number(item.genka) || 0) * (Number(item.qty) || 1)),
-          field8:       item.name              || '',
-        }));
+        console.log('[生産管理ID] 保存処理開始', {
+          seqNo: state.seqNo,
+          itemCount: currentItems.length,
+          sampleItemId: currentItems[0]?.id,
+        });
+
+        const insertRows = currentItems.map(item => {
+          // 生産管理用ID生成: 見積連番-L{3桁item.id}
+          const lineId = (state.seqNo && item.id)
+            ? `${state.seqNo}-L${String(item.id).padStart(3, '0')}`
+            : '';
+
+          if (!lineId) {
+            console.warn('[生産管理ID] ID生成失敗', {
+              itemName: item.name,
+              itemId: item.id,
+              seqNo: state.seqNo,
+              reason: !state.seqNo ? '見積番号なし' : !item.id ? 'item.idなし' : '不明',
+            });
+          } else {
+            console.log('[生産管理ID] 生成成功', { itemName: item.name, lineId });
+          }
+
+          return {
+            quoteType:    item.name              || '',
+            Product_Code: item.productCode        || '',
+            quantity:     Number(item.qty)       || 1,
+            Usage_Unit:   item.unit              || '式',
+            Unit_Price:   Number(item.unitPrice) || 0,
+            field10:      Number(item.amount)    || 0,
+            field15:      Math.round((Number(item.genka) || 0) * (Number(item.qty) || 1)),
+            field8:       item.name              || '',
+            ID1:          lineId,                // 生産管理用ID
+          };
+        });
         const insRes = await ZOHO.CRM.API.updateRecord({
           Entity:  'Quotes',
           APIData: { id: state.quoteId, LinkingModule1: insertRows },
