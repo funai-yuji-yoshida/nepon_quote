@@ -1337,7 +1337,7 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
               // 顧客担当者（会社名と同サイズ）
               ...(data.showContactName && data.contactName ? [{
                 margin: [25, 2, 0, 0],
-                text: (data.contactName || '') + '　' + (data.contactHonorific || '様'),
+                text: (data.contactName || '') + (data.contactHonorific && data.contactHonorific !== 'ー' ? '　' + data.contactHonorific : ''),
                 fontSize: custFs,
               }] : []),
               // 工事名 / 件名

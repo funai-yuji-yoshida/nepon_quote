@@ -78,10 +78,10 @@
           <label>見積番号</label>
           <span id="quoteNoDisplay" class="quote-no-generated">（未採番）</span>
           <button class="btn-auto" id="btnAutoNumber">🔢 採番する</button>
-          <button class="btn-reset-seq" id="btnIncrSeqNo" style="display:none" onclick="app.incrementSeqNo()">連番＋１</button>
-          <button class="btn-reset-seq" id="btnResetSeqNo" style="display:none" onclick="app.incrementEdaban()">枝番＋１</button>
-          <button class="btn-reset-seq btn-clear-seq" id="btnClearSeqNo" style="display:none" onclick="app.resetSeqNo()">採番クリア</button>
-          <button class="btn-reset-seq" id="btnUndoSeqNo" style="display:none" onclick="app.undoSeqNo()">← 戻る</button>
+          <button class="btn-reset-seq" id="btnIncrSeqNo" style="display:none" onclick="neponApp.incrementSeqNo()">連番＋１</button>
+          <button class="btn-reset-seq" id="btnResetSeqNo" style="display:none" onclick="neponApp.incrementEdaban()">枝番＋１</button>
+          <button class="btn-reset-seq btn-clear-seq" id="btnClearSeqNo" style="display:none" onclick="neponApp.resetSeqNo()">採番クリア</button>
+          <button class="btn-reset-seq" id="btnUndoSeqNo" style="display:none" onclick="neponApp.undoSeqNo()">← 戻る</button>
         </div>
         <div class="form-row">
           <label>枝番</label>
@@ -97,7 +97,7 @@
       <div class="form-section frp-mode-section">
         <h3 class="section-title">見積モード</h3>
         <div class="form-row">
-          <button id="btnFrpMode" class="btn-frp-toggle" onclick="app.switchFrpMode()">FRP見積モードに切り替え</button>
+          <button id="btnFrpMode" class="btn-frp-toggle" onclick="neponApp.switchFrpMode()">FRP見積モードに切り替え</button>
           <span id="frpModeLabel" class="frp-mode-label" style="display:none">● FRPモード有効</span>
         </div>
       </div>
@@ -124,6 +124,7 @@
                 <option value="社長">社長</option>
                 <option value="御中">御中</option>
                 <option value="様分">様分</option>
+                <option value="ー">ー</option>
               </select>
             </div>
             <div class="form-row">
@@ -178,7 +179,7 @@
               <span class="rate-label">仕入れ品掛率</span>
               <input type="number" id="ratePurchase" class="rate-input" step="0.001" min="0.001" max="9.999" placeholder="―">
             </div>
-            <button class="btn-apply-rate" onclick="app.applyGlobalRate()">全明細に反映</button>
+            <button class="btn-apply-rate" onclick="neponApp.applyGlobalRate()">全明細に反映</button>
             <div id="ratePanelFrpNote" style="display:none;font-size:11px;color:#c00;margin-top:6px;">※この項目はFRPには反映されません</div>
           </div>
         </div>
@@ -342,20 +343,20 @@
             <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:0;border-left:1px solid #ddd;padding-left:8px;margin-left:8px;">
               <div style="font-size:12px;color:#555;">定型文</div>
               <div style="display:flex;flex-wrap:wrap;gap:3px;">
-                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(1)">1</button>
-                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(2)">2</button>
-                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(3)">3</button>
-                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(4)">4</button>
-                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(5)">5</button>
-                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(6)">6</button>
-                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(7)">7</button>
-                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(8)">8</button>
-                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(9)">9</button>
-                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(10)">10</button>
-                <button class="btn-remark-preset" onclick="app.selectRemarkPreset(11)">11</button>
+                <button class="btn-remark-preset" onclick="neponApp.selectRemarkPreset(1)">1</button>
+                <button class="btn-remark-preset" onclick="neponApp.selectRemarkPreset(2)">2</button>
+                <button class="btn-remark-preset" onclick="neponApp.selectRemarkPreset(3)">3</button>
+                <button class="btn-remark-preset" onclick="neponApp.selectRemarkPreset(4)">4</button>
+                <button class="btn-remark-preset" onclick="neponApp.selectRemarkPreset(5)">5</button>
+                <button class="btn-remark-preset" onclick="neponApp.selectRemarkPreset(6)">6</button>
+                <button class="btn-remark-preset" onclick="neponApp.selectRemarkPreset(7)">7</button>
+                <button class="btn-remark-preset" onclick="neponApp.selectRemarkPreset(8)">8</button>
+                <button class="btn-remark-preset" onclick="neponApp.selectRemarkPreset(9)">9</button>
+                <button class="btn-remark-preset" onclick="neponApp.selectRemarkPreset(10)">10</button>
+                <button class="btn-remark-preset" onclick="neponApp.selectRemarkPreset(11)">11</button>
               </div>
               <div id="remarkPreviewBox" style="flex:1;min-height:48px;max-height:80px;overflow-y:auto;border:1px solid #ccc;border-radius:4px;padding:3px 6px;font-size:11px;color:#333;background:#fafafa;white-space:pre-wrap;line-height:1.5;"></div>
-              <button class="btn-remark-insert" onclick="app.insertSelectedRemark()" style="width:100%;">挿入</button>
+              <button class="btn-remark-insert" onclick="neponApp.insertSelectedRemark()" style="width:100%;">挿入</button>
             </div>
           </div>
         </div>
@@ -370,13 +371,13 @@
         <p class="hint-small">チェックした項目が印刷レイアウトに掲載されます（最大15項目）。テキストは直接編集可能です。</p>
         <div class="exclusion-preset-bar">
           <span class="exclusion-preset-label">プリセット:</span>
-          <button class="btn-excl-preset" onclick="app.applyExclusionPreset('mizukei')">水系1軍</button>
-          <button class="btn-excl-preset" onclick="app.applyExclusionPreset('fuukei')">風系1軍</button>
-          <button class="btn-excl-preset" onclick="app.applyExclusionPreset('general')">一般（全項目）</button>
+          <button class="btn-excl-preset" onclick="neponApp.applyExclusionPreset('mizukei')">水系1軍</button>
+          <button class="btn-excl-preset" onclick="neponApp.applyExclusionPreset('fuukei')">風系1軍</button>
+          <button class="btn-excl-preset" onclick="neponApp.applyExclusionPreset('general')">一般（全項目）</button>
         </div>
         <div class="exclusion-list" id="exclusionList"></div>
         <div class="exclusion-custom-list" id="exclusionCustomList"></div>
-        <button class="btn-excl-add" id="btnAddCustomExcl" onclick="app.addCustomExclusion()">＋手入力追加</button>
+        <button class="btn-excl-add" id="btnAddCustomExcl" onclick="neponApp.addCustomExclusion()">＋手入力追加</button>
       </div>
 
       <div class="form-section">
@@ -401,7 +402,7 @@
       </div>
 
       <div class="tab-footer">
-        <button class="btn-next" onclick="app.goToTab('items')">次へ: 見積明細 →</button>
+        <button class="btn-next" onclick="neponApp.goToTab('items')">次へ: 見積明細 →</button>
       </div>
     </div>
 
@@ -414,20 +415,20 @@
         <div class="toolbar-main">
           <!-- グループ1: 大項目追加 -->
           <div class="toolbar-group">
-            <button class="btn-primary btn-add-section" id="btnAddSection" onclick="app.addSection()">＋ 大項目を追加</button>
+            <button class="btn-primary btn-add-section" id="btnAddSection" onclick="neponApp.addSection()">＋ 大項目を追加</button>
           </div>
 
           <!-- グループ2: 品目検索・追加 -->
           <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;">
             <div class="cat-search-wrap" style="flex:1;min-width:0;">
               <div class="cat-tabs">
-                <button class="cat-tab active" data-cat="product" onclick="app.switchCatTab('product')">商品</button>
-                <button class="cat-tab" data-cat="kiki" onclick="app.switchCatTab('kiki')">機器</button>
-                <button class="cat-tab" data-cat="netsuki" onclick="app.switchCatTab('netsuki')" style="display:none">熱機</button>
-                <button class="cat-tab" data-cat="kanzai" onclick="app.switchCatTab('kanzai')">管材</button>
-                <button class="cat-tab" data-cat="denzai" onclick="app.switchCatTab('denzai')">電材</button>
-                <button class="cat-tab" data-cat="kouji" onclick="app.switchCatTab('kouji')">工事</button>
-                <button class="cat-tab" data-cat="standard" onclick="app.switchCatTab('standard')">標準項</button>
+                <button class="cat-tab active" data-cat="product" onclick="neponApp.switchCatTab('product')">商品</button>
+                <button class="cat-tab" data-cat="kiki" onclick="neponApp.switchCatTab('kiki')">機器</button>
+                <button class="cat-tab" data-cat="netsuki" onclick="neponApp.switchCatTab('netsuki')" style="display:none">熱機</button>
+                <button class="cat-tab" data-cat="kanzai" onclick="neponApp.switchCatTab('kanzai')">管材</button>
+                <button class="cat-tab" data-cat="denzai" onclick="neponApp.switchCatTab('denzai')">電材</button>
+                <button class="cat-tab" data-cat="kouji" onclick="neponApp.switchCatTab('kouji')">工事</button>
+                <button class="cat-tab" data-cat="standard" onclick="neponApp.switchCatTab('standard')">標準項</button>
               </div>
               <div class="cat-panel-wrap">
                 <div class="cat-panel" id="catPanel-product">
@@ -444,25 +445,25 @@
                 <div class="cat-panel" id="catPanel-standard" style="display:none"></div>
               </div>
               <select id="commonTargetSection" class="input-standard cat-target-sel"></select>
-              <button class="btn-cat-add" id="btnCommonAdd" onclick="app.execCatAdd()">追加</button>
+              <button class="btn-cat-add" id="btnCommonAdd" onclick="neponApp.execCatAdd()">追加</button>
             </div>
           </div>
 
           <!-- グループ3: 切り上げ -->
           <div class="toolbar-group toolbar-group-sep">
-            <button class="btn-rounding" id="btnToggleRounding" onclick="app.toggleRounding()" title="単価を桁数に応じて切り上げ表示">切り上げ</button>
+            <button class="btn-rounding" id="btnToggleRounding" onclick="neponApp.toggleRounding()" title="単価を桁数に応じて切り上げ表示">切り上げ</button>
           </div>
 
           <!-- グループ4: 所課マスタ・列表示 -->
           <div class="toolbar-group toolbar-group-sep toolbar-right">
             <span class="template-label">所課マスター</span>
-            <button class="btn-tpl-load" onclick="app.showTemplateLoadDialog()">📂 読み込み</button>
-            <button class="btn-tpl-save" onclick="app.showTemplateSaveDialog()">💾 登録</button>
+            <button class="btn-tpl-load" onclick="neponApp.showTemplateLoadDialog()">📂 読み込み</button>
+            <button class="btn-tpl-save" onclick="neponApp.showTemplateSaveDialog()">💾 登録</button>
             <div class="col-dropdown-wrap">
-              <button class="btn-col-toggle" onclick="app.toggleColDropdown()">⚙️ 列表示</button>
+              <button class="btn-col-toggle" onclick="neponApp.toggleColDropdown()">⚙️ 列表示</button>
               <div id="colDropdown" class="col-dropdown" style="display:none"></div>
             </div>
-            <button class="btn-tpl-load" onclick="app.openExcelModal()" title="Excel明細のインポート/エクスポート">📊 Excel</button>
+            <button class="btn-tpl-load" onclick="neponApp.openExcelModal()" title="Excel明細のインポート/エクスポート">📊 Excel</button>
           </div>
         </div>
 
@@ -480,7 +481,7 @@
               <option value="">― 品名・型式を選択 ―</option>
             </select>
             <select id="kikiRowTargetSection" class="input-standard cat-target-sel"></select>
-            <button class="btn-cat-add" onclick="app.execKikiRowAdd()">追加</button>
+            <button class="btn-cat-add" onclick="neponApp.execKikiRowAdd()">追加</button>
           </div>
         </div>
 
@@ -498,7 +499,7 @@
               <option value="">― 品名・型式を選択 ―</option>
             </select>
             <select id="kanzaiRowTargetSection" class="input-standard cat-target-sel"></select>
-            <button class="btn-cat-add" onclick="app.execKanzaiRowAdd()">追加</button>
+            <button class="btn-cat-add" onclick="neponApp.execKanzaiRowAdd()">追加</button>
           </div>
         </div>
 
@@ -516,7 +517,7 @@
               <option value="">― 品名・型式を選択 ―</option>
             </select>
             <select id="denzaiRowTargetSection" class="input-standard cat-target-sel"></select>
-            <button class="btn-cat-add" onclick="app.execDenzaiRowAdd()">追加</button>
+            <button class="btn-cat-add" onclick="neponApp.execDenzaiRowAdd()">追加</button>
           </div>
         </div>
 
@@ -537,7 +538,7 @@
               <option value="">― 工事名称を選択 ―</option>
             </select>
             <select id="koujiRowTargetSection" class="input-standard cat-target-sel"></select>
-            <button class="btn-cat-add" onclick="app.execKoujiAdd()">追加</button>
+            <button class="btn-cat-add" onclick="neponApp.execKoujiAdd()">追加</button>
           </div>
         </div>
 
@@ -549,9 +550,9 @@
           </div>
           <div class="toolbar-group toolbar-group-sep" style="flex:1;min-width:0;gap:6px;">
             <div class="cat-tabs">
-              <button class="cat-tab" id="standardSubStandard" onclick="app.switchStandardSub('standard')">農用工事</button>
-              <button class="cat-tab" id="standardSubNetsuki" onclick="app.switchStandardSub('netsuki')">熱機</button>
-              <button class="cat-tab" id="standardSubEisei" onclick="app.switchStandardSub('eisei')">衛生</button>
+              <button class="cat-tab" id="standardSubStandard" onclick="neponApp.switchStandardSub('standard')">農用工事</button>
+              <button class="cat-tab" id="standardSubNetsuki" onclick="neponApp.switchStandardSub('netsuki')">熱機</button>
+              <button class="cat-tab" id="standardSubEisei" onclick="neponApp.switchStandardSub('eisei')">衛生</button>
             </div>
           </div>
         </div>
@@ -567,7 +568,7 @@
             </select>
             <span class="standard-hint" id="standardHint" style="font-size:11px;color:#888;flex-shrink:0;"></span>
             <select id="standardRowTargetSection" class="input-standard cat-target-sel"></select>
-            <button class="btn-cat-add" onclick="app.execStandardAdd()">追加</button>
+            <button class="btn-cat-add" id="btnStandardAdd">追加</button>
           </div>
         </div>
 
@@ -586,7 +587,7 @@
               <option value="">― 型式を選択 ―</option>
             </select>
             <select id="netsukiTargetSection" class="input-standard cat-target-sel"></select>
-            <button class="btn-cat-add" onclick="app.execBuppanStandardAdd()">追加</button>
+            <button class="btn-cat-add" onclick="neponApp.execBuppanStandardAdd()">追加</button>
           </div>
         </div>
 
@@ -625,7 +626,7 @@
           <select id="eiseiModelSelect" class="input-search" style="height:30px;flex:1;min-width:0;">
             <option value="">― 型式を選択 ―</option>
           </select>
-          <button class="btn-cat-add" onclick="app.execEiseiAdd()">追加</button>
+          <button class="btn-cat-add" onclick="neponApp.execEiseiAdd()">追加</button>
         </div>
       </div>
 
@@ -633,14 +634,14 @@
       <div id="frpContainer" style="display:none">
         <div class="frp-header">
           <div class="frp-add-buttons">
-            <button class="btn-frp-add" onclick="app.openFrpWizard('product')">＋ 製品を追加</button>
-            <button class="btn-frp-add" onclick="app.openFrpWizard('option')">＋ オプション部品</button>
-            <button class="btn-frp-add" onclick="app.addFrpManualItem()">＋ 行を追加</button>
-            <button class="btn-frp-add" onclick="app.openSoryoModal()">＋ 送料</button>
-            <button class="btn-rounding" id="btnToggleRoundingFrp" onclick="app.toggleRounding()" title="単価を桁数に応じて切り上げ表示">切り上げ</button>
-            <button class="btn-frp-settings" onclick="app.openFrpSettings()">⚙ 設定</button>
-            <button class="btn-tpl-load" onclick="app.showTemplateLoadDialog()">📂 読み込み</button>
-            <button class="btn-tpl-save" onclick="app.showTemplateSaveDialog()">💾 登録</button>
+            <button class="btn-frp-add" onclick="neponApp.openFrpWizard('product')">＋ 製品を追加</button>
+            <button class="btn-frp-add" onclick="neponApp.openFrpWizard('option')">＋ オプション部品</button>
+            <button class="btn-frp-add" onclick="neponApp.addFrpManualItem()">＋ 行を追加</button>
+            <button class="btn-frp-add" onclick="neponApp.openSoryoModal()">＋ 送料</button>
+            <button class="btn-rounding" id="btnToggleRoundingFrp" onclick="neponApp.toggleRounding()" title="単価を桁数に応じて切り上げ表示">切り上げ</button>
+            <button class="btn-frp-settings" onclick="neponApp.openFrpSettings()">⚙ 設定</button>
+            <button class="btn-tpl-load" onclick="neponApp.showTemplateLoadDialog()">📂 読み込み</button>
+            <button class="btn-tpl-save" onclick="neponApp.showTemplateSaveDialog()">💾 登録</button>
           </div>
         </div>
 
@@ -690,12 +691,12 @@
 
       <div id="noSectionsMsg" class="empty-state">
         <p>「＋ 大項目を追加」からセクションを追加してください</p>
-        <button class="btn-primary" onclick="app.addSection()">＋ 大項目を追加</button>
+        <button class="btn-primary" onclick="neponApp.addSection()">＋ 大項目を追加</button>
       </div>
 
       <!-- 減衰計算サマリー -->
       <div id="gensuiSummary" class="gensui-summary" style="display:none">
-        <div class="gensui-summary-header" onclick="app.toggleGensuiSummary()" style="cursor:pointer">
+        <div class="gensui-summary-header" onclick="neponApp.toggleGensuiSummary()" style="cursor:pointer">
           <span class="gensui-toggle-btn">▼</span> 減衰計算サマリー
         </div>
         <table class="gensui-table">
@@ -729,7 +730,7 @@
         <div class="adjust-hint-note">🔒 行の代理店単価を手動値引きすると「調整済み」が増えます。</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:5px;">
           <div id="adjustHintSyncWrap" style="display:none;">
-            <button class="btn-adjust-sync" onclick="app.updateAdjustAmountToRest()">↩ 調整額を残額 <span id="adjustHintSyncLabel">¥0</span> に更新</button>
+            <button class="btn-adjust-sync" onclick="neponApp.updateAdjustAmountToRest()">↩ 調整額を残額 <span id="adjustHintSyncLabel">¥0</span> に更新</button>
           </div>
         </div>
       </div>
@@ -751,8 +752,8 @@
       </div>
 
       <div class="tab-footer">
-        <button class="btn-back" onclick="app.goToTab('basic')">← 基本情報</button>
-        <button class="btn-next" onclick="app.goToTab('output')">次へ: PDF出力 →</button>
+        <button class="btn-back" onclick="neponApp.goToTab('basic')">← 基本情報</button>
+        <button class="btn-next" onclick="neponApp.goToTab('output')">次へ: PDF出力 →</button>
       </div>
     </div>
 
@@ -889,8 +890,8 @@
 
           <div class="print-detail-option" style="display:none">
             <span class="print-detail-label">型式の印刷：</span>
-            <button id="btnModelPrintOn" class="spm-btn" onclick="app.setAllModelPrint(true)">全行ON</button>
-            <button id="btnModelPrintOff" class="spm-btn spm-hidden-on" onclick="app.setAllModelPrint(false)">全行OFF</button>
+            <button id="btnModelPrintOn" class="spm-btn" onclick="neponApp.setAllModelPrint(true)">全行ON</button>
+            <button id="btnModelPrintOff" class="spm-btn spm-hidden-on" onclick="neponApp.setAllModelPrint(false)">全行OFF</button>
           </div>
 
           <div class="print-detail-option">
@@ -924,10 +925,10 @@
           </div>
 
           <div class="pdf-btn-group">
-            <button class="btn-generate" id="btnSimplePDF" onclick="app.generatePDF('simple')" disabled>
+            <button class="btn-generate" id="btnSimplePDF" onclick="neponApp.generatePDF('simple')" disabled>
               📄 簡略印刷
             </button>
-            <button class="btn-generate btn-generate-detail" id="btnDetailPDF" onclick="app.generatePDF('detail')" disabled>
+            <button class="btn-generate btn-generate-detail" id="btnDetailPDF" onclick="neponApp.generatePDF('detail')" disabled>
               📋 詳細印刷
             </button>
           </div>
@@ -935,10 +936,10 @@
             📄 簡略：品目を集約してセクション小計のみ表示　／　📋 詳細：全品目の明細行を展開して表示
           </p>
           <div style="display:flex; align-items:center; gap:8px; margin-top:6px">
-            <button class="btn-secondary" id="btnPreviewSimplePDF" onclick="app.previewPDF('simple')" disabled>
+            <button class="btn-secondary" id="btnPreviewSimplePDF" onclick="neponApp.previewPDF('simple')" disabled>
               🔍 簡略プレビュー
             </button>
-            <button class="btn-secondary" id="btnPreviewDetailPDF" onclick="app.previewPDF('detail')" disabled>
+            <button class="btn-secondary" id="btnPreviewDetailPDF" onclick="neponApp.previewPDF('detail')" disabled>
               🔍 詳細プレビュー
             </button>
             <label style="margin-left:auto; display:flex; align-items:center; gap:4px; font-size:13px; white-space:nowrap">
@@ -977,14 +978,14 @@
           <div class="save-section">
             <hr>
             <p class="hint-small">見積データをCRMに保存:</p>
-            <button class="btn-secondary" id="btnSaveToCRM" onclick="app.saveToCRM()">
+            <button class="btn-secondary" id="btnSaveToCRM" onclick="neponApp.saveToCRM()">
               💾 CRMに保存（見積明細JSON）
             </button>
             <div id="saveStatus" class="pdf-status-msg"></div>
-            <button class="btn-secondary" id="btnExportCsv" onclick="app.exportCsv()" disabled style="margin-top:6px">
+            <button class="btn-secondary" id="btnExportCsv" onclick="neponApp.exportCsv()" disabled style="margin-top:6px">
               📊 CSV出力
             </button>
-            <button class="btn-secondary" id="btnExportExcel" onclick="app.exportExcel()" disabled style="margin-top:6px">
+            <button class="btn-secondary" id="btnExportExcel" onclick="neponApp.exportExcel()" disabled style="margin-top:6px">
               📊 Excel出力
             </button>
           </div>
@@ -992,7 +993,7 @@
       </div>
 
       <div class="tab-footer">
-        <button class="btn-back" onclick="app.goToTab('items')">← 見積明細</button>
+        <button class="btn-back" onclick="neponApp.goToTab('items')">← 見積明細</button>
       </div>
     </div>
 
@@ -1001,7 +1002,7 @@
     <!-- ============================================================ -->
     <div id="tab-summary" class="tab-content">
       <div class="summary-tab-toolbar">
-        <button class="btn-primary" onclick="app.generateSummaryPDF()">📄 集計表PDF出力</button>
+        <button class="btn-primary" onclick="neponApp.generateSummaryPDF()">📄 集計表PDF出力</button>
         <label class="print-detail-label" style="margin-left:12px;">
           <input type="checkbox" id="summaryShowDairi">
           集計表PDFに代理店価格を含める
@@ -1014,7 +1015,7 @@
       </div>
 
       <div class="tab-footer">
-        <button class="btn-back" onclick="app.goToTab('output')">← PDF出力</button>
+        <button class="btn-back" onclick="neponApp.goToTab('output')">← PDF出力</button>
       </div>
     </div>
 
@@ -1034,10 +1035,10 @@
         <div class="section-bikou-wrap"><span class="section-bikou-label">備考</span><input type="text" class="section-bikou-input" placeholder=""></div>
         <span class="section-collapsed-info"></span>
         <div class="section-actions">
-          <button class="btn-icon" onclick="app.moveSectionUp(this)" title="上へ">▲</button>
-          <button class="btn-icon" onclick="app.moveSectionDown(this)" title="下へ">▼</button>
-          <button class="btn-icon" onclick="app.duplicateSection(this)" title="複製">⧉</button>
-          <button class="btn-icon btn-danger" onclick="app.removeSection(this)" title="削除">✕</button>
+          <button class="btn-icon" onclick="neponApp.moveSectionUp(this)" title="上へ">▲</button>
+          <button class="btn-icon" onclick="neponApp.moveSectionDown(this)" title="下へ">▼</button>
+          <button class="btn-icon" onclick="neponApp.duplicateSection(this)" title="複製">⧉</button>
+          <button class="btn-icon btn-danger" onclick="neponApp.removeSection(this)" title="削除">✕</button>
         </div>
       </div>
 
@@ -1083,11 +1084,11 @@
       </div><!-- /.items-table-wrapper -->
 
       <div class="section-footer">
-        <button class="btn-add-item" onclick="app.addItem(this)">＋ 行を追加</button>
+        <button class="btn-add-item" onclick="neponApp.addItem(this)">＋ 行を追加</button>
         <div class="section-rate-wrap">
           <label class="section-rate-label">一括掛率</label>
           <input type="text" inputmode="decimal" class="section-rate-input" placeholder="例: 0.8">
-          <button class="btn-section-rate" onclick="app.applyBulkRate(this)">適用</button>
+          <button class="btn-section-rate" onclick="neponApp.applyBulkRate(this)">適用</button>
           <span class="section-rate-warn" style="display:none"></span>
         </div>
         <div class="section-subtotal">
@@ -1125,7 +1126,7 @@
       <td class="col-unit">
         <div class="unit-combo">
           <input type="text" class="item-unit" placeholder="式">
-          <button type="button" class="btn-unit-pick" tabindex="-1" onclick="app.toggleUnitDropdown(this)">▼</button>
+          <button type="button" class="btn-unit-pick" tabindex="-1" onclick="neponApp.toggleUnitDropdown(this)">▼</button>
         </div>
       </td>
       <td class="col-price"><input type="text" inputmode="numeric" class="item-price"></td>
@@ -1144,13 +1145,13 @@
       <td class="col-dairi-unit">
         <div class="dairi-unit-wrap">
           <input type="text" inputmode="numeric" class="item-dairi-unit" placeholder="">
-          <button class="btn-dairi-unit-lock" onclick="app.clearDairiUnitPrice(this)" title="手動入力をクリアして自動計算に戻す" style="display:none">🔒</button>
+          <button class="btn-dairi-unit-lock" onclick="neponApp.clearDairiUnitPrice(this)" title="手動入力をクリアして自動計算に戻す" style="display:none">🔒</button>
         </div>
       </td>
       <td class="col-final-dairi">
         <div class="final-dairi-wrap">
           <input type="text" inputmode="numeric" class="item-final-dairi" placeholder="">
-          <button class="btn-final-dairi-lock" onclick="app.clearFinalDairiUnit(this)" title="手動入力をクリアして自動計算に戻す" style="display:none">🔒</button>
+          <button class="btn-final-dairi-lock" onclick="neponApp.clearFinalDairiUnit(this)" title="手動入力をクリアして自動計算に戻す" style="display:none">🔒</button>
         </div>
       </td>
       <td class="col-dairi"><span class="item-dairi"></span></td>
@@ -1169,9 +1170,9 @@
       <td class="col-bikou"><input type="text" class="item-bikou" placeholder=""></td>
       <td class="col-item-actions">
         <div class="item-action-btns">
-          <button class="btn-icon btn-danger" onclick="app.removeItem(this)" title="削除">✕</button>
-          <button class="btn-spec-add" onclick="app.addSpecLine(this)">＋説明文</button>
-          <button class="btn-spec-template" onclick="app.showSpecTemplateMenu(this)" title="説明テンプレート">📋</button>
+          <button class="btn-icon btn-danger" onclick="neponApp.removeItem(this)" title="削除">✕</button>
+          <button class="btn-spec-add" onclick="neponApp.addSpecLine(this)">＋説明文</button>
+          <button class="btn-spec-template" onclick="neponApp.showSpecTemplateMenu(this)" title="説明テンプレート">📋</button>
         </div>
       </td>
     </tr>
@@ -1188,8 +1189,8 @@
         <p id="categoryChangeSeqNote" style="color:#c00;font-size:12px;margin-top:8px"></p>
       </div>
       <div class="modal-footer">
-        <button class="btn-primary" onclick="app.confirmCategoryChange()">変更する</button>
-        <button class="btn-secondary" onclick="app.declineCategoryChange()">このまま続ける</button>
+        <button class="btn-primary" onclick="neponApp.confirmCategoryChange()">変更する</button>
+        <button class="btn-secondary" onclick="neponApp.declineCategoryChange()">このまま続ける</button>
       </div>
     </div>
   </div>
@@ -1211,8 +1212,11 @@
             <input type="text" id="pdfAddressContact" class="input-standard" style="flex:1" placeholder="（省略可）">
             <select id="pdfAddressHonorific" class="input-standard" style="width:70px">
               <option value="様">様</option>
+              <option value="殿">殿</option>
+              <option value="社長">社長</option>
               <option value="御中">御中</option>
-              <option value="">なし</option>
+              <option value="様分">様分</option>
+              <option value="ー">ー</option>
             </select>
           </div>
         </div>
@@ -1302,7 +1306,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="document.getElementById('tplSaveModal').style.display='none'">キャンセル</button>
-        <button class="btn-primary" onclick="app.execTemplateSave()">💾 保存</button>
+        <button class="btn-primary" onclick="neponApp.execTemplateSave()">💾 保存</button>
       </div>
     </div>
   </div>
@@ -1370,8 +1374,8 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="document.getElementById('tplLoadModal').style.display='none'">キャンセル</button>
-        <!-- <button class="btn-secondary" onclick="app.showSetProductDialog()">📦 セット商品を追加</button> -->
-        <button class="btn-primary" id="btnTplLoad" onclick="app.execTemplateLoad()" disabled>📂 読み込み</button>
+        <!-- <button class="btn-secondary" onclick="neponApp.showSetProductDialog()">📦 セット商品を追加</button> -->
+        <button class="btn-primary" id="btnTplLoad" onclick="neponApp.execTemplateLoad()" disabled>📂 読み込み</button>
       </div>
     </div>
   </div>
@@ -1392,8 +1396,8 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="document.getElementById('setProductModal').style.display='none'">キャンセル</button>
-        <button class="btn-secondary" onclick="app.showSetProductSaveDialog(null)">➕ 新規登録</button>
-        <button class="btn-primary" id="btnAddSetProduct" onclick="app.execAddSetProduct()" disabled>📦 追加</button>
+        <button class="btn-secondary" onclick="neponApp.showSetProductSaveDialog(null)">➕ 新規登録</button>
+        <button class="btn-primary" id="btnAddSetProduct" onclick="neponApp.execAddSetProduct()" disabled>📦 追加</button>
       </div>
     </div>
   </div>
@@ -1429,7 +1433,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="document.getElementById('setProductSaveModal').style.display='none'">キャンセル</button>
-        <button class="btn-primary" onclick="app.execSetProductSave()">💾 保存</button>
+        <button class="btn-primary" onclick="neponApp.execSetProductSave()">💾 保存</button>
       </div>
     </div>
   </div>
@@ -1439,7 +1443,7 @@
     <div class="modal-dialog" style="width:520px">
       <div class="modal-header">
         <span class="modal-title">機器仕様マスタ 編集</span>
-        <button class="modal-close" onclick="app.closeSpecMasterModal()">✕</button>
+        <button class="modal-close" onclick="neponApp.closeSpecMasterModal()">✕</button>
       </div>
       <div class="modal-body" style="padding:16px">
         <div style="margin-bottom:10px;font-size:13px">
@@ -1450,8 +1454,8 @@
         <textarea id="spmContent" rows="10" style="width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:4px;padding:8px;font-size:13px;resize:vertical"></textarea>
       </div>
       <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid #eee">
-        <button onclick="app.closeSpecMasterModal()" style="padding:6px 18px;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer">キャンセル</button>
-        <button id="spmSaveBtn" onclick="app.saveSpecMaster()" style="padding:6px 18px;border:none;border-radius:4px;background:#1a73e8;color:#fff;cursor:pointer;font-weight:bold">保存</button>
+        <button onclick="neponApp.closeSpecMasterModal()" style="padding:6px 18px;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer">キャンセル</button>
+        <button id="spmSaveBtn" onclick="neponApp.saveSpecMaster()" style="padding:6px 18px;border:none;border-radius:4px;background:#1a73e8;color:#fff;cursor:pointer;font-weight:bold">保存</button>
       </div>
     </div>
   </div>
@@ -1533,10 +1537,10 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" onclick="app.resetFrpSettings()">↩ 初期値へ戻す</button>
+        <button class="btn-secondary" onclick="neponApp.resetFrpSettings()">↩ 初期値へ戻す</button>
         <button class="btn-secondary"
                 onclick="document.getElementById('frpSettingsModal').style.display='none'">キャンセル</button>
-        <button class="btn-primary" onclick="app.saveFrpSettings()">💾 保存</button>
+        <button class="btn-primary" onclick="neponApp.saveFrpSettings()">💾 保存</button>
       </div>
     </div>
   </div>
@@ -1560,7 +1564,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="document.getElementById('frpZubanModal').style.display='none'">キャンセル</button>
-        <button class="btn-primary" onclick="app.execFrpZubanSave()">✔ 確定</button>
+        <button class="btn-primary" onclick="neponApp.execFrpZubanSave()">✔ 確定</button>
       </div>
     </div>
   </div>
@@ -1574,8 +1578,8 @@
         <div style="margin-top:10px;font-size:12.5px;color:#888">②見積明細に戻り「調整額を調整してください。」</div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;padding:14px 20px">
-        <button class="btn-secondary" onclick="app._adjustWarnIgnore()" style="color:#666">無視する</button>
-        <button class="btn-secondary" onclick="app._adjustWarnCancel()">②見積明細に戻る</button>
+        <button class="btn-secondary" onclick="neponApp._adjustWarnIgnore()" style="color:#666">無視する</button>
+        <button class="btn-secondary" onclick="neponApp._adjustWarnCancel()">②見積明細に戻る</button>
       </div>
     </div>
   </div>
@@ -1591,7 +1595,7 @@
 
         <div style="display:flex;flex-direction:column;gap:12px">
           <!-- テンプレート -->
-          <button onclick="app.downloadExcelTemplate(); app.closeExcelModal()"
+          <button onclick="neponApp.downloadExcelTemplate(); app.closeExcelModal()"
                   style="padding:14px 18px;border:1px solid #3498db;border-radius:6px;background:#fff;cursor:pointer;text-align:left;transition:all 0.2s"
                   onmouseover="this.style.background='#ebf5fb'"
                   onmouseout="this.style.background='#fff'">
@@ -1600,7 +1604,7 @@
           </button>
 
           <!-- エクスポート -->
-          <button onclick="app.exportItemsToExcel(); app.closeExcelModal()"
+          <button onclick="neponApp.exportItemsToExcel(); app.closeExcelModal()"
                   style="padding:14px 18px;border:1px solid #27ae60;border-radius:6px;background:#fff;cursor:pointer;text-align:left;transition:all 0.2s"
                   onmouseover="this.style.background='#eafaf1'"
                   onmouseout="this.style.background='#fff'">
@@ -1620,7 +1624,7 @@
         </div>
       </div>
       <div style="display:flex;justify-content:flex-end;padding:14px 24px;border-top:1px solid #ecf0f1">
-        <button class="btn-secondary" onclick="app.closeExcelModal()">閉じる</button>
+        <button class="btn-secondary" onclick="neponApp.closeExcelModal()">閉じる</button>
       </div>
     </div>
   </div>
@@ -1644,7 +1648,7 @@
     <div style="background:#fff;width:92vw;height:92vh;border-radius:8px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.3)">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid #ddd;flex-shrink:0">
         <span style="font-weight:bold;font-size:14px">📄 PDF プレビュー</span>
-        <button onclick="app.closePdfPreview()" style="padding:4px 14px;border:1px solid #ccc;border-radius:4px;background:#f5f5f5;cursor:pointer;font-size:13px">✕ 閉じる</button>
+        <button onclick="neponApp.closePdfPreview()" style="padding:4px 14px;border:1px solid #ccc;border-radius:4px;background:#f5f5f5;cursor:pointer;font-size:13px">✕ 閉じる</button>
       </div>
       <div id="pdfPreviewLoading" style="flex:1;display:flex;align-items:center;justify-content:center;font-size:14px;color:#666">⏳ PDF生成中...</div>
       <iframe id="pdfPreviewFrame" style="flex:1;border:none;display:none" src=""></iframe>
