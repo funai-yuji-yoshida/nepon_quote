@@ -645,7 +645,11 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
                 });
               }
             }
-            const _specLines = (item.specLines || []).filter(l => l.trim());
+            // 型式と同じ値を除外（物販標準項マスタのfield重複防止）
+            const _specLines = (item.specLines || []).filter(l => {
+              const trimmed = l.trim();
+              return trimmed && trimmed !== (item.model || '').trim() && trimmed !== (item.spec || '').trim();
+            });
             _specLines.forEach(line => mirrorEntries.push({ type: 'specLine', text: line }));
           });
         }
@@ -1867,7 +1871,11 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
             { text: (isBulk || isShikiOnly) ? fmt(dairiAmtFn(item)) : fmt(Number(item.amount) || 0), alignment: 'right' },
           ]);
         }
-        (item.specLines || []).filter(l => (l || '').trim()).forEach(line => {
+        // 型式と同じ値を除外（物販標準項マスタのfield重複防止）
+        (item.specLines || []).filter(l => {
+          const trimmed = (l || '').trim();
+          return trimmed && trimmed !== (item.model || '').trim() && trimmed !== (item.spec || '').trim();
+        }).forEach(line => {
           const trimmed = line.trim();
           if (trimmed.startsWith('〇')) {
             const text = trimmed.substring(1).trim();
@@ -2045,7 +2053,11 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
           const dAmt   = dairiAmtFn(item);
           eiseiPriceTotal   += total;
           eiseiShikiriTotal += dAmt;
-          const specLines = (item.specLines || []).filter(l => (l || '').trim());
+          // 型式と同じ値を除外（物販標準項マスタのfield重複防止）
+          const specLines = (item.specLines || []).filter(l => {
+            const trimmed = (l || '').trim();
+            return trimmed && trimmed !== (item.model || '').trim() && trimmed !== (item.spec || '').trim();
+          });
           const btm = specLines.length === 0;
           rows.push([
             { text: String(rowNo++), alignment: 'center', fontSize: 8, border: [true, true, true, btm] },
@@ -2287,7 +2299,11 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
             ...(showBikou ? [{ text: item.bikou || '' }] : []),
           ]);
         }
-        const _sl = (item.specLines || []).filter(l => (l || '').trim());
+        // 型式と同じ値を除外（物販標準項マスタのfield重複防止）
+        const _sl = (item.specLines || []).filter(l => {
+          const trimmed = (l || '').trim();
+          return trimmed && trimmed !== (item.model || '').trim() && trimmed !== (item.spec || '').trim();
+        });
         _sl.forEach(line => {
           const trimmed = line.trim();
           const hasCircle = trimmed.startsWith('〇');
@@ -2612,7 +2628,11 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
             });
           }
         }
-        const _sl = (item.specLines || []).filter(l => (l || '').trim());
+        // 型式と同じ値を除外（物販標準項マスタのfield重複防止）
+        const _sl = (item.specLines || []).filter(l => {
+          const trimmed = (l || '').trim();
+          return trimmed && trimmed !== (item.model || '').trim() && trimmed !== (item.spec || '').trim();
+        });
         _sl.forEach(line => {
           const trimmed = line.trim();
           const hasCircle = trimmed.startsWith('〇');
@@ -2955,7 +2975,11 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
               rows.push([{ text: '' }, { text: trimmed, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]);
             }
           });
-          (item.specLines || []).filter(l => (l || '').trim()).forEach(line => {
+          // 型式と同じ値を除外（物販標準項マスタのfield重複防止）
+          (item.specLines || []).filter(l => {
+            const trimmed = (l || '').trim();
+            return trimmed && trimmed !== (item.model || '').trim() && trimmed !== (item.spec || '').trim();
+          }).forEach(line => {
             const trimmed = line.trim();
             if (trimmed.startsWith('〇')) {
               const text = trimmed.substring(1).trim();
@@ -2965,7 +2989,11 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
             }
           });
         } else {
-          const _sl1 = (item.specLines || []).filter(l => (l || '').trim());
+          // 型式と同じ値を除外（物販標準項マスタのfield重複防止）
+          const _sl1 = (item.specLines || []).filter(l => {
+            const trimmed = (l || '').trim();
+            return trimmed && trimmed !== (item.model || '').trim() && trimmed !== (item.spec || '').trim();
+          });
           _sl1.forEach(line => {
             const trimmed = line.trim();
             if (trimmed.startsWith('〇')) {
@@ -3285,7 +3313,11 @@ c72 4 120 12 160 27 84 32 100 48 96 96 l-3 40 -60 -30z"/>
             });
           }
         }
-        const _sl2 = (item.specLines || []).filter(l => (l || '').trim());
+        // 型式と同じ値を除外（物販標準項マスタのfield重複防止）
+        const _sl2 = (item.specLines || []).filter(l => {
+          const trimmed = (l || '').trim();
+          return trimmed && trimmed !== (item.model || '').trim() && trimmed !== (item.spec || '').trim();
+        });
         _sl2.forEach(line => rows.push([{ text: '' }, { text: line, fontSize: 7.5, color: '#000', margin: [8, 0, 0, 0] }, ...emp(COLS - 2)]));
       });
 
